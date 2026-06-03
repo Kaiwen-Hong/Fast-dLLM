@@ -9,15 +9,19 @@ run on the RTX 5090 and scale to Waymo TPU. Adapted from `DLM-policy4AV/jax-mdlm
 |---|---|
 | `docs/REPORT.md` | Overnight build summary + reproduce commands (read first) |
 | `docs/HANDOFF.md` | Living status log + exact run commands/env |
+| `docs/FEATURES.md` | Capability matrix (done/verified/remaining) |
+| `docs/ARCHITECTURE.md` | Module layout + training data-flow + parity methodology |
+| `docs/AUDIT.md` | Adversarial audit findings + resolutions |
 | `docs/00_PLAN.md` | Feasibility + phased plan |
 | `docs/01_pytorch_reference_algorithm.md` | Exact PyTorch loss/mask/scaffold/M-RoPE/param spec |
 | `docs/02_tpu_plan.md` | TPU mesh/sharding scale-out plan |
 
-**Status:** Phase 1 (text parity 3e-5) · Phase 2 (SASD loss parity 8e-8) · **Phase 3 (text loss
-decreases, base 3.84→1.47)** · Phase 4 (ViT parity 4e-5) · Phase 4b (multimodal forward 7.7e-5,
-**multimodal training loss 0.999→0.701**) · Phase 5 (Orbax+sharding) — all verified. The full model
-is ported + parity-verified + trains end-to-end. Open (not part of the rewrite): JAX generation/sampling,
-physical TP sharding, real Waymo-data training.
+**Status (all verified):** Phase 1 text parity 3e-5 · Phase 2 SASD loss parity 8e-8 · **Phase 3 text loss
+decreases (base 3.84→1.47)** · Phase 4 ViT parity 4e-5 · Phase 4b multimodal forward 7.7e-5 + **multimodal
+training 0.999→0.701** · JAX **section-diffusion sampler** (generates valid JSON trajectory) · Phase 5
+Orbax + FSDP specs + **TP sharding primitives** (mesh=1). The full model is ported, parity-verified, trains
+end-to-end (text+multimodal), and generates. `run_all_verification.sh` → 9/9 gates PASS. Audit: 0 code
+defects (`docs/AUDIT.md`). Open: whole-model TP swap, KV-cache fast decode, real Waymo-data training.
 
 Envs (always `unset LD_LIBRARY_PATH` first): PyTorch oracle =
 `/home/kaiwen/miniconda3/envs/ddrive/bin/python`; JAX =

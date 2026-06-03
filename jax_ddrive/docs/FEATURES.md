@@ -43,7 +43,8 @@ parity gate or a loss-decrease run exists (see `docs/REPORT.md` for commands/num
 |---|---|---|
 | Orbax checkpoint save/restore | ✅ verified | `checkpoint.py`, round-trip |
 | FSDP PartitionSpec mapping + mesh | ✅ | `sharding.py` (spec artifact) |
-| Physical TP sharding (ShardedLinear/Embedding) | 🚧 | task #10 (JAX 0.10 sharding-in-types) |
+| Physical TP sharding primitives (ShardedLinear/Embedding, `out_sharding=`) | ✅ verified mesh=1 | `models/sharded.py`, `tests/test_sharding.py` |
+| Whole-model TP swap (Linear→ShardedLinear across the decoder) | ⬜ mechanical | ~80 LOC; primitives ready, see `docs/02_tpu_plan.md` |
 | MaxText fork integration (5-line loss_fn diff) | ⬜ | `docs/02_tpu_plan.md` |
 
 ## Data / eval

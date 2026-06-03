@@ -20,6 +20,9 @@ gate(){ # name  marker  cmd...
 
 # CPU unit tests
 JAX_PLATFORMS=cpu $JX jax_ddrive/tests/test_mask_loss.py 2>&1 | clean | grep -q "ALL CPU TESTS PASS" && R[cpu_mask_loss]=PASS || R[cpu_mask_loss]=FAIL
+JAX_PLATFORMS=cpu $JX jax_ddrive/tests/test_lora.py 2>&1 | clean | grep -q "ALL LORA TESTS PASS" && R[cpu_lora]=PASS || R[cpu_lora]=FAIL
+JAX_PLATFORMS=cpu $JX jax_ddrive/tests/test_noising.py 2>&1 | clean | grep -q "ALL NOISING TESTS PASS" && R[cpu_noise]=PASS || R[cpu_noise]=FAIL
+JAX_PLATFORMS=cpu $JX jax_ddrive/tests/test_sharding.py 2>&1 | clean | grep -q "ALL SHARDING TESTS PASS" && R[cpu_sharding]=PASS || R[cpu_sharding]=FAIL
 
 # Phase 1 text
 $PT jax_ddrive/scripts/capture_oracle_text.py >/dev/null 2>&1
@@ -34,11 +37,15 @@ gate phase4_vit "PHASE4_VIT_PASS" $JX jax_ddrive/scripts/parity_vit.py
 # Phase 4b multimodal forward
 $PT jax_ddrive/scripts/capture_oracle_mm.py >/dev/null 2>&1
 gate phase4b_mm_fwd "PHASE4b_MM_PASS" $JX jax_ddrive/scripts/parity_mm.py
+# Phase 3 default training path (LoRA) smoke gate: trains the LoRA adapters a few steps and
+# asserts the fixed-eval loss decreases (no NaN). Needs prep_overfit_data.npz from prep step.
+$PT jax_ddrive/scripts/prep_overfit_data.py >/dev/null 2>&1
+gate phase3_lora_train "PHASE3_PASS" $JX jax_ddrive/ddrive_jax/train_overfit.py --source trained --fixed_batch --steps 30 --lr 1e-4
 
 echo
 echo "================ VERIFICATION SUMMARY ================"
 ok=0; n=0
-for k in cpu_mask_loss phase1_text phase2_sasd phase4_vit phase4b_mm_fwd; do
+for k in cpu_mask_loss cpu_lora cpu_noise cpu_sharding phase1_text phase2_sasd phase4_vit phase4b_mm_fwd phase3_lora_train; do
   v=${R[$k]:-MISSING}; printf "  %-16s %s\n" "$k" "$v"; n=$((n+1)); [ "$v" = PASS ] && ok=$((ok+1))
 done
 echo "-----------------------------------------------------"

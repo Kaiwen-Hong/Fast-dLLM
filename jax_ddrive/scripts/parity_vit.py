@@ -38,6 +38,10 @@ def main():
         cfg = vit.cfg; u = cfg.spatial_merge_unit; N = int(pv.shape[0])
         wi, cuw = get_window_index(thw, cfg); cu = cu_seqlens_full(thw)
         cos, sin = vit._rotary(thw, wi)
+        # direct patch-embed (Conv3D-as-linear reshape) gate: our matmul vs PyTorch's cuDNN conv.
+        pe = np.asarray(vit.patch_embed(pv)).reshape(N // u, u, -1)[wi].reshape(N, -1)
+        pe_rel = float(np.abs(pe - dd["patch_reord"]).max() / (np.abs(dd["patch_reord"]).max() + 1e-9))
+        print(f"patch_embed (conv-as-linear) rel-max {pe_rel:.3e}  (~6.5e-4 cuDNN-conv seed; >5e-3 ⇒ reshape bug)")
         x = jnp.asarray(dd["patch_reord"])
         sf = jnp.asarray(_seg_ids_from_cu(cu, N)); mf = (sf[:, None] == sf[None, :])
         sw = jnp.asarray(_seg_ids_from_cu(cuw, N)); mw = (sw[:, None] == sw[None, :])
@@ -47,10 +51,13 @@ def main():
         iso = float(np.abs(x - ref).max() / (np.abs(ref).max() + 1e-9))
         print(f"blocks+merger on PyTorch patch-embed rel-max {iso:.3e}  (cuDNN-conv seed removed)")
     except FileNotFoundError:
+        pe_rel = None
         print("(run scripts/debug_vit.py first for the isolated metric)")
 
-    # Pass on the architecture parity (iso) when available, else the looser end-to-end bound.
-    gate = (iso is not None and iso < 1e-3) or (iso is None and relmax < 1e-2)
+    # Pass requires BOTH: blocks+merger arch parity (iso<1e-3) AND patch_embed reshape correct
+    # (pe_rel<5e-3 catches reshape/transpose bugs while tolerating the ~6.5e-4 cuDNN seed).
+    gate = ((iso is not None and iso < 1e-3 and (pe_rel is None or pe_rel < 5e-3))
+            or (iso is None and relmax < 1e-2))
     print(f"\nPHASE4_VIT_{'PASS' if gate else 'FAIL'} "
           f"(arch parity {iso if iso is not None else relmax:.3e}; end-to-end {relmax:.3e} carries the cuDNN-conv seed)")
     sys.exit(0 if gate else 1)
