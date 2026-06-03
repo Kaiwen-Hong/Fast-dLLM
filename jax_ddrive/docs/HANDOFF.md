@@ -32,3 +32,32 @@ on the RTX 5090, TPU/MaxText-ready. See 00_PLAN.md (plan) and 01_pytorch_referen
 
 ## Parallel tracks
 - Waymo WOD-E2E download (val 225G then train 876G) → `/home/kaiwen/data/fast-ddrive/waymo/` (account kaiwenh.17@gmail.com has access). Log: `logs/waymo_download.log`. Not needed for the milestone.
+
+## Overnight 2026-06-03 — eval pipeline (both stacks) + JAX real-data training
+**See `docs/EVAL_PIPELINE.md` for the full pipeline + reproduce commands.** GPU note: the
+user authorized freeing the whole 5090, so the neighboring `starVLA-opd` server (PID 1972816)
+was killed → 32 GB free. Restart cmd: `/home/kaiwen/data/fast-ddrive/RESTART_starVLA_server.txt`.
+
+- [x] **`autovla` env** (`/home/kaiwen/miniconda3/envs/autovla`): TF + waymo-open-dataset + the
+  **compiled** `end_to_end_driving_data_pb2` (pip wheels lack it; compiled from GitHub `.proto`
+  against installed descriptors). Needed by the converter + the official metric.
+- [x] **Converter** `fast_ddrive/data/convert_wod_e2e.py`: the repo's missing preprocessor.
+  Prompt reproduces `data/example/sample.json` **byte-for-byte** (1896 chars, verified). Produced
+  `val_rated.json` = **479** rater-scored frames (the official RFS subset) + 1437 front-cam JPEGs,
+  and `train_targets.json` (800 frames, `--with_target`: GT trajectory + derived meta + pseudo text).
+- [x] **PyTorch eval (5090, multimodal)** — `batch_inference.py scaffold_spec` → `predictions.json`
+  → `evaluate_waymo_metrics.py`. **Validated on 52 rated frames: ADE_3s 0.888, ADE_5s 2.250, RFS 7.913**
+  (100% trajectory parse). Full-479 in the overnight run (`eval/pt_val_full_ss/`).
+- [x] **JAX multimodal section-diffusion sampler** (`ddrive_jax/eval/mm_sampler.py`): ViT once →
+  scatter image embeds → block-by-block denoise of the deep-JSON scaffold. **GATE PASS** vs PyTorch
+  `mdm_sample_deep_scaffold`: trajectory matches to **0.01 m** (`scripts/verify_sd_mm.py`, bf16).
+  Prep ports validated against PyTorch internals: x_t0 ✅, response_block_idx ✅ (exact generation
+  replica), numpy `get_rope_index` ✅ (`scripts/capture_oracle_sd_mm.py`).
+- [x] **JAX eval pipeline** (`eval/prep_jax_eval.py` ddrive-env CPU prep → `eval/jax_batch_inference.py`
+  jax-env compute → same metric). **52 rated frames: ADE_3s 0.853, ADE_5s 2.196, RFS 8.100** (100%
+  parse) — on par with / marginally better than PyTorch. Full-479 in the overnight run (`eval/jax_val_full_sd/`).
+- [x] **JAX real-data SASD training** (`ddrive_jax/train_waymo_sasd_jax.py`): multi-sample, stochastic
+  per-section Beta noise, Section-Importance-Weighted + complementary-mask loss, frozen ViT embeds,
+  bf16+remat+Adafactor, Orbax ckpt. 400 real samples prepped (`eval/prep_train_jax.py`; all L=1184 /
+  7 blocks → single compile). Loss-decrease run in the overnight batch (`logs/train_jax.log`).
+- Runner: `scripts/run_overnight.sh` (PyTorch-479 eval+metric → JAX training → JAX-479 eval+metric).

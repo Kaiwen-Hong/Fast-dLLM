@@ -34,9 +34,11 @@ parity gate or a loss-decrease run exists (see `docs/REPORT.md` for commands/num
 |---|---|---|
 | PyTorch model inference (`run_chatbot.py`) | ✅ works | Phase 0; valid JSON trajectory |
 | JAX **forward** (full model) | ✅ verified | the basis for all generation |
-| JAX **section-diffusion sampler** (`mdm_sample_deep_scaffold`) | ✅ generates valid JSON | `diffusion/sample_sd.py`; emits a parseable trajectory; forward parity-verified; exact-token match limited by bf16 + MDM sampling sensitivity |
-| JAX scaffold-spec / multi-traj decoders | ⬜ not ported | inference-speed features (need KV-cache) |
-| KV-cache (block-wise + fork) | ⬜ not ported | needed for fast decode |
+| JAX **section-diffusion sampler** (text) | ✅ generates valid JSON | `diffusion/sample_sd.py` |
+| JAX **multimodal** section-diffusion sampler (ViT fuse + denoise) | ✅ **verified** | `eval/mm_sampler.py`; trajectory matches PyTorch to **0.01 m** (`scripts/verify_sd_mm.py`) |
+| JAX **eval pipeline** → official ADE/RFS | ✅ **verified** | `eval/{prep_jax_eval,jax_batch_inference}.py`; 52-frame ADE3s 0.853 / ADE5s 2.196 / RFS 8.10 (vs PyTorch 0.888/2.250/7.913) |
+| JAX scaffold-spec / multi-traj decoders | ⬜ not ported | speed features (need KV-cache); section_diffusion is the working JAX decoder |
+| KV-cache (block-wise + fork) | ⬜ not ported | would speed JAX decode (~17 s/sample now) |
 
 ## TPU / scale-out
 | Feature | Status | Notes |
@@ -51,8 +53,9 @@ parity gate or a loss-decrease run exists (see `docs/REPORT.md` for commands/num
 | Feature | Status | Notes |
 |---|---|---|
 | Example-sample data prep (text + multimodal) | ✅ | `scripts/prep_overfit_data*.py` |
-| WOD-E2E download | ✅ val (225GB); train downloading | `/home/kaiwen/data/fast-ddrive/waymo/` |
-| tfrecord→JSON converter | ⬜ | repo's is "coming soon"; needed for real training |
-| Official ADE/RFS metrics | ⬜ | separate `autovla` TF env (`fast_ddrive/eval/`) |
+| WOD-E2E download | ✅ val (226GB) + train (877GB) | `/home/kaiwen/data/fast-ddrive/waymo/` |
+| **tfrecord→JSON converter** | ✅ **done** | `fast_ddrive/data/convert_wod_e2e.py`; prompt byte-for-byte; 479 rated val + train targets |
+| **Official ADE/RFS metrics** | ✅ **done** | `autovla` env (compiled E2E proto); shared by both stacks |
+| **JAX real-data SASD training** | ✅ done | `train_waymo_sasd_jax.py`; 400 real samples prepped; loss-decrease run in overnight batch |
 
 Legend: ✅ done/verified · 🚧 in progress · ⬜ not started (scoped).

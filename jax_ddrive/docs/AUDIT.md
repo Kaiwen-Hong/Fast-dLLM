@@ -26,3 +26,15 @@ regression gate; `remat=True/False` equivalence test; the non-deep `compute_resp
 
 After fixes, `run_all_verification.sh` runs **9 gates** (cpu_mask_loss, cpu_lora, cpu_noise,
 cpu_sharding, phase1_text, phase2_sasd, phase4_vit, phase4b_mm_fwd, phase3_lora_train) — all PASS.
+
+## Second audit (2026-06-03) — eval + training code (11 agents, review→verify)
+Reviewed `convert_wod_e2e.py`, `eval/{mm_sampler,scaffold,rope_index}.py`,
+`eval/{prep_jax_eval,prep_train_jax,jax_batch_inference}.py`, `train_waymo_sasd_jax.py`.
+**7 raw findings → 2 confirmed, 5 refuted. No correctness defect in the parity-validated path.**
+
+| # | Severity | Issue | Resolution |
+|---|---|---|---|
+| 1 | major (latent) | `messages_from_prompt` duplicated leading images when a prompt has ≥2 `<image>` placeholders (vs the reference's running cursor). Never triggered — all real data has exactly 1 placeholder, so both impls agree byte-for-byte (why the 52/479-frame eval passed). | **Fixed** to mirror `batch_inference.generate` exactly (running `image_idx`); verified identical on 1-placeholder, correct (no dup) on 2–3. |
+| 2 | minor (by design) | converter lateral pseudo-label ∈ {go straight, turn left, turn right}, never "lane follow" (raw WOD-E2E has no text labels). | **Documented** in `build_meta_behavior` (trajectory is the real signal; no canonical lateral parity assumed). |
+
+Refuted (verified non-issues): a claimed FMB trailing-space divergence (the NULL-padded target is in fact *more* scaffold-correct than `sample.json`'s trailing-space form — confirmed via the reference `section_utils` scaffold detector); the multi-image bug re-raised as "dead branch"; `embed_tokens` called twice for dtype (pure gather, XLA CSE dedups, no grad effect); Orbax saving model-state-only (operational, not correctness; the reference ships no training code); "come to stop" longitudinal vocab (intended weak label).
