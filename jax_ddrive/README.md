@@ -26,9 +26,10 @@ defects (`docs/AUDIT.md`).
 
 **Eval + training pipeline (2026-06-03, `docs/EVAL_PIPELINE.md`):** WOD-E2E `tfrecord→JSON`
 converter (prompt byte-for-byte; 479 rated val frames) · official **ADE/RFS** metric on **both**
-stacks (one backend) · PyTorch `scaffold_spec` **ADE3s 0.888 / ADE5s 2.250 / RFS 7.913** ·
-JAX multimodal `section_diffusion` **ADE3s 0.853 / ADE5s 2.196 / RFS 8.100** (trajectory parity
-0.01 m vs PyTorch) · JAX SASD training on real Waymo data (`train_waymo_sasd_jax.py`). Open:
+stacks (one backend), **full 479 frames** · PyTorch `scaffold_spec` **ADE3s 0.814 / ADE5s 1.990
+/ RFS 7.914** · JAX multimodal `section_diffusion` **ADE3s 0.839 / ADE5s 2.072 / RFS 7.929**
+(on par; trajectory parity 0.01 m vs PyTorch) · JAX SASD training on real Waymo data
+(`train_waymo_sasd_jax.py`, loss 0.682→0.600). Open:
 whole-model TP swap, JAX KV-cache fast decode.
 
 Envs (always `unset LD_LIBRARY_PATH` first): PyTorch oracle =

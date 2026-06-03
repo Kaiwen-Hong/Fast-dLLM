@@ -54,8 +54,8 @@ was killed → 32 GB free. Restart cmd: `/home/kaiwen/data/fast-ddrive/RESTART_s
   Prep ports validated against PyTorch internals: x_t0 ✅, response_block_idx ✅ (exact generation
   replica), numpy `get_rope_index` ✅ (`scripts/capture_oracle_sd_mm.py`).
 - [x] **JAX eval pipeline** (`eval/prep_jax_eval.py` ddrive-env CPU prep → `eval/jax_batch_inference.py`
-  jax-env compute → same metric). **52 rated frames: ADE_3s 0.853, ADE_5s 2.196, RFS 8.100** (100%
-  parse) — on par with / marginally better than PyTorch. Full-479 in the overnight run (`eval/jax_val_full_sd/`).
+  jax-env compute → same metric). **Full 479 rated frames: ADE_3s 0.839, ADE_5s 2.072, RFS 7.929**
+  (100% parse) — on par with PyTorch (0.814/1.990/7.914). Results in `eval/jax_val_full_sd/`.
 - [x] **JAX real-data SASD training** (`ddrive_jax/train_waymo_sasd_jax.py`): multi-sample, stochastic
   per-section Beta noise, Section-Importance-Weighted + complementary-mask loss, frozen ViT embeds,
   bf16+remat+Adafactor, Orbax ckpt. 400 real samples prepped (`eval/prep_train_jax.py`; all L=1184 /

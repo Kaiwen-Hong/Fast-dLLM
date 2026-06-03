@@ -4,19 +4,18 @@ Built 2026-06-03. The whole open-loop evaluation pipeline (official Waymo ADE + 
 Feedback Score) now runs on **both** stacks — PyTorch on the RTX 5090 and the JAX port —
 sharing one metric backend, plus JAX SASD training on real Waymo data.
 
-## TL;DR results (official rated val set)
+## TL;DR results — official rated val set, **full 479 frames, both stacks**
 
-| Metric | PyTorch `scaffold_spec` **(full 479)** | JAX `section_diffusion` (52) |
+| Metric | PyTorch `scaffold_spec` | JAX `section_diffusion` |
 |---|---|---|
-| ADE @3s (m) | **0.814** | 0.853 |
-| ADE @5s (m) | **1.990** | 2.196 |
-| RFS         | **7.914** | 8.100 |
-| parse rate  | 100% | 100% |
+| ADE @3s (m) | 0.814 | 0.839 |
+| ADE @5s (m) | 1.990 | 2.072 |
+| RFS         | 7.914 | 7.929 |
+| parse rate  | 100% (479/479) | 100% (479/479) |
 
-(52-frame head-to-head: PyTorch 0.888 / 2.250 / 7.913 vs JAX 0.853 / 2.196 / 8.100 — on par.)
-Both paper-consistent. The JAX multimodal section-diffusion sampler reproduces the PyTorch
-trajectory to **0.01 m** on a matched sample (bf16). The full-479 JAX run lands in
-`jax_val_full_sd/waymo_eval_results.json` (overnight, ~2.5 h).
+Both paper-consistent and **on par** (RFS 7.93 ≈ 7.91; ADE within ~3%). The JAX multimodal
+section-diffusion sampler reproduces the PyTorch trajectory to **0.01 m** on a matched sample
+(bf16). Results: `eval/pt_val_full_ss/` and `eval/jax_val_full_sd/waymo_eval_results.json`.
 
 **JAX real-data SASD training**: fixed-eval loss **0.6815 → 0.6005** (−0.08) over 400 steps on
 200 real Waymo frames (bf16+remat+Adafactor), Orbax ckpts at step_200/step_400. `WAYMO_SASD_JAX_TRAIN_PASS`.
