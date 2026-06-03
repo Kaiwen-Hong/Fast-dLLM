@@ -23,6 +23,7 @@ JAX_PLATFORMS=cpu $JX jax_ddrive/tests/test_mask_loss.py 2>&1 | clean | grep -q 
 JAX_PLATFORMS=cpu $JX jax_ddrive/tests/test_lora.py 2>&1 | clean | grep -q "ALL LORA TESTS PASS" && R[cpu_lora]=PASS || R[cpu_lora]=FAIL
 JAX_PLATFORMS=cpu $JX jax_ddrive/tests/test_noising.py 2>&1 | clean | grep -q "ALL NOISING TESTS PASS" && R[cpu_noise]=PASS || R[cpu_noise]=FAIL
 JAX_PLATFORMS=cpu $JX jax_ddrive/tests/test_sharding.py 2>&1 | clean | grep -q "ALL SHARDING TESTS PASS" && R[cpu_sharding]=PASS || R[cpu_sharding]=FAIL
+JAX_PLATFORMS=cpu $JX jax_ddrive/tests/test_eval_ports.py 2>&1 | clean | grep -q "ALL EVAL PORT TESTS PASS" && R[cpu_eval_ports]=PASS || R[cpu_eval_ports]=FAIL
 
 # Phase 1 text
 $PT jax_ddrive/scripts/capture_oracle_text.py >/dev/null 2>&1
@@ -45,7 +46,7 @@ gate phase3_lora_train "PHASE3_PASS" $JX jax_ddrive/ddrive_jax/train_overfit.py 
 echo
 echo "================ VERIFICATION SUMMARY ================"
 ok=0; n=0
-for k in cpu_mask_loss cpu_lora cpu_noise cpu_sharding phase1_text phase2_sasd phase4_vit phase4b_mm_fwd phase3_lora_train; do
+for k in cpu_mask_loss cpu_lora cpu_noise cpu_sharding cpu_eval_ports phase1_text phase2_sasd phase4_vit phase4b_mm_fwd phase3_lora_train; do
   v=${R[$k]:-MISSING}; printf "  %-16s %s\n" "$k" "$v"; n=$((n+1)); [ "$v" = PASS ] && ok=$((ok+1))
 done
 echo "-----------------------------------------------------"
