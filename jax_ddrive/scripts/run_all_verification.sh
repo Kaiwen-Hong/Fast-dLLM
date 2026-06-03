@@ -40,6 +40,8 @@ $PT jax_ddrive/scripts/capture_oracle_mm.py >/dev/null 2>&1
 gate phase4b_mm_fwd "PHASE4b_MM_PASS" $JX jax_ddrive/scripts/parity_mm.py
 # Phase 3 default training path (LoRA) smoke gate: trains the LoRA adapters a few steps and
 # asserts the fixed-eval loss decreases (no NaN). Needs prep_overfit_data.npz from prep step.
+# NOTE: LoRA on the near-optimal *trained* ckpt moves the loss only ~0.001 over 30 steps, so this
+# gate can flake transiently in the heavy back-to-back suite; it passes reliably standalone.
 $PT jax_ddrive/scripts/prep_overfit_data.py >/dev/null 2>&1
 gate phase3_lora_train "PHASE3_PASS" $JX jax_ddrive/ddrive_jax/train_overfit.py --source trained --fixed_batch --steps 30 --lr 1e-4
 
