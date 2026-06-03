@@ -76,8 +76,19 @@ def test_section_weighted_ce():
     print("[ok] test_section_weighted_ce")
 
 
+def test_block_ranges():
+    from ddrive_jax.diffusion.sample_sd import block_ranges_from_rbi
+    rbi = np.array([-1, -1, 0, 0, 0, 1, 1, -1, 2, 2], np.int32)
+    r = block_ranges_from_rbi(rbi)
+    assert r == [(0, 2, 5), (1, 5, 7), (2, 8, 10)], r        # contiguous spans of equal block id
+    # all-prompt -> no ranges
+    assert block_ranges_from_rbi(np.array([-1, -1], np.int32)) == []
+    print("[ok] test_block_ranges")
+
+
 if __name__ == "__main__":
     test_hybrid_mask()
     test_eval_mask()
     test_section_weighted_ce()
+    test_block_ranges()
     print("\nALL CPU TESTS PASS")

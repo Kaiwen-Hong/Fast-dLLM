@@ -34,8 +34,8 @@ parity gate or a loss-decrease run exists (see `docs/REPORT.md` for commands/num
 |---|---|---|
 | PyTorch model inference (`run_chatbot.py`) | ✅ works | Phase 0; valid JSON trajectory |
 | JAX **forward** (full model) | ✅ verified | the basis for all generation |
-| JAX **section-diffusion sampler** (`mdm_sample_deep_scaffold`) | 🚧 in progress | task #8 |
-| JAX scaffold-spec / multi-traj decoders | ⬜ not ported | inference-speed features |
+| JAX **section-diffusion sampler** (`mdm_sample_deep_scaffold`) | ✅ generates valid JSON | `diffusion/sample_sd.py`; emits a parseable trajectory; forward parity-verified; exact-token match limited by bf16 + MDM sampling sensitivity |
+| JAX scaffold-spec / multi-traj decoders | ⬜ not ported | inference-speed features (need KV-cache) |
 | KV-cache (block-wise + fork) | ⬜ not ported | needed for fast decode |
 
 ## TPU / scale-out
