@@ -24,7 +24,27 @@ sharding.py           mesh + FSDP PartitionSpec mapping (TPU)
 checkpoint.py         Orbax save/restore of NNX state
 train_overfit.py      text SASD overfit (loss-decrease)
 train_overfit_mm.py   multimodal SASD overfit (loss-decrease)
+train_waymo_sasd_jax.py  real-Waymo multi-sample SASD training + Orbax ckpt
+eval/                 JAX inference building blocks:
+  rope_index.py         numpy get_rope_index (3D M-RoPE), validated vs PyTorch
+  scaffold.py           deep-JSON scaffold + response_block_idx (generation_utils replica)
+  mm_sampler.py         multimodal section-diffusion sampler (ViT fuse → block denoise)
+convert/prep_to_parquet.py  npz → sharded Parquet (TPU-ready dataset writer)
+data/                 (Phase 6) TPU-ready input pipeline:
+  parquet_dataset.py    framework-free numpy decode contract (the data SSOT)
+  grain_pipeline.py     grain MapDataset: per-host shard, online SASD noise, resumable
+train/                (Phase 6) self-contained multi-host FSDP harness:
+  dist.py               jax.distributed bootstrap + mesh context
+  train_tpu.py          shard_map+psum FSDP train step (proxy on CPU-8 / real on GPU/TPU)
+  checkpoint_mgr.py     Orbax CheckpointManager (params+opt+step+grain_state)
+  launch_tpu.sh         TPU queued-resource launch template
 ```
+
+**Two scale-out paths** (Phase 6/7): **Path A** = the self-contained NNX FSDP harness above
+(`train/train_tpu.py`), kept as the algorithm source of truth. **Path B (production)** = the SASD
+algorithm grafted into a **MaxText fork** (`/home/kaiwen/jax-dlm-baseline/maxtext-dlm-fork/`), which
+reuses this package's `data/` loader + `diffusion/` + ViT and **trains on real TPU** (v6e, real
+weights). See `docs/4collect/OVERNIGHT_TPU_PROGRESS.md`.
 
 ## Training data flow (multimodal SASD)
 ```
@@ -57,7 +77,7 @@ JAX gate (`scripts/parity_*.py`, run with `jax_default_matmul_precision=highest`
 TF32). Gates assert rel-max < 1e-3 (looser for ViT due to the cuDNN-Conv3d seed; we isolate
 the architecture by feeding PyTorch's patch-embed in). `run_all_verification.sh` runs them all.
 
-## Key numerics/gotchas (also in HANDOFF.md)
+## Key numerics/gotchas (also in `docs/4collect/HANDOFF.md`)
 - Parity needs **fp32 `highest`** matmul precision; training uses default **TF32** + fp32 loss.
 - Doubled `[noisy|clean]` 2L sequence; positions **tiled** `[0..L-1, 0..L-1]` (M-RoPE: `[pos3d|pos3d]`).
   PyTorch achieves this by splitting q/k into L-halves; JAX runs full 2L with tiled positions (equivalent).

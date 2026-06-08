@@ -20,6 +20,11 @@ section-diffusion sampler reproduces the PyTorch trajectory to **0.01 m** on a m
 **JAX real-data SASD training**: fixed-eval loss **0.6815 → 0.6005** (−0.08) over 400 steps on
 200 real Waymo frames (bf16+remat+Adafactor), Orbax ckpts at step_200/step_400. `WAYMO_SASD_JAX_TRAIN_PASS`.
 
+> 📌 This doc covers the single-box eval + real-data training loop (the `train_waymo_sasd_jax.py`
+> path). It was later **scaled up** (Phase 6/7): the dataset became a 50,331-frame Parquet set, training
+> moved to a multi-host **FSDP harness** (`ddrive_jax/train/`) and a **MaxText port** that trains on real
+> TPU. See `docs/3summary/REPORT.md` and `docs/4collect/OVERNIGHT_TPU_PROGRESS.md`.
+
 ## The pipeline (5 stages)
 
 ```

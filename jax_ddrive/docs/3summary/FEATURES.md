@@ -1,12 +1,12 @@
 # Fast-dDrive JAX — feature matrix
 
 Status of every Fast-dDrive capability in the JAX/Flax-NNX port. "Verified" = a numeric
-parity gate or a loss-decrease run exists (see `docs/REPORT.md` for commands/numbers).
+parity gate or a loss-decrease run exists (see `REPORT.md` for commands/numbers).
 
 > 📌 **STATUS UPDATE (2026-06-08):** The "TPU / scale-out" rows below predate Phase 6/7. Since then the
 > FSDP harness is verified and the **MaxText port is done and trains on real TPU** (v6e-1, real weights,
-> loss 0.31/0.56). Treat "MaxText fork integration ⬜" as **superseded** — current truth is
-> `docs/OVERNIGHT_TPU_PROGRESS.md`.
+> loss 0.31/0.56). The "TPU / scale-out" table below has been refreshed accordingly — current truth is
+> `docs/4collect/OVERNIGHT_TPU_PROGRESS.md`.
 
 ## Model components
 | Feature | Status | Evidence |
@@ -48,11 +48,14 @@ parity gate or a loss-decrease run exists (see `docs/REPORT.md` for commands/num
 ## TPU / scale-out
 | Feature | Status | Notes |
 |---|---|---|
-| Orbax checkpoint save/restore | ✅ verified | `checkpoint.py`, round-trip |
-| FSDP PartitionSpec mapping + mesh | ✅ | `sharding.py` (spec artifact) |
+| Orbax checkpoint save/restore | ✅ verified | `checkpoint.py` + harness `checkpoint_mgr.py`; round-trip, ckpt-resume diff 0.0 |
+| FSDP PartitionSpec mapping + mesh | ✅ verified | `sharding.py`; 252/252 real-model kernels sharded (abstract trace) |
+| **Self-contained FSDP harness** (shard_map+psum, AdamW, grain multi-host) | ✅ verified | `ddrive_jax/train/`; FSDP-vs-1device 9.5e-7; real 3.09B GPU 0.985→0.598 (CPU-8 emu + 1 GPU) |
+| **TPU-ready dataset** (Parquet, private HF) | ✅ done | 50,331 frames / 787 shards / 22 GB; bit-exact decode; MaxText `hf`-path compatible |
 | Physical TP sharding primitives (ShardedLinear/Embedding, `out_sharding=`) | ✅ verified mesh=1 | `models/sharded.py`, `tests/test_sharding.py` |
-| Whole-model TP swap (Linear→ShardedLinear across the decoder) | ⬜ mechanical | ~80 LOC; primitives ready, see `docs/02_tpu_plan.md` |
-| MaxText fork integration (5-line loss_fn diff) | ⬜ | `docs/02_tpu_plan.md` |
+| Whole-model TP swap (Linear→ShardedLinear across the decoder) | ⬜ mechanical | ~80 LOC; primitives ready, see `docs/1plans/02_tpu_plan.md` |
+| **MaxText fork integration** (SASD graft) | ✅ done & TPU-proven | loss/weight/VLA parity bit-exact to NNX; **trains on real v6e-1, real weights, loss 0.31/0.56** |
+| **Multi-node (≥8-chip) TPU run** | ⬜ blocked (capacity) | built + armed; GCP trial gave no ≥8-chip capacity (external/transient) — `docs/4collect/OVERNIGHT_TPU_PROGRESS.md` |
 
 ## Data / eval
 | Feature | Status | Notes |

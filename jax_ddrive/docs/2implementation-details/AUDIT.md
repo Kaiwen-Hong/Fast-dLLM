@@ -38,3 +38,24 @@ Reviewed `convert_wod_e2e.py`, `eval/{mm_sampler,scaffold,rope_index}.py`,
 | 2 | minor (by design) | converter lateral pseudo-label ∈ {go straight, turn left, turn right}, never "lane follow" (raw WOD-E2E has no text labels). | **Documented** in `build_meta_behavior` (trajectory is the real signal; no canonical lateral parity assumed). |
 
 Refuted (verified non-issues): a claimed FMB trailing-space divergence (the NULL-padded target is in fact *more* scaffold-correct than `sample.json`'s trailing-space form — confirmed via the reference `section_utils` scaffold detector); the multi-image bug re-raised as "dead branch"; `embed_tokens` called twice for dtype (pure gather, XLA CSE dedups, no grad effect); Orbax saving model-state-only (operational, not correctness; the reference ships no training code); "come to stop" longitudinal vocab (intended weak label).
+
+## Third pass (2026-06-08) — Phase 6/7 verification (scale-up + MaxText + TPU)
+The scale-up and MaxText-port code carry their own verification — per-claim gates rather than a single
+adversarial sweep like the two audits above; honest emulation-vs-real labels below. Detail:
+`docs/4collect/OVERNIGHT_PROGRESS.md` (Phase 6), `docs/4collect/OVERNIGHT_TPU_PROGRESS.md` (Phase 7).
+
+| Area | Check | Result | Hardware |
+|---|---|---|---|
+| grain input pipeline | 3 adversarial agents: determinism+resume, disjoint sharding, noising bit-exact vs `noise.make_batch` | PASS | CPU-8 emulation |
+| FSDP math | (2,1) vs (1,1) single-step loss parity | \|diff\| **9.5e-7** | CPU-8 emulation |
+| Checkpoint resume | save → fresh-restore → continuation | **diff 0.0** (step+grain restored) | CPU-8 emulation |
+| Real-model pspec rule | 252/252 real 3.09B kernels get correct FSDP pspec (abstract trace) | PASS | memory-free trace |
+| Real-model loss-decrease | real 3.09B + frozen ViT, 40 steps | **0.985→0.598**, no NaN | single GPU |
+| MaxText SASD parity | loss/noise/mask byte-exact; weight load 434/434 leaves 100% top-1; full-VLA loss rel **1.7e-4** | PASS | GPU |
+| MaxText real-TPU train | real weights via MaxText | loss **0.31/0.56**, 65 TFLOP/s | **real v6e-1 TPU** |
+
+**Honest gaps (carried, not defects):** (1) the real model × **multi-device physical** FSDP step is
+NOT locally verified — loading 3.09B under CPU-8 emulation OOMs the 30 GB box; only the FSDP *math*
+(proxy) + the *rule* (abstract trace) + single-device real are proven. (2) The literal **≥8-chip
+multi-node** TPU run never executed (GCP trial capacity). (3) Pseudo text labels for non-trajectory
+sections (inherent to WOD-E2E). None is a code-correctness defect; each is a coverage/data limit.

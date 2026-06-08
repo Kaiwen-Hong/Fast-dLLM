@@ -5,12 +5,12 @@ what is verified (with numbers), how to reproduce it, how to deploy on TPU, and 
 criteria. Branch `jax-ddrive-port`, not pushed to GitHub.
 
 > **Last updated: 2026-06-06** (Phase 6 complete; Phase 7 = MaxText port, in progress).
-> For Phase 6 detail see `docs/03_scaleup_tpu_spec.md` and `docs/OVERNIGHT_PROGRESS.md`.
+> For Phase 6 detail see `docs/1plans/03_scaleup_tpu_spec.md` and `docs/4collect/OVERNIGHT_PROGRESS.md`.
 >
 > 📌 **STATUS UPDATE (2026-06-08):** Phase 7 (MaxText port) is **done and proven on real TPU** —
 > MaxText SASD trains on a real v6e-1 with real Fast-dDrive weights (loss 0.31/0.56, matching the GPU
 > smoke). The claims below of "MaxText port not done" / "no real TPU run yet" are **superseded**; the
-> current source of truth is **`docs/OVERNIGHT_TPU_PROGRESS.md`**. The only remaining open item is the
+> current source of truth is **`docs/4collect/OVERNIGHT_TPU_PROGRESS.md`**. The only remaining open item is the
 > literal **≥8-chip multi-node run**, blocked solely by GCP trial TPU **capacity** (external/transient,
 > not a code issue) — one command (`ACCEL=v6e-16 bash launch_maxtext_sasd_tpu.sh`) once capacity frees.
 
@@ -152,7 +152,7 @@ or supply Waymo's own perception labels.
 - **Adversarial code audit** (11 agents, review→verify) over the eval/training code: **2 confirmed**
   (a latent multi-`<image>` handling divergence — **fixed** to mirror the reference; a minor
   intent-only lateral pseudo-label — **documented**), **5 refuted**, **0 correctness defects** in the
-  validated path. See `docs/AUDIT.md`.
+  validated path. See `docs/2implementation-details/AUDIT.md`.
 - **Parity methodology**: every component has a PyTorch "oracle" capture (`scripts/capture_oracle_*`,
   eager attention + explicit masks/positions) and a JAX gate (`scripts/parity_*`, with
   `jax_default_matmul_precision=highest` to disable TF32). Gates assert rel-max < 1e-3.
@@ -171,8 +171,11 @@ fast_ddrive/                         # the PyTorch release + our additions
   eval/waymo_rfs_utils.py            # RFS (pure numpy)
 jax_ddrive/
   to-host.md                         # THIS FILE
-  README.md  docs/{REPORT,HANDOFF,EVAL_PIPELINE,FEATURES,ARCHITECTURE,AUDIT,00_PLAN,
-                   01_pytorch_reference_algorithm,02_tpu_plan}.md
+  README.md
+  docs/3summary/{REPORT,FEATURES}.md
+  docs/2implementation-details/{ARCHITECTURE,EVAL_PIPELINE,AUDIT,01_pytorch_reference_algorithm}.md
+  docs/1plans/{00_PLAN,02_tpu_plan,03_scaleup_tpu_spec,04_tpu_smallscale_validation}.md   # frozen
+  docs/4collect/{HANDOFF,OVERNIGHT_PROGRESS,05_maxtext_port_progress,OVERNIGHT_TPU_PROGRESS}.md   # frozen logs
   ddrive_jax/
     models/{rope,qwen2_5_text,vision_qwen25vl,sharded}.py
     diffusion/{masks,sasd_loss,noise,sample_sd}.py
@@ -391,6 +394,7 @@ axis (Option 2/3 TP, KV-cache decode) — not a correctness gate.
 
 ---
 
-*Doc maintained alongside `docs/EVAL_PIPELINE.md` (pipeline detail), `docs/02_tpu_plan.md` (TPU
-detail), `docs/AUDIT.md` (audit), and `docs/REPORT.md`/`HANDOFF.md` (build log). Generated for the
-Fast-dDrive JAX port, branch `jax-ddrive-port`.*
+*Doc maintained alongside `docs/2implementation-details/EVAL_PIPELINE.md` (pipeline detail),
+`docs/1plans/02_tpu_plan.md` (TPU detail), `docs/2implementation-details/AUDIT.md` (audit), and
+`docs/3summary/REPORT.md` / `docs/4collect/HANDOFF.md` (build log). Generated for the Fast-dDrive
+JAX port, branch `jax-ddrive-port`.*

@@ -4,11 +4,11 @@
 怎么复现、怎么在 TPU 上部署、以及验收标准。分支 `jax-ddrive-port`,未推到 GitHub。
 
 > **最后更新:2026-06-06**(Phase 6 完成;Phase 7 = MaxText port,进行中)。
-> Phase 6 细节见 `docs/03_scaleup_tpu_spec.md` 和 `docs/OVERNIGHT_PROGRESS.md`。
+> Phase 6 细节见 `docs/1plans/03_scaleup_tpu_spec.md` 和 `docs/4collect/OVERNIGHT_PROGRESS.md`。
 > 📌 **状态更新(2026-06-08):** Phase 7(MaxText port)已**完成并在真实 TPU 上跑通** —— MaxText SASD
 > 在真实 v6e-1 上用真实 Fast-dDrive 权重训练(loss 0.31/0.56,与 GPU smoke 吻合)。下文中"MaxText port
-> 未完成"/"尚无真实 TPU 跑"的说法**已过期**;当前真相以 `docs/OVERNIGHT_TPU_PROGRESS.md` /
-> `docs/OVERNIGHT_TPU_PROGRESS-chn.md` 为准。唯一剩余开放项:字面意义的 **≥8-chip 多节点跑**,仅被
+> 未完成"/"尚无真实 TPU 跑"的说法**已过期**;当前真相以 `docs/4collect/OVERNIGHT_TPU_PROGRESS.md` /
+> `docs/4collect/OVERNIGHT_TPU_PROGRESS-chn.md` 为准。唯一剩余开放项:字面意义的 **≥8-chip 多节点跑**,仅被
 > GCP trial TPU **容量**阻塞(外部/瞬时,非代码问题)—— 容量一空出即一条命令
 > `ACCEL=v6e-16 bash launch_maxtext_sasd_tpu.sh`。
 
@@ -148,7 +148,7 @@ trajectory),要么提供 Waymo 自己的 perception labels。
 - **对抗式 code audit**(11 agents,review→verify)覆盖 eval/training 代码:**2 confirmed**
   (一个 latent 的 multi-`<image>` 处理 divergence —— **已修**为镜像 reference;一个 minor 的
   intent-only lateral 伪标签 —— **已文档化**),**5 refuted**,validated 路径里 **0 correctness
-  defects**。见 `docs/AUDIT.md`。
+  defects**。见 `docs/2implementation-details/AUDIT.md`。
 - **Parity 方法学**:每个组件都有一个 PyTorch "oracle" capture(`scripts/capture_oracle_*`,
   eager attention + 显式 masks/positions)和一个 JAX gate(`scripts/parity_*`,带
   `jax_default_matmul_precision=highest` 来关闭 TF32)。Gates 断言 rel-max < 1e-3。
@@ -166,9 +166,12 @@ fast_ddrive/                         # PyTorch release + 我们的新增
   eval/evaluate_waymo_metrics.py     # 官方 ADE/RFS(release 的)
   eval/waymo_rfs_utils.py            # RFS(纯 numpy)
 jax_ddrive/
-  to-host.md                         # 本文件(英文原版)
-  README.md  docs/{REPORT,HANDOFF,EVAL_PIPELINE,FEATURES,ARCHITECTURE,AUDIT,00_PLAN,
-                   01_pytorch_reference_algorithm,02_tpu_plan}.md
+  to-host.md / to-host-chn.md        # 英文原版 / 本文件(中文版)
+  README.md
+  docs/3summary/{REPORT,FEATURES}.md
+  docs/2implementation-details/{ARCHITECTURE,EVAL_PIPELINE,AUDIT,01_pytorch_reference_algorithm}.md
+  docs/1plans/{00_PLAN,02_tpu_plan,03_scaleup_tpu_spec,04_tpu_smallscale_validation}.md   # frozen
+  docs/4collect/{HANDOFF,OVERNIGHT_PROGRESS,05_maxtext_port_progress,OVERNIGHT_TPU_PROGRESS}.md   # frozen 日志
   ddrive_jax/
     models/{rope,qwen2_5_text,vision_qwen25vl,sharded}.py
     diffusion/{masks,sasd_loss,noise,sample_sd}.py
@@ -385,6 +388,7 @@ vision_mask)是框架中立的 numpy → 经 grain 加载。ViT image embeds 可
 
 ---
 
-*本文档与 `docs/EVAL_PIPELINE.md`(pipeline 细节)、`docs/02_tpu_plan.md`(TPU
-细节)、`docs/AUDIT.md`(audit)、`docs/REPORT.md`/`HANDOFF.md`(build log)一起维护。
+*本文档与 `docs/2implementation-details/EVAL_PIPELINE.md`(pipeline 细节)、
+`docs/1plans/02_tpu_plan.md`(TPU 细节)、`docs/2implementation-details/AUDIT.md`(audit)、
+`docs/3summary/REPORT.md` / `docs/4collect/HANDOFF.md`(build log)一起维护。
 为 Fast-dDrive JAX port 生成,分支 `jax-ddrive-port`。*
