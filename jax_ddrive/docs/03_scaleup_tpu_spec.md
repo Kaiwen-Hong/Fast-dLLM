@@ -3,6 +3,12 @@
 Status: **Phase 6 complete on local hardware (2026-06-05/06). Next: MaxText port (Phase 7).**
 This is the SSOT for the scale-up. Decisions are locked and reflected below.
 
+> 📌 **STATUS UPDATE (2026-06-08):** Phase 7 (MaxText port) is no longer "next/TODO" — it is **done and
+> proven on real TPU** (MaxText SASD on v6e-1, real weights, loss 0.31/0.56). The "MaxText port (Phase 7
+> — TODO)" section, the "MaxText integration ❌ Not yet started" and "TPU pod end-to-end ❌" rows below
+> are **superseded**. Current truth: **`docs/OVERNIGHT_TPU_PROGRESS.md`**. Remaining open item: the
+> ≥8-chip multi-node run, blocked only by GCP trial capacity (external/transient, not a code issue).
+
 ## 0. Locked decisions
 
 | # | Decision | Choice | Status |

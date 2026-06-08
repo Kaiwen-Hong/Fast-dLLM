@@ -5,8 +5,12 @@
 
 > **最后更新:2026-06-06**(Phase 6 完成;Phase 7 = MaxText port,进行中)。
 > Phase 6 细节见 `docs/03_scaleup_tpu_spec.md` 和 `docs/OVERNIGHT_PROGRESS.md`。
-> ⚠️ 注:Phase 7(MaxText port)在本文档写完后已大幅推进并在真实 TPU 上跑通,最新状态以
-> `docs/OVERNIGHT_TPU_PROGRESS.md` / `docs/OVERNIGHT_TPU_PROGRESS-chn.md` 为准。
+> 📌 **状态更新(2026-06-08):** Phase 7(MaxText port)已**完成并在真实 TPU 上跑通** —— MaxText SASD
+> 在真实 v6e-1 上用真实 Fast-dDrive 权重训练(loss 0.31/0.56,与 GPU smoke 吻合)。下文中"MaxText port
+> 未完成"/"尚无真实 TPU 跑"的说法**已过期**;当前真相以 `docs/OVERNIGHT_TPU_PROGRESS.md` /
+> `docs/OVERNIGHT_TPU_PROGRESS-chn.md` 为准。唯一剩余开放项:字面意义的 **≥8-chip 多节点跑**,仅被
+> GCP trial TPU **容量**阻塞(外部/瞬时,非代码问题)—— 容量一空出即一条命令
+> `ACCEL=v6e-16 bash launch_maxtext_sasd_tpu.sh`。
 
 ---
 

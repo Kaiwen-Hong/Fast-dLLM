@@ -3,6 +3,11 @@
 Status of every Fast-dDrive capability in the JAX/Flax-NNX port. "Verified" = a numeric
 parity gate or a loss-decrease run exists (see `docs/REPORT.md` for commands/numbers).
 
+> 📌 **STATUS UPDATE (2026-06-08):** The "TPU / scale-out" rows below predate Phase 6/7. Since then the
+> FSDP harness is verified and the **MaxText port is done and trains on real TPU** (v6e-1, real weights,
+> loss 0.31/0.56). Treat "MaxText fork integration ⬜" as **superseded** — current truth is
+> `docs/OVERNIGHT_TPU_PROGRESS.md`.
+
 ## Model components
 | Feature | Status | Evidence |
 |---|---|---|
