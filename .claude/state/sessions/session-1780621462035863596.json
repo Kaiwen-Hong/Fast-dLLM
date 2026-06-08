@@ -1,0 +1,42 @@
+{
+  "changes_this_session": [],
+  "cwd": "/home/kaiwen/Desktop/research/Fast-dLLM",
+  "duration_minutes": 0,
+  "ended_at": "2026-06-05T01:04:25Z",
+  "event_seq": 0,
+  "fork_count": 0,
+  "git": {
+    "branch": "jax-ddrive-port",
+    "last_commit": "ff02eb5",
+    "uncommitted_changes": 0
+  },
+  "harness_mem": {
+    "healthy": true,
+    "last_checked": "2026-06-05T01:04:22Z",
+    "last_error": ""
+  },
+  "intent": "literal",
+  "last_event_id": "",
+  "memory_logged": true,
+  "orchestration": {
+    "max_state_retries": 3,
+    "retry_backoff_seconds": 10
+  },
+  "parent_session_id": null,
+  "plans": {
+    "completed_tasks": 0,
+    "exists": false,
+    "last_modified": 0,
+    "pending_tasks": 0,
+    "todo_tasks": 0,
+    "wip_tasks": 0
+  },
+  "project_name": "Fast-dLLM",
+  "prompt_seq": 1,
+  "resume_token": "resume-1780621462035867519",
+  "session_id": "session-1780621462035863596",
+  "started_at": "2026-06-05T01:04:22Z",
+  "state": "stopped",
+  "state_version": 1,
+  "updated_at": "2026-06-05T01:04:22Z"
+}

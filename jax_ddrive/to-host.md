@@ -1,48 +1,43 @@
 # Fast-dDrive → JAX / TPU — Hosting & Deployment Handoff (`to-host.md`)
 
-Self-contained handoff for whoever runs this on Waymo's TPU infra. It covers **what was
-built, what is verified (with numbers), how to reproduce it, how to deploy on TPU, and the
-acceptance criteria** (verified vs. expected). Everything described here is committed on the
-local branch `jax-ddrive-port` of the repo at `/home/kaiwen/Desktop/research/Fast-dLLM`
-(commits `0a4b7cc → 02731ac`; **not pushed** to GitHub yet).
+Self-contained handoff for whoever runs this on Waymo's TPU infra. Covers what was built,
+what is verified (with numbers), how to reproduce it, how to deploy on TPU, and the acceptance
+criteria. Branch `jax-ddrive-port`, not pushed to GitHub.
+
+> **Last updated: 2026-06-06** (Phase 6 complete; Phase 7 = MaxText port, in progress).
+> For Phase 6 detail see `docs/03_scaleup_tpu_spec.md` and `docs/OVERNIGHT_PROGRESS.md`.
 
 ---
 
 ## 0. TL;DR (point by point)
 
-- **Goal**: re-implement Fast-dDrive (a Qwen2.5-VL-3B block-diffusion Vision-Language-Action
-  model for Waymo end-to-end driving) in **JAX / Flax-NNX (MaxText-style)** so it runs on TPU,
-  validated locally on an RTX 5090 by **parity vs. the PyTorch release** and **training loss that
-  decreases**.
-- **The whole model is ported and parity-verified** against the PyTorch release: text decoder
-  (logits rel-max **3.2e-5**), Qwen2.5-VL ViT (arch **4.0e-5**), vision↔text fusion + 3D M-RoPE
-  (multimodal forward **7.7e-5**), and the SASD block-diffusion training loss (**7.9e-8**, attention
-  mask **bit-identical**).
-- **It trains end-to-end with decreasing loss**: text from scratch **3.84 → 1.47**; multimodal
-  **0.999 → 0.701**; and on **real Waymo data 0.6815 → 0.6005** (Orbax checkpoints saved).
-- **A full WOD-E2E open-loop evaluation pipeline runs on BOTH stacks** (PyTorch on the 5090 and
-  the JAX port), sharing one official metric backend. Full **479-frame** rated-val results:
-  | | ADE@3s | ADE@5s | RFS | parse |
-  |---|---|---|---|---|
-  | PyTorch `scaffold_spec` | 0.814 | 1.990 | 7.914 | 100% |
-  | JAX `section_diffusion` | 0.839 | 2.072 | 7.929 | 100% |
-  On par; the JAX multimodal sampler reproduces the PyTorch trajectory to **0.01 m**.
-- **We built the data plumbing the repo was missing**: a `tfrecord → Fast-dDrive JSON` converter
-  (prompt reproduced **byte-for-byte**; extracts the **479** official rater-scored val frames) and
-  the **autovla** metric env (we had to **compile the WOD-E2E protobuf from source** — no pip wheel
-  ships it).
-- **Verification**: a 10-gate suite (`run_all_verification.sh`) + an 11-agent adversarial code
-  audit found **0 correctness defects** in the validated path.
-- **TPU path is designed and the primitives exist**: plain Flax-NNX model + Orbax checkpointing +
-  FSDP `PartitionSpec` mapping + `ShardedLinear/ShardedEmbedding` TP primitives (validated no-op at
-  mesh=1). Remaining TPU work is mechanical (swap `Linear→ShardedLinear` across the decoder, wire a
-  TPU mesh + GCS Orbax + a grain data pipeline) — see §6.
-- **Local hardware**: single RTX 5090 (32 GB). All big artifacts live under
-  `/home/kaiwen/data/fast-ddrive/` (outside the repo). Both Waymo splits downloaded (train 877 GB,
-  val 226 GB).
-- **What's still open** (not blocking the rewrite): whole-model TP swap on a real mesh; a JAX
-  KV-cache for faster decode (current JAX decode ≈ 16 s/sample, no cache); higher-fidelity training
-  text labels (raw WOD-E2E has no text labels — see §2.4).
+### Phases 1–5 (model port + eval, previously verified)
+- **The whole model is ported and parity-verified** against PyTorch: text decoder **3.2e-5**, ViT **4.0e-5**, multimodal forward **7.7e-5**, SASD loss **7.9e-8**, attention mask bit-identical.
+- **Trains with decreasing loss**: text scratch **3.84→1.47**; multimodal **0.999→0.701**; real Waymo **0.6815→0.6005**.
+- **WOD-E2E eval on both stacks**: PyTorch ADE@3s **0.814** / RFS **7.914**; JAX **0.839** / **7.929** (on par, trajectory match **0.01 m**). Full 479-frame rated-val set.
+- **10-gate verification suite + adversarial audit: 0 defects**.
+
+### Phase 6 (scale-up + dataset, 2026-06-05, newly completed)
+- **TPU-ready dataset built and uploaded**: 50,331 WOD-E2E train frames → 787 Apache Parquet shards (22 GB), private HF `kaiwen2/wod-e2e-fast-ddrive-sasd-50k`. 0 conversion errors; bit-exact decode verified; MaxText `hf` data-path compatible.
+- **FSDP training harness verified**: `shard_map`+`psum` FSDP, AdamW, Orbax `CheckpointManager`. FSDP-vs-single-device **|diff|=9.5e-7**; checkpoint resume **diff=0.0**; 252/252 real-model kernels sharded.
+- **Real 3.09B model trains through the harness on the GPU**: loss **0.985→0.598** (40 steps, no NaN, 24.8 GB VRAM).
+- **grain multi-host input pipeline**: deterministic, per-host sharding, online SASD noising, resumable.
+
+### Phase 7 (MaxText port — next, not yet started)
+- **Decision (2026-06-06)**: use **MaxText** as the production training framework.
+- **What to graft**: `diffusion/` module + SASD `loss_fn` (~5-line diff) + bidirectional attention patch + Waymo grain data source. Template: `jax-mdlm-handoff` (LLaDA in MaxText).
+- **Data is ready**: Parquet on local disk + private HF; `gsutil rsync` to GCS before the pod run.
+
+### Hardware + storage
+- RTX 5090 (32 GB VRAM). Host RAM 30 GB, **no swap** — don't load the full 3.09B model under CPU 8-device emulation (OOMs).
+- Big files on `/home/kaiwen/data/fast-ddrive/` (3.6 TB SSD). Raw train: 877 GB, raw val: 226 GB. 50k Parquet: 22 GB.
+
+### Honest open items
+- **Pseudo text labels** for `critical_objects`/`explanation` (WOD-E2E has none; only trajectory+meta are real GT).
+- **50k subset** (50k of ~420k train frames); full = `scripts/build_full_dataset.sh --full`.
+- **No real TPU run yet** — all multi-host verification is CPU 8-device emulation + single GPU.
+- **MaxText port not done** (Phase 7).
+- HF datasets are **private** (WOD license prohibits redistribution).
 
 ---
 

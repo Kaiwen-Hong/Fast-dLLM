@@ -2,10 +2,10 @@
   "version": "2.0.0",
   "legacy_version": "1.0.0",
   "artifactType": "structured-handoff",
-  "timestamp": "2026-06-03T08:03:07Z",
+  "timestamp": "2026-06-04T22:40:28Z",
   "sessionId": "",
   "previous_state": {
-    "summary": "Before compaction: 15 recent edit(s)",
+    "summary": "Before compaction: 5 recent edit(s)",
     "session_state": {
       "state": "stopped"
     },
@@ -13,7 +13,7 @@
       "total": 0,
       "wip": 0,
       "blocked": 0,
-      "recent_edits": 15
+      "recent_edits": 5
     }
   },
   "next_action": {
@@ -25,20 +25,20 @@
     {
       "severity": "medium",
       "kind": "verification",
-      "summary": "15 recent edit(s) should be re-validated after resume",
-      "detail": ".claude/memory/session-log.md, .claude/sessions/.last_inbox_check, .claude/state/breezing-timeline.jsonl, .claude/state/changed-files.jsonl, .claude/state/runtime-reactive.jsonl"
+      "summary": "5 recent edit(s) should be re-validated after resume",
+      "detail": ".claude/memory/session-log.md, .claude/state/session.events.jsonl, .claude/state/session.json, .claude/state/sessions/session-1780612770163449655.events.jsonl, .claude/state/sessions/session-1780612770163449655.json"
     }
   ],
   "failed_checks": null,
   "decision_log": [
     {
-      "timestamp": "2026-06-03T08:03:07Z",
+      "timestamp": "2026-06-04T22:40:28Z",
       "actor": "pre-compact-save",
       "decision": "canonical_handoff_artifact_written",
       "rationale": "Persist a stable JSON artifact in .claude/state for long-running session handoff."
     },
     {
-      "timestamp": "2026-06-03T08:03:07Z",
+      "timestamp": "2026-06-04T22:40:28Z",
       "actor": "pre-compact-save",
       "decision": "legacy_snapshot_mirrored",
       "rationale": "Keep precompact-snapshot.json for backward compatibility with older hooks."
@@ -56,12 +56,9 @@
         "sessionAgeMinutes": 120
       }
     },
-    "recommended": true,
-    "summary": "Context reset recommended (auto): 15 recent edit count exceed threshold 8; 1608 session age (minutes) exceed threshold 120",
-    "reasons": [
-      "15 recent edit count exceed threshold 8",
-      "1608 session age (minutes) exceed threshold 120"
-    ],
+    "recommended": false,
+    "summary": "Context reset not required (auto)",
+    "reasons": null,
     "candidates": [
       {
         "key": "wip_tasks",
@@ -80,9 +77,9 @@
       {
         "key": "recent_edits",
         "label": "recent edit count",
-        "actual": 15,
+        "actual": 5,
         "threshold": 8,
-        "triggered": true
+        "triggered": false
       },
       {
         "key": "failed_checks",
@@ -94,17 +91,17 @@
       {
         "key": "session_age_minutes",
         "label": "session age (minutes)",
-        "actual": 1608,
+        "actual": 0,
         "threshold": 120,
-        "triggered": true
+        "triggered": false
       }
     ],
     "counters": {
       "wipTasks": 0,
       "blockedTasks": 0,
-      "recentEdits": 15,
+      "recentEdits": 5,
       "failedChecks": 0,
-      "sessionAgeMinutes": 1608
+      "sessionAgeMinutes": 0
     }
   },
   "continuity": {
@@ -117,19 +114,9 @@
   "wipTasks": null,
   "recentEdits": [
     ".claude/memory/session-log.md",
-    ".claude/sessions/.last_inbox_check",
-    ".claude/state/breezing-timeline.jsonl",
-    ".claude/state/changed-files.jsonl",
-    ".claude/state/runtime-reactive.jsonl",
-    ".claude/state/session-events.jsonl",
-    ".claude/state/session-events.jsonl.1",
-    ".claude/state/session-events.jsonl.lock",
-    ".claude/state/session-skills-used.json",
     ".claude/state/session.events.jsonl",
     ".claude/state/session.json",
-    ".claude/state/sessions/session-1780377271893986521.events.jsonl",
-    ".claude/state/sessions/session-1780377271893986521.json",
-    ".claude/state/tooling-policy.json",
-    ".claude/state/usage-stats.jsonl"
+    ".claude/state/sessions/session-1780612770163449655.events.jsonl",
+    ".claude/state/sessions/session-1780612770163449655.json"
   ]
 }
