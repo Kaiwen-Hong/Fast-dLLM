@@ -151,3 +151,6 @@
 {"file":"/home/kaiwen/.claude/projects/-home-kaiwen-Desktop-research-Fast-dLLM/memory/fast-ddrive-tpu-smallscale-validation.md","action":"Edit","timestamp":"2026-06-07T15:14:32Z","important":false}
 {"file":"jax_ddrive/docs/OVERNIGHT_TPU_PROGRESS.md","action":"Edit","timestamp":"2026-06-07T21:41:10Z","important":false}
 {"file":"/home/kaiwen/tpu_cap_recheck.sh","action":"Write","timestamp":"2026-06-08T10:25:48Z","important":false}
+{"file":"jax_ddrive/scripts/convert_full_chunked.py","action":"Write","timestamp":"2026-06-08T23:59:20Z","important":false}
+{"file":"/home/kaiwen/full_chunked_wrapper.sh","action":"Write","timestamp":"2026-06-09T00:04:05Z","important":false}
+{"file":"/home/kaiwen/full_upload_wrapper.sh","action":"Write","timestamp":"2026-06-09T01:02:48Z","important":false}

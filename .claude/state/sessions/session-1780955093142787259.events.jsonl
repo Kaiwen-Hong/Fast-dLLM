@@ -9,6 +9,3 @@
 {"id":"event-000004","type":"session.stop","ts":"2026-06-08T10:30:31Z","state":"stopped"}
 {"id":"event-000003","type":"session.stop","ts":"2026-06-08T21:38:15Z","state":"stopped"}
 {"id":"event-000001","type":"session.stop","ts":"2026-06-08T21:45:07Z","state":"stopped"}
-{"id":"event-000005","type":"session.stop","ts":"2026-06-09T00:01:36Z","state":"stopped"}
-{"id":"event-000004","type":"session.stop","ts":"2026-06-09T00:11:23Z","state":"stopped"}
-{"id":"event-000001","type":"session.stop","ts":"2026-06-09T01:01:41Z","state":"stopped"}
