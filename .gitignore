@@ -25,3 +25,6 @@ output_models/
 
 # Downloaded ALLaVA-4V (HF) + full-download logs (see fast_dvlm/data/download_example_dataset.sh)
 fast_dvlm/data/ALLaVA-4V/
+
+# Claude Code local cache/state (sessions, runtime state, session log) — not for version control
+.claude/
