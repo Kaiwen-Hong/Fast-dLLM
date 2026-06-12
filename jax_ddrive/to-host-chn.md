@@ -3,14 +3,24 @@
 给在 Waymo TPU 基础设施上跑这个项目的人的自包含交接文档。覆盖:做了什么、验证了什么(带数字)、
 怎么复现、怎么在 TPU 上部署、以及验收标准。分支 `jax-ddrive-port`,未推到 GitHub。
 
-> **最后更新:2026-06-06**(Phase 6 完成;Phase 7 = MaxText port,进行中)。
-> Phase 6 细节见 `docs/1plans/03_scaleup_tpu_spec.md` 和 `docs/4collect/OVERNIGHT_PROGRESS.md`。
-> 📌 **状态更新(2026-06-08):** Phase 7(MaxText port)已**完成并在真实 TPU 上跑通** —— MaxText SASD
-> 在真实 v6e-1 上用真实 Fast-dDrive 权重训练(loss 0.31/0.56,与 GPU smoke 吻合)。下文中"MaxText port
-> 未完成"/"尚无真实 TPU 跑"的说法**已过期**;当前真相以 `docs/4collect/OVERNIGHT_TPU_PROGRESS.md` /
-> `docs/4collect/OVERNIGHT_TPU_PROGRESS-chn.md` 为准。唯一剩余开放项:字面意义的 **≥8-chip 多节点跑**,仅被
-> GCP trial TPU **容量**阻塞(外部/瞬时,非代码问题)—— 容量一空出即一条命令
-> `ACCEL=v6e-16 bash launch_maxtext_sasd_tpu.sh`。
+> **最后更新:2026-06-12**(Phase 8 = dataset v2 + 生产数据路径,完成)。文档导航与维护规则见
+> `docs/README.md`;数据格式权威规格见 `docs/2implementation-details/DATASET_V2.md`(v1 细节与
+> Round-2 语义验证见 `DATASET.md`)。
+> 📌 **历史基线(2026-06-08):** Phase 7(MaxText port)完成并在真实 v6e-1 上用真实权重跑通
+> (loss 0.31/0.56)。详见 `docs/4collect/OVERNIGHT_TPU_PROGRESS{,-chn}.md`。
+> 📌 **数据集(2026-06-12 白天):** 全量 **415,663 帧** parquet 构建完成;**Round-2 语义验证:10/10
+> 样本与从 raw 重跑整条链 bit-exact**(全部列、answer 文本 round-trip、轨迹==真值@1s、像素重建);
+> 可视化复查网站 `jax_ddrive/visualizations/`。
+> 📌 **状态(2026-06-12 overnight,当前真相):** 生产训练闭环在真实 TPU 上**端到端重验证通过**
+> (`V2_TPU_VALIDATION_PASS`):**dataset v2**(ArrayRecord;12 数组含 pixel_values + 预计算
+> frozen-ViT `image_embeds` bf16 [168,2048] 单份)× **AR reader**(`make_sasd_loader` 按扩展名
+> 自动探测,公共 API 不变 → 三条训练路径同时获得全量数据能力,旧"尚无训练路径读 AR"的缺口已关闭)
+> × **数据迭代器状态进 checkpoint**(`waymo_sasd` 加入 grain ckpt 家族;resume **续流不重放**,
+> v6e-1 实测恢复后精确续训 12..17)。v6e-1 吞吐 **83.4 TFLOP/s/device(较 ViT-in-loop 的 65 提升
+> 28%,pod 侧不再加载 ViT/transformers)**。v2 数据 train 全量/50k/400 + val(479,训练格式带
+> target)均已构建、抽样审计(逐字节 vs parquet)、上传 GCS。MaxText fork 已 commit(`a645b25`,
+> 含 vendored 自包含 `sasd_data/`)+ `PATCHES.md` 逐文件文档化。
+> 📌 仍开放:**≥8-chip 多节点跑**(纯 GCP trial 容量问题,外部/瞬时;Waymo 容量下即验证阶梯 step 2)。
 
 ---
 
@@ -33,16 +43,33 @@
 - **要 graft 什么**:`diffusion/` 模块 + SASD `loss_fn`(~5 行 diff)+ bidirectional attention patch + Waymo grain data source。模板:`jax-mdlm-handoff`(LLaDA in MaxText)。
 - **数据已就绪**:Parquet 在本地磁盘 + 私有 HF;pod 跑之前 `gsutil rsync` 到 GCS。
 
+### Phase 8(dataset v2 + 生产数据路径,2026-06-12,当前真相)
+- **Dataset v2(生产训练格式)**:ArrayRecord(tf.train.Example),12 个数组**全保留**(含
+  `pixel_values`,使 embeds 可独立复验)+ 新增 **`image_embeds` [168,2048] bf16** = frozen-ViT
+  离线预计算(fp32 highest 精度 → bf16;单份存储,loader `concat([ie,ie])` 双倍)。规格 SSOT:
+  `docs/2implementation-details/DATASET_V2.md`。
+- **四个 split 构建 + 审计 + 上传 GCS**:train 全量 **415,663/130 shards/369 G**、50k
+  (50,331/787/45 G)、400(烟测)、**val 479(训练格式带 target,从 raw val `--with_target` 重建)**。
+  审计 = 三方计数对账 + 抽样逐字节 vs parquet + embeds 独立复算(bf16 量化后 99.67% 逐位相同)。
+- **AR reader**:`make_sasd_loader` 按扩展名自动探测 AR/parquet(公共 API 不变);grain 管线透传
+  `image_embeds`;`tests/test_ar_pipeline.py` 证 AR↔parquet **batch 级 bit-exact**。
+- **迭代器状态进 checkpoint**:`waymo_sasd` 加入 MaxText grain ckpt 家族 → **resume 续流不重放**。
+- **真实 TPU 重验证**(v6e-1,`V2_TPU_VALIDATION_PASS`):预计算 embeds 路径(pod 不加载 ViT)
+  **83.4 TFLOP/s/device(+28% vs 旧路径)**;恢复跑精确续训 12..17(零 step-0)。
+- **MaxText fork 自包含化并 commit**(`a645b25`):vendored `input_pipeline/sasd_data/`,
+  `PATCHES.md` 逐文件文档化(provenance、flag-gating、验证命令)。
+
 ### 硬件 + 存储
 - RTX 5090(32 GB VRAM)。Host RAM 30 GB,**无 swap** —— 别在 CPU 8-device emulation 下加载完整 3.09B 模型(会 OOM)。
-- 大文件放在 `/home/kaiwen/data/fast-ddrive/`(3.6 TB SSD)。Raw train:877 GB,raw val:226 GB。50k Parquet:22 GB。
+- 大文件放在 `/home/kaiwen/data/fast-ddrive/`(3.6 TB SSD)。Raw train:877 GB,raw val:226 GB。
+  v2 AR:全量 369 G / 50k 45 G(均已镜像到 GCS bucket `gs://project-…-ddrive-sasd/`)。
 
 ### 诚实的开放项
-- **Pseudo text labels**:`critical_objects`/`explanation` 是伪标签(WOD-E2E 没有文本标签;只有 trajectory+meta 是真 GT)。
-- **50k subset**(50k of ~420k train frames);全量 = `scripts/build_full_dataset.sh --full`。
-- **尚无真实 TPU 跑** —— 所有 multi-host 验证都是 CPU 8-device emulation + single GPU。
-- **MaxText port 未完成**(Phase 7)。
-- HF datasets 是**私有的**(WOD license 禁止再分发)。
+- **Pseudo text labels**:`critical_objects`/`explanation` 是伪标签(WOD-E2E 没有文本标签;只有 trajectory+meta 是真 GT)。teacher-distill 升级管线已在小样本验证(见 memory/分支内脚本),未全量执行。
+- **≥8-chip 多节点跑未发生**:FSDP 数学在 CPU 8-device 仿真 + 单芯 TPU 已证;多节点只差 GCP trial 容量(Waymo 内部容量下跑验证阶梯 step 2 即可)。
+- **训练循环 eval 未接线**(`eval_interval: 0`):val v2 AR(479,训练格式)已就绪,接上是小改动。
+- HF datasets 是**私有的**(WOD license 禁止再分发);GCS bucket 属 $300 trial 项目(注意到期迁移)。
+- 分支 `jax-ddrive-port` 与 maxtext fork 均**未推远端**(本地 + GCS tarball)。
 
 ---
 

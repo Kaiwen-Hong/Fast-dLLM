@@ -67,8 +67,36 @@ and `../../to-host.md`; this file records what happened and in what order.*
     QRs auto-deleted.
   - Determinism note: both attempts produced identical per-step losses in RUN 1
     (e.g. step 5 = 0.398) — the deterministic grain stream at work.
-* full v2: **(pending — converting, ~6 h)**
-* 10-gate `run_all_verification.sh` re-run: **(pending — after GPU frees)**
-* MaxText GPU smoke on v2 data: **(pending — after GPU frees; TPU validation already
-  covers the production path end-to-end)**
-* uploads (full v2 → GCS): **(pending)**
+* full v2: ✅ **415,663 records / 130 shards / 369 GB**, 347 min on the 5090,
+  eager-diff max 6.55e-5 / median 1.60e-6, 406 in-run verifications.
+* full v2 audit: ✅ counts 3-way consistent; 130 sampled records byte-identical to
+  parquet; 6 embeds independently recomputed (eager fp32): 99.67% of elements
+  bit-identical after bf16 quantization, max rel 2.58e-3 ≈ the bf16 resolution itself.
+* upload: ✅ full v2 → GCS **368.68 GiB / 131 objects** (~55 min at ~114 MiB/s).
+* 10-gate re-run: **9/10 PASS** — with a real find & fix on the way:
+  - First runs OOM-killed the three big-model fp32 parity gates (kernel: anon 16.9G +
+    shmem 8.2G ≈ 25 G peak vs 24 G available; the eager loader materialized the full
+    6.2 GB tensor dict). **Fixed by making `load_fast_ddrive_text` streaming**
+    (per-tensor, mirror of the ViT streaming loader; commit `7198a8a`) →
+    phase1/2/4/4b all PASS again at the historical numbers (text logits rel-max
+    3.23e-5, top-1 100%).
+  - `phase3_lora_train`: the documented thin-margin flake
+    (`run_all_verification.sh:43`, to-host §2.5). This round's regenerated 2-sample
+    fixed batch drew a flat sample: 1.1182→1.1184 (+2e-4 vs the ~1e-3 signal; the other
+    sample decreases). Deterministic for this draw (two identical standalone re-runs);
+    PASSED earlier the same night under a different draw. No dependence on any v2
+    change (weights load bit-identically; all parity gates green).
+* MaxText GPU smoke on v2: **skipped deliberately** — its purpose was a fallback if TPU
+  capacity never appeared; the real-TPU validation (`V2_TPU_VALIDATION_PASS`) covers the
+  production path end-to-end, and the smoke's eager param-ckpt build is itself an OOM
+  hazard on the 30 G box.
+* local cleanup: ✅ superseded v1 AR (158 G) deleted (GCS copy verified, 157.78 GiB);
+  final local layout = packed parquet source-of-truth (178 G) + v2 AR train
+  full/50k/400 + val (+ small v1 sets); 1.2 T free.
+
+## Where things landed (commits)
+
+`Fast-dLLM @ jax-ddrive-port`: `b18e861` (converter+reader+tests) → `20014a7` (two-tier
+check + audit tool) → `fff4a39` (docs) → `7198a8a` (streaming text loader) + to-host twins
+& this log. `maxtext-dlm-fork @ master`: `a645b25` (vendored sasd_data, embeds
+consumption, waymo_sasd ckpt family, PATCHES.md).

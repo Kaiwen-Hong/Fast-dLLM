@@ -4,15 +4,29 @@ Self-contained handoff for whoever runs this on Waymo's TPU infra. Covers what w
 what is verified (with numbers), how to reproduce it, how to deploy on TPU, and the acceptance
 criteria. Branch `jax-ddrive-port`, not pushed to GitHub.
 
-> **Last updated: 2026-06-06** (Phase 6 complete; Phase 7 = MaxText port, in progress).
-> For Phase 6 detail see `docs/1plans/03_scaleup_tpu_spec.md` and `docs/4collect/OVERNIGHT_PROGRESS.md`.
+> **Last updated: 2026-06-12** (Phase 8 = dataset v2 + production data path, complete). Docs index &
+> maintenance rules: `docs/README.md`; authoritative data-format spec:
+> `docs/2implementation-details/DATASET_V2.md` (v1 detail & round-2 semantic verification: `DATASET.md`).
 >
-> 📌 **STATUS UPDATE (2026-06-08):** Phase 7 (MaxText port) is **done and proven on real TPU** —
-> MaxText SASD trains on a real v6e-1 with real Fast-dDrive weights (loss 0.31/0.56, matching the GPU
-> smoke). The claims below of "MaxText port not done" / "no real TPU run yet" are **superseded**; the
-> current source of truth is **`docs/4collect/OVERNIGHT_TPU_PROGRESS.md`**. The only remaining open item is the
-> literal **≥8-chip multi-node run**, blocked solely by GCP trial TPU **capacity** (external/transient,
-> not a code issue) — one command (`ACCEL=v6e-16 bash launch_maxtext_sasd_tpu.sh`) once capacity frees.
+> 📌 **Historical baseline (2026-06-08):** Phase 7 (MaxText port) done and proven on a real v6e-1 with
+> real weights (loss 0.31/0.56). See `docs/4collect/OVERNIGHT_TPU_PROGRESS{,-chn}.md`.
+> 📌 **Dataset (2026-06-12 daytime):** full **415,663-frame** parquet build complete; **Round-2 semantic
+> verification: 10/10 samples bit-exact** against a from-raw re-run (all columns, answer round-trip,
+> trajectory == GT@1s, pixel reconstruction); interactive review site `jax_ddrive/visualizations/`.
+> 📌 **STATUS (2026-06-12 overnight — current truth):** the production training loop is
+> **re-validated end-to-end on real TPU** (`V2_TPU_VALIDATION_PASS`): **dataset v2** (ArrayRecord;
+> 12 arrays incl. pixel_values + precomputed frozen-ViT **`image_embeds` bf16 [168,2048]**, single
+> copy) × **AR reader** (`make_sasd_loader` auto-detects by extension, public API unchanged → all
+> three training paths gain full-scale data; the "no training path reads ArrayRecord" gap is CLOSED)
+> × **data-iterator state in checkpoints** (`waymo_sasd` joined the grain ckpt family; resume
+> **continues the stream instead of replaying** — measured on v6e-1: restored run trains exactly
+> steps 12..17). Throughput **83.4 TFLOP/s/device on v6e-1 (+28% vs the ViT-in-loop path's 65; no
+> ViT/transformers on the pod)**. v2 data built, byte-audited vs parquet, and uploaded to GCS for
+> train full/50k/400 + **val 479 (training format, with targets)**. MaxText fork committed
+> (`a645b25`, self-contained vendored `sasd_data/`) + `PATCHES.md` documents the whole diff.
+> 📌 Still open: the literal **≥8-chip multi-node run** (GCP trial capacity only — external/transient;
+> run validation-ladder step 2 once capacity exists on Waymo infra). §§2–6 below narrate the 06-08
+> baseline; the v2 delta lives in §0 Phase 8 and `docs/4collect/06_dataset_v2_progress.md`.
 
 ---
 
@@ -35,16 +49,42 @@ criteria. Branch `jax-ddrive-port`, not pushed to GitHub.
 - **What to graft**: `diffusion/` module + SASD `loss_fn` (~5-line diff) + bidirectional attention patch + Waymo grain data source. Template: `jax-mdlm-handoff` (LLaDA in MaxText).
 - **Data is ready**: Parquet on local disk + private HF; `gsutil rsync` to GCS before the pod run.
 
+### Phase 8 (dataset v2 + production data path, 2026-06-12 — current truth)
+- **Dataset v2 (the production training format)**: ArrayRecord (tf.train.Example) keeping ALL 12
+  arrays (incl. `pixel_values`, so embeds stay independently re-verifiable) **+ `image_embeds`
+  [168,2048] bf16** = frozen-ViT output precomputed offline (fp32 highest precision → bf16; single
+  copy, loader doubles via `concat([ie,ie])`). Spec SSOT: `docs/2implementation-details/DATASET_V2.md`.
+- **Four splits built + audited + uploaded to GCS**: train full **415,663 / 130 shards / 369 G**,
+  50k (50,331 / 787 / 45 G), 400 (smoke), **val 479 (TRAINING format with targets, rebuilt from raw
+  val with `--with_target`)**. Audit = 3-way count reconciliation + sampled byte-exact vs parquet +
+  independent embeds recompute (99.67% of elements bit-identical after bf16 quantization).
+- **AR reader**: `make_sasd_loader` auto-detects AR/parquet by extension (public API unchanged);
+  grain pipeline passes `image_embeds` through; `tests/test_ar_pipeline.py` proves AR↔parquet
+  **batch-level bit-exactness**.
+- **Iterator state in checkpoints**: `waymo_sasd` joined MaxText's grain ckpt family → **resume
+  continues the data stream instead of replaying it**.
+- **Real-TPU re-validation** (v6e-1, `V2_TPU_VALIDATION_PASS`): precomputed-embeds path (no ViT on
+  the pod) at **83.4 TFLOP/s/device (+28% vs the old path)**; the restored run trains exactly
+  steps 12..17 (zero step-0 evidence).
+- **MaxText fork made self-contained and committed** (`a645b25`): vendored
+  `input_pipeline/sasd_data/`; `PATCHES.md` documents the full diff (provenance, flag-gating,
+  validation commands).
+
 ### Hardware + storage
 - RTX 5090 (32 GB VRAM). Host RAM 30 GB, **no swap** — don't load the full 3.09B model under CPU 8-device emulation (OOMs).
-- Big files on `/home/kaiwen/data/fast-ddrive/` (3.6 TB SSD). Raw train: 877 GB, raw val: 226 GB. 50k Parquet: 22 GB.
+- Big files on `/home/kaiwen/data/fast-ddrive/` (3.6 TB SSD). Raw train: 877 GB, raw val: 226 GB.
+  v2 AR: full 369 G / 50k 45 G (both mirrored to the GCS bucket `gs://project-…-ddrive-sasd/`).
 
 ### Honest open items
-- **Pseudo text labels** for `critical_objects`/`explanation` (WOD-E2E has none; only trajectory+meta are real GT).
-- **50k subset** (50k of ~420k train frames); full = `scripts/build_full_dataset.sh --full`.
-- **No real TPU run yet** — all multi-host verification is CPU 8-device emulation + single GPU.
-- **MaxText port not done** (Phase 7).
-- HF datasets are **private** (WOD license prohibits redistribution).
+- **Pseudo text labels** for `critical_objects`/`explanation` (WOD-E2E has none; only trajectory+meta
+  are real GT). A teacher-distill upgrade pipeline is validated at small scale, not yet run at full scale.
+- **No ≥8-chip multi-node run yet**: FSDP math proven in CPU 8-device emulation + single-chip TPU;
+  multi-node is blocked only by GCP trial capacity (run validation-ladder step 2 on Waymo infra).
+- **In-loop eval not wired** (`eval_interval: 0`): the val v2 AR set (479, training format) is ready;
+  wiring it is a small change.
+- HF datasets are **private** (WOD license prohibits redistribution); the GCS bucket lives in the
+  $300 trial project (mind its expiry when migrating).
+- Branch `jax-ddrive-port` and the MaxText fork are **not pushed to any remote** (local + GCS tarballs).
 
 ---
 
