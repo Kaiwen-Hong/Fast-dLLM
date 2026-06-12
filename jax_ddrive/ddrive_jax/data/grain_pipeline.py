@@ -1,8 +1,16 @@
 """Multi-host SASD input pipeline (grain ``MapDataset``) for Fast-dDrive JAX training.
 
-Builds an **infinite, deterministic, resumable** stream of numpy batch dicts from the
-TPU-ready Parquet shards (``ddrive_jax/data/parquet_dataset.py`` decode contract), applying
-online SASD noising (``ddrive_jax/diffusion/noise.make_batch``) per emitted sample.
+Builds an **infinite, deterministic, resumable** stream of numpy batch dicts from either
+source format (auto-detected by file extension in the data dir):
+
+* ``*.arrayrecord`` — dataset v2 (``ar_dataset.ArRecordSource``): lazy random access, scales
+  to the full 415k set; records may carry precomputed ``image_embeds`` [N_img, D] bf16
+  (single copy), which is passed through into the batch as ``image_embeds`` [B, N_img, D]
+  (consumer doubles it via ``concat([ie, ie], axis=1)`` instead of running the frozen ViT).
+* ``*.parquet`` — v1 (``parquet_dataset.decode_row`` contract): eager load, small subsets.
+
+Online SASD noising (``ddrive_jax/diffusion/noise.make_batch``) is applied per emitted
+sample in both cases.
 
 Six guarantees (all tested in ``tests/test_grain_pipeline.py``):
 
@@ -50,7 +58,7 @@ import numpy as np
 import grain
 import pyarrow.parquet as pq
 
-from ddrive_jax.data import parquet_dataset
+from ddrive_jax.data import ar_dataset, parquet_dataset
 from ddrive_jax.diffusion import noise
 
 # --- SSOT constants (do not re-hardcode MASK_ID; import from the noise module) -----------
@@ -112,7 +120,7 @@ def _fold_rng(seed, global_step, global_sample_index):
 # ==================================================================== per-sample transform ==
 def _per_sample_arrays(s, ifn, lfn, ol, w, gidx, step):
     """Assemble the per-sample record (pre-batch) the batch dict needs."""
-    return {
+    rec = {
         "input_final": ifn,                                            # (2,2L) i64
         "labels_final": lfn,                                           # (2,L)  i64
         "original_labels": ol,                                         # (1,L)  i64
@@ -128,6 +136,9 @@ def _per_sample_arrays(s, ifn, lfn, ol, w, gidx, step):
         "_gidx": int(gidx),
         "_step": int(step),
     }
+    if "image_embeds" in s:                                           # dataset v2 (precomputed
+        rec["image_embeds"] = np.ascontiguousarray(s["image_embeds"])  # frozen-ViT) [N_img,D] bf16
+    return rec
 
 
 def _collate(records):
@@ -137,7 +148,7 @@ def _collate(records):
     == ``gidx0 // process_count``).  ``_gidx`` / ``_step`` are dropped from the public dict.
     """
     stack = lambda k: np.stack([r[k] for r in records], 0)
-    return {
+    out = {
         "input_final": stack("input_final"),          # (B,2,2L) i64
         "labels_final": stack("labels_final"),         # (B,2,L)  i64
         "original_labels": stack("original_labels"),   # (B,1,L)  i64
@@ -152,6 +163,9 @@ def _collate(records):
         "sample_id": [r["sample_id"] for r in records],      # list[str] len B
         "step": int(records[0]["_step"]),                    # global step (int)
     }
+    if "image_embeds" in records[0]:
+        out["image_embeds"] = stack("image_embeds")          # (B,N_img,D) bf16, single copy
+    return out
 
 
 # =================================================================== padding path (TODO) ==
@@ -189,7 +203,8 @@ class SasdLoader:
     """Infinite, resumable iterator of numpy batch dicts (see module docstring)."""
 
     def __init__(self, iter_dataset, per_host_batch, total_global_samples,
-                 *, seed, process_index, process_count, L, N, n_img):
+                 *, seed, process_index, process_count, L, N, n_img, has_embeds=False):
+        self.has_embeds = bool(has_embeds)   # dataset v2: batches carry image_embeds
         self._ds = iter_dataset
         self.per_host_batch = per_host_batch
         self.total_global_samples = total_global_samples
@@ -231,18 +246,33 @@ def make_sasd_loader(parquet_dir, split="train", *, per_host_batch, seed=0,
     Args mirror the multi-host contract.  ``process_index`` / ``process_count`` default to a
     single host; pass ``jax.process_index()`` / ``jax.process_count()`` at the call site.
     """
-    paths = parquet_dataset.shard_paths(parquet_dir, split)
-    if not paths:
-        raise FileNotFoundError(f"no {split}-*.parquet shards under {parquet_dir!r}")
-    src = _RowSource(paths)
+    ar_paths = ar_dataset.shard_paths(parquet_dir, split)
+    pq_paths = parquet_dataset.shard_paths(parquet_dir, split)
+    if ar_paths and pq_paths:
+        raise ValueError(f"both arrayrecord and parquet shards under {parquet_dir!r} — ambiguous")
+    if ar_paths:
+        src = ar_dataset.ArRecordSource(ar_paths)      # lazy random access (full-scale path)
+    elif pq_paths:
+        src = _RowSource(pq_paths)                     # eager decode (small subsets)
+    else:
+        raise FileNotFoundError(
+            f"no {split}-*.arrayrecord or {split}-*.parquet shards under {parquet_dir!r}")
     ntotal = len(src)
     if ntotal == 0:
         raise ValueError(f"empty dataset under {parquet_dir!r} split={split!r}")
 
     # -- uniform vs padding path ---------------------------------------------------------
-    Ls = sorted({int(r["input_ids"].shape[0]) for r in src._rows})
-    Ns = sorted({int(r["pixel_values"].shape[0]) for r in src._rows})
-    n_imgs = sorted({int(r["image_grid_thw"].shape[0]) for r in src._rows})
+    # Probe a deterministic sample of records instead of scanning all rows (the lazy AR
+    # source would otherwise force a full decode pass; both the 50k and 415k sets were
+    # verified 100% uniform offline: L=1184, pixel (672,1176), 3 images).
+    probe_idx = sorted(set(np.linspace(0, ntotal - 1, num=min(16, ntotal), dtype=int).tolist()))
+    probe = [src[i] for i in probe_idx]
+    Ls = sorted({int(r["input_ids"].shape[0]) for r in probe})
+    Ns = sorted({int(r["pixel_values"].shape[0]) for r in probe})
+    n_imgs = sorted({int(r["image_grid_thw"].shape[0]) for r in probe})
+    has_embeds = {("image_embeds" in r) for r in probe}
+    if len(has_embeds) != 1:
+        raise ValueError("mixed shards: some records carry image_embeds, some do not")
     if max_length is None:
         assert len(Ls) == 1, (
             f"non-uniform L {Ls} requires max_length (padding path TODO; see _pad_sample)")
@@ -281,4 +311,4 @@ def make_sasd_loader(parquet_dir, split="train", *, per_host_batch, seed=0,
 
     return SasdLoader(ds, int(per_host_batch), ntotal, seed=sd,
                       process_index=int(process_index), process_count=pc,
-                      L=L, N=N, n_img=n_img)
+                      L=L, N=N, n_img=n_img, has_embeds=next(iter(has_embeds)))
