@@ -105,3 +105,28 @@ round-trip (bit-identical continuation) and by the on-TPU resume validation
   on the parquet path.
 * Fork self-containment: import + loader + handler round-trip with **no** `ddrive_jax` on
   `PYTHONPATH` (see PATCHES.md §How to validate).
+
+## 6. Round-2 from-raw re-verification + review website
+
+Independent of the build-time checks (§1), `jax_ddrive/scripts/verify_ar_round2.sh`
+re-verifies sampled v2 records **from the raw tfrecords**: it re-runs the whole chain
+(stage 1 converter → stage 2 prep), compares the 12 source arrays bit-exact against the
+AR rows, and re-derives `image_embeds` from the stored `pixel_values` (eager frozen ViT,
+fp32 highest → bf16) under a two-tier criterion — bitwise fraction ≥ 98.5% (observed
+~99.8%) AND every mismatched element ≤ 1.5× its own bf16 ulp or |Δ| ≤ 2e-3 (the bf16-level
+global rel is reported, not gated: a benign 1-ulp flip at a near-max element already
+exceeds 1e-3; the builder's 1e-3 cap applies to fp32 pre-quantization values). Plus
+structure self-checks, answer-text round-trip, trajectory == GT@1 s, pixel reconstruction,
+and an embeds-PCA triptych for eyeballing.
+
+* **Status: 12/12 PASS (2026-06-12)** — 10 train (`wod_e2e_sasd_full_v2_ar` shard 0
+  rows 0–9) + 2 val (`wod_e2e_sasd_val_v2_ar` rows 0–1). Artifacts:
+  `/home/kaiwen/data/fast-ddrive/verify_round2_v2/review/report.md`.
+* Re-run: `NT=10 NV=2 bash jax_ddrive/scripts/verify_ar_round2.sh` (~5 min; needs the
+  autovla/ddrive/jax envs + the 5090 for the embeds recompute).
+* **Review website** (what a v2 record is, the build chain, the v2 feed path, the 12
+  verified examples with BEV/layout/M-RoPE/mask/embeds figures):
+  `jax_ddrive/visualizations/index.html` — `bash jax_ddrive/visualizations/serve.sh`,
+  then `ssh -L 8890:localhost:8890 <desktop>` → http://localhost:8890. Regenerate after
+  a new verify run: `PYTHONPATH=jax_ddrive <ddrive-python>
+  jax_ddrive/scripts/make_dataset_website.py`.

@@ -1,0 +1,139 @@
+<!doctype html><html lang="zh"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Fast-dDrive SASD 数据集 v2 — 总览</title><style>
+:root { --bg:#f7f8fa; --card:#fff; --ink:#1c2733; --mut:#6b7a8c; --acc:#0b66c3;
+        --ok:#1d8a4e; --line:#e3e8ee; --code:#f1f4f8; --v2:#7c3aed; }
+* { box-sizing: border-box; }
+body { margin:0; font:15px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,
+       "Helvetica Neue",Arial,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+       color:var(--ink); background:var(--bg); }
+nav { position:sticky; top:0; z-index:9; background:#102a43; color:#d9e2ec;
+      padding:10px 26px; display:flex; gap:18px; align-items:center; flex-wrap:wrap; }
+nav a { color:#d9e2ec; text-decoration:none; font-weight:600; font-size:14px; }
+nav a:hover { color:#fff; text-decoration:underline; }
+nav .brand { color:#fff; font-size:16px; margin-right:8px; }
+main { max-width:1180px; margin:0 auto; padding:28px 26px 80px; }
+h1 { font-size:26px; margin:18px 0 6px; }
+h2 { font-size:20px; margin:38px 0 10px; padding-top:8px; border-top:2px solid var(--line); }
+h3 { font-size:16px; margin:22px 0 8px; }
+.sub { color:var(--mut); margin:0 0 18px; }
+.card { background:var(--card); border:1px solid var(--line); border-radius:10px;
+        padding:16px 20px; margin:14px 0; }
+.grid { display:grid; gap:14px; }
+.grid.c2 { grid-template-columns:1fr 1fr; } .grid.c3 { grid-template-columns:1fr 1fr 1fr; }
+@media (max-width:900px){ .grid.c2,.grid.c3{grid-template-columns:1fr;} }
+table { border-collapse:collapse; width:100%; font-size:13.5px; }
+th,td { border:1px solid var(--line); padding:6px 10px; text-align:left; vertical-align:top; }
+th { background:#eef2f7; }
+code, .tok { font:12.5px/1.55 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+       background:var(--code); padding:1px 5px; border-radius:4px; }
+pre { font:12.5px/1.55 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+      background:var(--code); border:1px solid var(--line); border-radius:8px;
+      padding:12px 14px; overflow-x:auto; white-space:pre-wrap; word-break:break-word; }
+img { max-width:100%; height:auto; border:1px solid var(--line); border-radius:8px;
+      background:#fff; }
+.badge { display:inline-block; padding:2px 10px; border-radius:999px; font-size:12.5px;
+         font-weight:700; }
+.badge.ok { background:#e3f6ec; color:var(--ok); }
+.badge.info { background:#e4eefb; color:var(--acc); }
+.badge.v2 { background:#f1e9fe; color:var(--v2); }
+.badge.val { background:#fdebd0; color:#9c640c; }
+details { margin:10px 0; }
+details > summary { cursor:pointer; font-weight:600; color:var(--acc); }
+.flow { display:flex; flex-direction:column; gap:0; margin:18px 0; }
+.stage { background:var(--card); border:1px solid var(--line); border-left:5px solid var(--acc);
+         border-radius:10px; padding:12px 18px; }
+.stage.v2 { border-left-color:var(--v2); }
+.stage h3 { margin:2px 0 6px; }
+.stage .env { float:right; font-size:12px; color:var(--mut); }
+.arrow { text-align:center; color:var(--mut); font-size:20px; line-height:1.4; }
+.kv { color:var(--mut); font-size:13.5px; }
+.cards { display:grid; grid-template-columns:repeat(auto-fill,minmax(330px,1fr)); gap:16px; }
+.scard { background:var(--card); border:1px solid var(--line); border-radius:10px;
+         padding:12px; text-decoration:none; color:var(--ink); transition:box-shadow .15s; }
+.scard:hover { box-shadow:0 4px 14px rgba(16,42,67,.12); }
+.scard img { width:100%; }
+.scard .t { font:12px ui-monospace,Menlo,monospace; color:var(--mut); margin-top:6px;
+            word-break:break-all; }
+.pn { display:flex; justify-content:space-between; margin:26px 0 8px; }
+.pn a { color:var(--acc); font-weight:700; text-decoration:none; }
+.note { background:#fff8e6; border:1px solid #f1de9d; border-radius:8px; padding:10px 14px;
+        font-size:13.5px; }
+</style></head><body><nav><span class="brand">Fast-dDrive SASD dataset v2 review</span><a href="index.html">总览 / Pipeline / 喂给模型</a><span style="color:#829ab1">样本:</span><a href="sample_00.html">00</a><a href="sample_01.html">01</a><a href="sample_02.html">02</a><a href="sample_03.html">03</a><a href="sample_04.html">04</a><a href="sample_05.html">05</a><a href="sample_06.html">06</a><a href="sample_07.html">07</a><a href="sample_08.html">08</a><a href="sample_09.html">09</a><a href="sample_10.html">10</a><a href="sample_11.html">11</a></nav><main>
+<h1>Fast-dDrive SASD 训练数据集 <span class="badge v2">v2</span> — 是什么、怎么来的、怎么喂给模型</h1>
+<p class="sub">生产格式:<code>wod_e2e_sasd_*_v2_ar</code>(ArrayRecord,13 原字段 + 预计算
+<code>image_embeds</code>)· 全量 415,663 帧 · 本站 12 个样本(10 train + 2 val)
+均通过 round-2 验证:12 列 vs 从 raw 重跑 bit-exact + embeds 从像素复算两层判据</p>
+
+<div class="card"><b>一句话:</b> 每条记录 = 一个驾驶瞬间。<b>三张前视相机图</b>(像素在
+<code>pixel_values</code>,<b>v2 还存了它们的 frozen-ViT 输出 <code>image_embeds</code></b> ——
+训练时直接用,pod 上不再跑 ViT)+ <b>文本 prompt</b>(任务指令、导航命令、3 秒自车历史)
++ <b>JSON 答案</b>(critical_objects / explanation / future_meta_behavior / <b>真值轨迹</b>),
+外加一套 SASD 训练结构(哪些 token 可加噪、各属哪个 section、权重和噪声调度)。</div>
+
+<div class="card"><h3 style="margin-top:0">v1 → v2 变了什么</h3>
+<table><tr><th></th><th>AR v1(已退役,仅存 GCS)</th><th>AR v2(生产格式)</th></tr>
+<tr><td>字段</td><td>12 数组 + 3 标量(只有像素)</td><td>同样 13 个字段全保留 + <b>image_embeds bf16 [168,2048]</b></td></tr>
+<tr><td>训练时图像处理</td><td>每 step 在 host 跑 frozen ViT(数据循环被卡住)</td><td>读现成 embeds → 纯 IO;pod 零 ViT/transformers 依赖</td></tr>
+<tr><td>v6e-1 实测吞吐</td><td>65 TFLOP/s/device</td><td><b>83.4 TFLOP/s/device(+28%)</b></td></tr>
+<tr><td>谁能读</td><td>无训练路径读它(都走 parquet)</td><td><code>make_sasd_loader</code> 按扩展名自动探测;FSDP harness 与 MaxText 直接消费;iterator 状态进 ckpt → <b>resume 续流不重放</b>(v6e-1 实测续训 12..17)</td></tr>
+<tr><td>split</td><td>train only</td><td>full / 50k / 400 / <b>val 479(训练格式带 target)</b></td></tr></table></div>
+
+<h2 id="record">① 处理后的一条记录长什么样</h2>
+<p>14 个字段。注意:<code>input_ids</code> 中的"图像部分"只是 56×3 个相同的占位符
+<code>&lt;|image_pad|&gt;</code>(id 151655);像素在 <code>pixel_values</code>,
+<b>模型实际吃的图像表示在 <code>image_embeds</code></b>(forward 时散射到占位符位置)。</p>
+<table><tr><th>字段</th><th>形状/类型</th><th>含义</th><th>训练时用途</th></tr><tr><td><code>sample_id</code></td><td><code>str</code></td><td>WOD-E2E frame id（frame.context.name），可 join 回 GT</td><td>追溯/调试</td></tr><tr><td><code>input_ids</code></td><td><code>[1184] int64</code></td><td>完整 chat-template token 序列（结构见下文布局图）</td><td>embed 后做模型输入</td></tr><tr><td><code>labels</code></td><td><code>[1184] int64</code></td><td>answer 区间 = token id；其余 -100（不计 loss）</td><td>loss 目标</td></tr><tr><td><code>rbi</code></td><td><code>[1184] int32</code></td><td>response block index：prompt=-1；answer 按 section 切成 ≤32 value-token 的块</td><td>构建注意力 mask + 分配 section</td></tr><tr><td><code>turn</code></td><td><code>[1184] int32</code></td><td>块边界处 +1 的递增序号</td><td>训练 mask 的 turn 规则</td></tr><tr><td><code>scaffold</code></td><td><code>[1184] bool</code></td><td>JSON 骨架位置（key、引号、分隔符）——永不加噪、永不训练</td><td>加噪时冻结</td></tr><tr><td><code>weight_vec</code></td><td><code>[1184] f32</code></td><td>逐 token loss 权重：CO 1.5 / explanation 1.0 / fmb 2.0 / trajectory 3.0</td><td>section-weighted CE</td></tr><tr><td><code>block_alpha / block_beta</code></td><td><code>[7] f32</code></td><td>每块 Beta(α,β) 噪声调度：CO(1,2) exp(1,1) fmb(1,1.5) traj(2,1)</td><td>在线加噪采样 mask 比例</td></tr><tr><td><code>position_ids</code></td><td><code>[3,1184] int32</code></td><td>3D M-RoPE 位置（temporal/height/width 三通道）</td><td>RoPE cos/sin</td></tr><tr><td><code>vision_mask</code></td><td><code>[1184] bool</code></td><td>vision token 位置（image_pad / vision_start / vision_pad）</td><td>辅助/调试</td></tr><tr><td><code>pixel_values</code></td><td><code>[672,1176] f16</code></td><td>3 张图的像素 patch：每行=14×14×3 通道×2 时间帧，CLIP 归一化（可逆；保留它使 embeds 永远可独立复验）</td><td>复验源（v2 训练不再喂 ViT）</td></tr><tr><td><code>image_grid_thw</code></td><td><code>[3,3] int64</code></td><td>每图 (t,h,w) patch 网格 = [1, 16, 14]</td><td>索引 + M-RoPE</td></tr><tr><td><code><b>image_embeds</b> ⭐v2</code></td><td><code>[168,2048] bf16</code></td><td>frozen ViT 输出<b>离线预计算</b>(fp32 highest → bf16,单份;loader `concat([ie,ie])` 翻倍到 336)——训练时直接散射到占位符位置,pod 上不再跑 ViT</td><td><b>模型的图像输入</b></td></tr><tr><td><code>L / n_blocks</code></td><td><code>标量</code></td><td>序列长 / response 块数</td><td>静态形状</td></tr></table>
+
+<h3>一个样本的序列布局(样本 00,L=1184 个 token 各是什么)</h3>
+<img src="assets/00/sequence_layout.png" alt="sequence layout">
+<p class="kv">上条:区域/section(灰=prompt 文本,蓝=图像占位区,橙/绿/紫/红=答案四个 section,黑=MASK pad)。
+下条:训练角色——深灰 scaffold(JSON 骨架,冻结)、红 value(被加噪+训练的内容)、黑 pad。</p>
+
+<h2 id="pipeline">② 从 raw 数据怎么处理出来的(每级带验证)</h2>
+<div class="flow"><div class="stage"><span class="env">—</span><h3>Stage 0 — 原始数据</h3><p>WOD-E2E tfrecords(263 train + 93 val shards,~1.1 TB)。每帧一个 <code>E2EDFrame</code> proto:8 路相机 JPEG、16 点自车历史(@0.25s)、20 点未来轨迹(@4Hz,<b>真值</b>)、导航 intent、rater 偏好轨迹。</p><p class="kv"><code>/home/kaiwen/data/fast-ddrive/waymo/</code></p></div><div class="arrow">⬇︎</div><div class="stage"><span class="env">autovla env</span><h3>Stage 1 — 抽取 + 造 prompt/target</h3><p class="kv" style="color:var(--ok)">✅ prompt 对官方 sample.json 逐字节验证</p><p><code>fast_ddrive/data/convert_wod_e2e.py --with_target</code>:取<b>左前/正前/右前</b> 3 路相机存 JPEG;固定指令模板 + 导航命令 + 7 点自车历史(@0.5s)拼 prompt;target JSON 里 <b>trajectory=真值 5 点@1s</b>,future_meta_behavior 派生,critical_objects/explanation 是伪标签(已知限制,可 teacher-distill 升级)。val split 加 <code>--rated_only</code>(479 个 rater 评分帧)。</p><p class="kv">输出:train/val JSON + JPEGs</p></div><div class="arrow">⬇︎</div><div class="stage"><span class="env">ddrive env</span><h3>Stage 2 — Token 化 + SASD 结构</h3><p class="kv" style="color:var(--ok)">✅ round-2:12 列 vs 从 raw 重跑 bit-exact</p><p><code>jax_ddrive/eval/prep_train_jax.py</code>:HF processor(chat template;每图 16×14 patch 网格);<code>process_gpt</code> 规范化 answer;标 labels;deep-scaffold 检测 scaffold/value、按 section 切块(rbi/turn)、配权重和 Beta(α,β);3D M-RoPE position_ids;pad 到 L=1184。</p><p class="kv">输出:每帧一个 npz(12 个数组)</p></div><div class="arrow">⬇︎</div><div class="stage"><span class="env">pyarrow</span><h3>Stage 3 — Parquet(bit-exact 真相源)</h3><p class="kv" style="color:var(--ok)">✅ 三方计数对账;packed=唯一本地 parquet 源</p><p><code>prep_to_parquet.py</code>(原始字节 blob + shape 列,无损)→ <code>pack_parquet.py</code>(纯 concat 合并成 130 个文件,内容不变)。</p><p class="kv">输出:<code>wod_e2e_sasd_full_packed/</code> 178G</p></div><div class="arrow">⬇︎</div><div class="stage v2"><span class="env">jax venv + 5090 GPU</span><h3>Stage 4 — AR v2:预计算 ViT embeds ⭐</h3><p class="kv" style="color:var(--ok)">✅ 构建期四道内建检查:每 shard jit-vs-eager ViT 抽查(观测 ≤5e-6,硬上限 1e-3)· bitwise recompute + bf16 roundtrip · 计数对账 · AR↔parquet 逐字节(test_ar_pipeline.py)</p><p><code>jax_ddrive/scripts/parquet_to_ar_with_embeds.py</code>(~19 样本/s,原子可断点续):对每帧跑 frozen ViT(fp32 highest)→ bf16 存为 <code>image_embeds</code>,连同 13 个原字段一起打成 ArrayRecord(tf.train.Example)。<b>这就是 TPU 训练直接消费的生产格式。</b></p><p class="kv">输出:v2 AR 四个 split(下表)</p></div></div>
+<h3>v2 AR 四个 split(本地 + GCS 镜像)</h3>
+<table><tr><th>目录(/home/kaiwen/data/fast-ddrive/hf/)</th><th>行数</th><th>shards</th><th>大小</th><th>角色</th></tr>
+<tr><td><code>wod_e2e_sasd_full_v2_ar</code></td><td>415,663</td><td>130</td><td>368.7 GB</td><td>生产训练(full)</td></tr><tr><td><code>wod_e2e_sasd_50k_v2_ar</code></td><td>50,331</td><td>787</td><td>44.7 GB</td><td>shakeout 训练</td></tr><tr><td><code>wod_e2e_sasd_val_v2_ar</code></td><td>479</td><td>8</td><td>437.9 MB</td><td>val(rated 帧,训练格式带 target)</td></tr><tr><td><code>wod_e2e_sasd_v2_ar</code></td><td>400</td><td>7</td><td>363.2 MB</td><td>烟测/单测</td></tr></table>
+<div class="note">本站验证(round-2,2026-06-12):对 12 个样本从 raw tfrecord 重跑整条链,
+12 个数组列与 v2 AR 记录<b>逐列 bit-exact</b>;<code>image_embeds</code> 用存储的像素重新过
+frozen ViT(fp32 highest → bf16)比对,两层判据 = bitwise ≥98.5%(实测 ~99.8%)且每个
+mismatch ≤1.5× 自身 bf16 ulp 或 |Δ|≤2e-3(全部通过;bf16 级全局 rel 仅作诊断报告——单个大幅值
+元素的 1-ulp 翻转就有 ~2⁻⁸ 相对量级,对它设门限是范畴错误)。端到端旁证:同一 prep 管线的
+479 帧 val 上 JAX/PyTorch 官方指标 ADE@3s 0.839/0.814、RFS 7.93/7.91 持平。</div>
+
+<h2 id="feed">③ 训练时怎么喂给模型(每个 train step,v2 路径)</h2>
+<div class="card">
+<p><b>1. 读取:</b> <code>make_sasd_loader</code> 按扩展名自动探测 AR(lazy 随机访问,全量可用)/
+parquet;按 host 切分全局 shuffle 流,确定性、可断点续;<b>iterator 状态随 checkpoint 保存,
+resume 续流不重放</b>。batch 里直接带 <code>image_embeds (B,168,2048) bf16</code>。</p>
+<p><b>2. 在线加噪(<code>noise.make_batch</code>):</b> 每个 response 块抽
+<code>t ~ Beta(α,β)</code> → 以概率 <code>p=(1-ε)t+ε</code> 把该块的 <b>value</b> token 替换成
+<code>|&lt;MASK&gt;|</code>(scaffold 冻结;<code>&lt;|im_end|&gt;</code> 必 mask)。轨迹块 α,β=(2,1)
+→ 平均被 mask 更多(任务更难、权重也最高 3.0)。</p>
+<p><b>3. 拼接 doubled 序列(2L=2368),每样本两行:</b></p>
+<pre>row 0 (mdm):  [ x_t  = 答案被随机 mask     | x_0 = 干净原序列 ]   ← labels: 只在被 mask 的位置
+row 1 (comp): [ x̄_t = 互补位置被 mask      | x_0 = 干净原序列 ]   ← labels: 互补位置
+</pre>
+<p><b>4. 图像(v2):</b> 直接取记录里的 <code>image_embeds</code> →
+<code>concat([ie,ie])</code> 翻倍到 [336,2048] → 散射到两行序列里 <code>&lt;|image_pad|&gt;</code>
+的位置。<b>不再有任何 ViT 前向</b>(v1 在这里每 step 跑一次 frozen ViT —— 数据循环因此从
+65 提到 83.4 TFLOP/s/device)。</p>
+<p><b>5. 位置 & 注意力:</b> position_ids 平铺两份 → M-RoPE cos/sin(contiguous-chunk 布局,
+非 MaxText 内建 interleaved);由 rbi/turn 构建 [2L,2L] hybrid block-causal mask(下图)。</p>
+<p><b>6. loss:</b>
+<code>Σ section_weighted_CE(noisy 半边 logits, labels, w) + causal_CE(clean 半边 row0, 原 labels)</code>,
+除以 <code>2×答案 token 数</code>。消费方:NNX FSDP harness(<code>train_tpu.py</code>)和
+MaxText <code>objective="sasd"</code>(fork @ a645b25,vendored 自包含 <code>sasd_data/</code>)。</p>
+</div>
+<div class="grid c2">
+<div><img src="assets/00/attn_mask.png" alt="attention mask">
+<p class="kv">训练注意力 mask(样本 00):左上=noisy 半边(prompt 整块双向 + 答案逐块);
+右上=noisy→clean 只看更早的 turn(阶梯);右下=clean 半边标准 causal。</p></div>
+<div><img src="assets/00/position_ids.png" alt="position ids">
+<p class="kv">3D M-RoPE:文本区三通道重合对角线;图像区 t 持平、h/w 锯齿;图像段只前进
+max(h,w),所以末端位置 ≈1040 &lt; 1184。</p></div>
+</div>
+<p>每个样本页底部都有"加噪后模型实际看到的序列"文本示例(mdm 行 + 互补行)。</p>
+
+<h2 id="samples">④ 12 个已验证样本(点进去看完整编码;缩略图 = 原图 | 像素重建 | embeds PCA)</h2>
+<div class="cards"><a class="scard" href="sample_00.html"><img src="assets/00/triptych__orig_recon_embedsPCA.png" loading="lazy" alt="sample 00"><div><span class="badge ok">✅ 28/28 checks</span> <span class="badge info">train</span> <span class="badge v2">emb 99.85%</span></div><div class="t">00 · afd7afd2fd7fe02b65210917a8b65da5-199</div></a><a class="scard" href="sample_01.html"><img src="assets/01/triptych__orig_recon_embedsPCA.png" loading="lazy" alt="sample 01"><div><span class="badge ok">✅ 28/28 checks</span> <span class="badge info">train</span> <span class="badge v2">emb 99.87%</span></div><div class="t">01 · d6cdf6eb1b7d4a8be6dac71f34e6cdb7-164</div></a><a class="scard" href="sample_02.html"><img src="assets/02/triptych__orig_recon_embedsPCA.png" loading="lazy" alt="sample 02"><div><span class="badge ok">✅ 28/28 checks</span> <span class="badge info">train</span> <span class="badge v2">emb 99.82%</span></div><div class="t">02 · 0fdba2bcc19c78417afbeecfd950bccc-209</div></a><a class="scard" href="sample_03.html"><img src="assets/03/triptych__orig_recon_embedsPCA.png" loading="lazy" alt="sample 03"><div><span class="badge ok">✅ 28/28 checks</span> <span class="badge info">train</span> <span class="badge v2">emb 99.87%</span></div><div class="t">03 · b197472f28df9f18c22654a5b514082a-072</div></a><a class="scard" href="sample_04.html"><img src="assets/04/triptych__orig_recon_embedsPCA.png" loading="lazy" alt="sample 04"><div><span class="badge ok">✅ 28/28 checks</span> <span class="badge info">train</span> <span class="badge v2">emb 99.83%</span></div><div class="t">04 · f17e44388a430e099334c48f8df62601-076</div></a><a class="scard" href="sample_05.html"><img src="assets/05/triptych__orig_recon_embedsPCA.png" loading="lazy" alt="sample 05"><div><span class="badge ok">✅ 28/28 checks</span> <span class="badge info">train</span> <span class="badge v2">emb 99.76%</span></div><div class="t">05 · 6c1968916f97cf11f599d7a2f87827d0-051</div></a><a class="scard" href="sample_06.html"><img src="assets/06/triptych__orig_recon_embedsPCA.png" loading="lazy" alt="sample 06"><div><span class="badge ok">✅ 28/28 checks</span> <span class="badge info">train</span> <span class="badge v2">emb 99.84%</span></div><div class="t">06 · 2fc83038cb02199f1e530808f50e3862-070</div></a><a class="scard" href="sample_07.html"><img src="assets/07/triptych__orig_recon_embedsPCA.png" loading="lazy" alt="sample 07"><div><span class="badge ok">✅ 28/28 checks</span> <span class="badge info">train</span> <span class="badge v2">emb 99.86%</span></div><div class="t">07 · 0eaf6f08eb7b83df35994a057433b60f-076</div></a><a class="scard" href="sample_08.html"><img src="assets/08/triptych__orig_recon_embedsPCA.png" loading="lazy" alt="sample 08"><div><span class="badge ok">✅ 28/28 checks</span> <span class="badge info">train</span> <span class="badge v2">emb 99.84%</span></div><div class="t">08 · 3975f1a050ffed03c03d91278e2d4841-197</div></a><a class="scard" href="sample_09.html"><img src="assets/09/triptych__orig_recon_embedsPCA.png" loading="lazy" alt="sample 09"><div><span class="badge ok">✅ 28/28 checks</span> <span class="badge info">train</span> <span class="badge v2">emb 99.86%</span></div><div class="t">09 · 5c20d39301b65963151038c28ca26742-221</div></a><a class="scard" href="sample_10.html"><img src="assets/10/triptych__orig_recon_embedsPCA.png" loading="lazy" alt="sample 10"><div><span class="badge ok">✅ 28/28 checks</span> <span class="badge val">val</span> <span class="badge v2">emb 99.76%</span></div><div class="t">10 · d5fa64f6a8c44c60aaec7b07776e23c4-150</div></a><a class="scard" href="sample_11.html"><img src="assets/11/triptych__orig_recon_embedsPCA.png" loading="lazy" alt="sample 11"><div><span class="badge ok">✅ 28/28 checks</span> <span class="badge val">val</span> <span class="badge v2">emb 99.83%</span></div><div class="t">11 · 4b390f75983c892cbb4144d5af260054-148</div></a></div>
+</main></body></html>

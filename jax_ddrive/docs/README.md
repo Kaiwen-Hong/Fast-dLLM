@@ -7,8 +7,10 @@ stable reference or a frozen historical log.
 
 | doc | scope |
 |---|---|
-| [`../to-host.md`](../to-host.md) / [`../to-host-chn.md`](../to-host-chn.md) | **The handoff doc** (En/中文 twins — update both): what exists, what's verified (numbers), how to reproduce, how to deploy, acceptance criteria. The status banner at the top carries the latest date. |
+| [`../to-host-chn.md`](../to-host-chn.md) | **The handoff doc** (中文; the English `to-host.md` twin was retired 2026-06-12): what exists, what's verified (numbers), how to reproduce, how to deploy, acceptance criteria. The status banner at the top carries the latest date. |
 | [`2implementation-details/DATASET_V2.md`](2implementation-details/DATASET_V2.md) | The production data format: v2 ArrayRecord schema (12 arrays + precomputed `image_embeds`), builder, verification chain, reader API, checkpoint/resume wiring, built-set inventory (local + GCS). |
+| [`quick-refresh.md`](quick-refresh.md) | Distilled-dataset quick tracker: per-set location (local / GCS / CNS), build date, size, format/AR status. Update when a distilled set is built or moved. |
+| [`5blockers/0612-blocker-v0.md`](5blockers/0612-blocker-v0.md) | 内部 TPU 部署的正式 blocker 分析(B1–B5)+ 备选路线 + from-base 衍生项(V1–V4)+ overfit 成功标准 + **可带出的简化验证日志规格** + 待拍板决策清单。版本化:`5blockers/MMDD-blocker-vN.md`,新版本新文件,旧版不改。 |
 
 The MaxText fork side is documented in the fork itself:
 `maxtext-dlm-fork/PATCHES.md` (file-by-file diff vs upstream, vendor sync rules, validation
@@ -22,6 +24,7 @@ commands).
 | `2implementation-details/01_pytorch_reference_algorithm.md` | the PyTorch SASD algorithm being ported |
 | `2implementation-details/EVAL_PIPELINE.md` | WOD-E2E eval (two stacks, one metric) |
 | `2implementation-details/DATASET.md` | v1 Parquet dataset (superseded for training by DATASET_V2, still the bit-exact source format) |
+| `2implementation-details/LABELING.md` | where labels come from (pseudo vs real), annotation provenance (dVLM-AD / GPT-4.1), the teacher-distill pipeline + scripts, the 400/800/50k/415k identity map, L=1280 |
 | `2implementation-details/AUDIT.md` | adversarial code-audit findings |
 | `3summary/REPORT.md`, `3summary/FEATURES.md` | phase-completion summaries |
 
@@ -44,7 +47,7 @@ commands).
    elsewhere (link instead). Frozen logs keep the *discovery* story, not the truth.
 2. When a milestone lands: update the living docs **in the same change**, and append a
    dated entry to a `4collect/` log (create `NN_<topic>_progress.md`, numbered).
-3. `to-host.md` and `to-host-chn.md` are twins — never update one without the other.
+3. The handoff doc is `to-host-chn.md` (中文 only; the English `to-host.md` twin is retired).
 4. Plans in `1plans/` are written once and frozen; deviations are recorded in the living
    docs, not by editing the plan.
 5. Big artifacts (datasets, ckpts, oracles) live under `/home/kaiwen/data/fast-ddrive/`

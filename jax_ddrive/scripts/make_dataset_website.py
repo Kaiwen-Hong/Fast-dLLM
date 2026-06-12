@@ -1,9 +1,10 @@
-"""Generate a self-contained static website explaining the SASD training dataset:
-what a processed record looks like, how it is built from raw WOD-E2E, and how it is
-fed into the model — illustrated with the 10 verified round-2 examples.
+"""Generate a self-contained static website explaining the SASD **v2** training dataset:
+what a processed record looks like (incl. precomputed `image_embeds`), how it is built
+from raw WOD-E2E, and how it is fed into the model — illustrated with the 12 verified
+round-2 examples (10 train + 2 val).
 
-Reads the round-2 artifacts under /home/kaiwen/data/fast-ddrive/verify_round2/
-(ar_npz, viz_data.json, review.md PNGs, src.json) and writes a static site
+Reads the round-2 v2 artifacts under /home/kaiwen/data/fast-ddrive/verify_round2_v2/
+(ar_npz, embeds_check, viz_data.json, review PNGs, src.json) and writes a static site
 (pure relative paths, no CDN, no JS dependencies) to jax_ddrive/visualizations/.
 
 Run (ddrive env):
@@ -23,21 +24,21 @@ import numpy as np
 REPO = "/home/kaiwen/Desktop/research/Fast-dLLM"
 SNAP = ("/home/kaiwen/data/huggingface/hub/models--Efficient-Large-Model--Fast-dDrive/"
         "snapshots/0fda81009f4efa58a2debbb48c0c09818e45341f")
-VR = "/home/kaiwen/data/fast-ddrive/verify_round2"
-AR_DIR = "/home/kaiwen/data/fast-ddrive/hf/wod_e2e_sasd_full_tfexample_ar"
+VR = "/home/kaiwen/data/fast-ddrive/verify_round2_v2"
+HF = "/home/kaiwen/data/fast-ddrive/hf"
 OUT = REPO + "/jax_ddrive/visualizations"
 
 sys.path.insert(0, REPO + "/jax_ddrive")
 sys.path.insert(0, REPO + "/jax_ddrive/scripts")
 from verify_ar_round2 import (_render_collapsed, _runs, IMAGE_PAD, MASK_ID,  # noqa: E402
-                              IM_START, IM_END, AB_TO_SECTION)
+                              IM_START, IM_END)
 from ddrive_jax.diffusion import noise as noise_mod                          # noqa: E402
 
 E = html.escape
 
 CSS = """
 :root { --bg:#f7f8fa; --card:#fff; --ink:#1c2733; --mut:#6b7a8c; --acc:#0b66c3;
-        --ok:#1d8a4e; --line:#e3e8ee; --code:#f1f4f8; }
+        --ok:#1d8a4e; --line:#e3e8ee; --code:#f1f4f8; --v2:#7c3aed; }
 * { box-sizing: border-box; }
 body { margin:0; font:15px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,
        "Helvetica Neue",Arial,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
@@ -56,8 +57,7 @@ h3 { font-size:16px; margin:22px 0 8px; }
         padding:16px 20px; margin:14px 0; }
 .grid { display:grid; gap:14px; }
 .grid.c2 { grid-template-columns:1fr 1fr; } .grid.c3 { grid-template-columns:1fr 1fr 1fr; }
-.grid.c5 { grid-template-columns:repeat(5,1fr); }
-@media (max-width:900px){ .grid.c2,.grid.c3,.grid.c5{grid-template-columns:1fr;} }
+@media (max-width:900px){ .grid.c2,.grid.c3{grid-template-columns:1fr;} }
 table { border-collapse:collapse; width:100%; font-size:13.5px; }
 th,td { border:1px solid var(--line); padding:6px 10px; text-align:left; vertical-align:top; }
 th { background:#eef2f7; }
@@ -72,11 +72,14 @@ img { max-width:100%; height:auto; border:1px solid var(--line); border-radius:8
          font-weight:700; }
 .badge.ok { background:#e3f6ec; color:var(--ok); }
 .badge.info { background:#e4eefb; color:var(--acc); }
+.badge.v2 { background:#f1e9fe; color:var(--v2); }
+.badge.val { background:#fdebd0; color:#9c640c; }
 details { margin:10px 0; }
 details > summary { cursor:pointer; font-weight:600; color:var(--acc); }
 .flow { display:flex; flex-direction:column; gap:0; margin:18px 0; }
 .stage { background:var(--card); border:1px solid var(--line); border-left:5px solid var(--acc);
          border-radius:10px; padding:12px 18px; }
+.stage.v2 { border-left-color:var(--v2); }
 .stage h3 { margin:2px 0 6px; }
 .stage .env { float:right; font-size:12px; color:var(--mut); }
 .arrow { text-align:center; color:var(--mut); font-size:20px; line-height:1.4; }
@@ -94,20 +97,19 @@ details > summary { cursor:pointer; font-weight:600; color:var(--acc); }
         font-size:13.5px; }
 """
 
-NAV_SAMPLES = "".join(f'<a href="sample_{k:02d}.html">{k:02d}</a>' for k in range(10))
 
-
-def nav(active="index"):
-    return (f'<nav><span class="brand">Fast-dDrive SASD dataset review</span>'
+def nav(n_samples):
+    links = "".join(f'<a href="sample_{k:02d}.html">{k:02d}</a>' for k in range(n_samples))
+    return (f'<nav><span class="brand">Fast-dDrive SASD dataset v2 review</span>'
             f'<a href="index.html">总览 / Pipeline / 喂给模型</a>'
-            f'<span style="color:#829ab1">样本:</span>{NAV_SAMPLES}</nav>')
+            f'<span style="color:#829ab1">样本:</span>{links}</nav>')
 
 
-def page(title, body, active="index"):
+def page(title, body, n_samples):
     return (f'<!doctype html><html lang="zh"><head><meta charset="utf-8">'
             f'<meta name="viewport" content="width=device-width,initial-scale=1">'
             f'<title>{E(title)}</title><style>{CSS}</style></head>'
-            f'<body>{nav(active)}<main>{body}</main></body></html>')
+            f'<body>{nav(n_samples)}<main>{body}</main></body></html>')
 
 
 def parse_checks(review_md):
@@ -124,6 +126,11 @@ def fmt_bytes(n):
     return f"{n:.1f} PB"
 
 
+SAMPLE_PNGS = ["triptych__orig_recon_embedsPCA.png", "side_by_side__orig_vs_recon.png",
+               "embeds_recompute_diff.png", "bev_trajectory.png",
+               "sequence_layout.png", "position_ids.png", "attn_mask.png"]
+
+
 def main():
     from transformers import AutoTokenizer
     tok = AutoTokenizer.from_pretrained(SNAP, trust_remote_code=True)
@@ -131,17 +138,22 @@ def main():
     loc = json.load(open(os.path.join(VR, "locations.json")))
     src = {s["sample_id"]: s for s in json.load(open(os.path.join(VR, "src.json")))}
     os.makedirs(OUT, exist_ok=True)
+    # clear stale per-sample pages/assets from previous (v1) generations
+    for p in glob.glob(os.path.join(OUT, "sample_*.html")):
+        os.remove(p)
+    shutil.rmtree(os.path.join(OUT, "assets"), ignore_errors=True)
 
-    ar_files = glob.glob(os.path.join(AR_DIR, "train-*.arrayrecord"))
-    ar_total = sum(os.path.getsize(f) for f in ar_files)
+    sizes = {d: sum(os.path.getsize(f) for f in glob.glob(os.path.join(HF, d, "*")))
+             for d in ["wod_e2e_sasd_full_v2_ar", "wod_e2e_sasd_50k_v2_ar",
+                       "wod_e2e_sasd_val_v2_ar", "wod_e2e_sasd_v2_ar"]}
 
     samples = []
     for k, sid in enumerate(loc["order"]):
+        split = loc["splits"][sid]
         sdir = os.path.join(VR, "review", f"{k:02d}_{sid}")
         adir = os.path.join(OUT, "assets", f"{k:02d}")
         os.makedirs(adir, exist_ok=True)
-        for png in ["side_by_side__orig_vs_recon.png", "bev_trajectory.png",
-                    "sequence_layout.png", "position_ids.png", "attn_mask.png"]:
+        for png in SAMPLE_PNGS:
             shutil.copy2(os.path.join(sdir, png), os.path.join(adir, png))
         item = src[sid]
         for i, rel in enumerate(item["image"]):
@@ -177,7 +189,7 @@ def main():
                              float(ar["block_alpha"][b]), float(ar["block_beta"][b])))
 
         samples.append(dict(
-            k=k, sid=sid, L=L, rs=rs, re=re_, vd=vd, checks=checks,
+            k=k, sid=sid, split=split, L=L, rs=rs, re=re_, vd=vd, checks=checks,
             n_blocks=int(ar["n_blocks"]), grid=ar["image_grid_thw"].tolist(),
             runs=[ln for _, ln in pad_runs], npix=int(ar["pixel_values"].shape[0]),
             mask_tail=int((ids[re_:] == MASK_ID).sum()),
@@ -186,10 +198,11 @@ def main():
             ans=ans_decoded, full=full_decoded,
             noisy=noisy_answer, comp=comp_answer, n_masked=n_masked, n_comp=n_comp,
             n_resp=int((labels != -100).sum()),
-            loc=loc["locations"][sid], sec_rows=sec_rows, n_imgs=len(item["image"]),
+            loc=loc["locations"][sid], sec_rows=sec_rows,
+            emb=vd["embeds"],
         ))
 
-    write_index(samples, ar_total, len(ar_files))
+    write_index(samples, sizes)
     for s in samples:
         write_sample(s, len(samples))
     write_readme()
@@ -197,7 +210,8 @@ def main():
 
 
 # ───────────────────────────────────────────────────────── index sections ────
-def write_index(S, ar_total, n_ar_files):
+def write_index(S, sizes):
+    n = len(S)
     s0 = S[0]
     schema_rows = [
         ("sample_id", "str", "WOD-E2E frame id（frame.context.name），可 join 回 GT", "追溯/调试"),
@@ -210,69 +224,102 @@ def write_index(S, ar_total, n_ar_files):
         ("block_alpha / block_beta", f"[{s0['n_blocks']}] f32", "每块 Beta(α,β) 噪声调度：CO(1,2) exp(1,1) fmb(1,1.5) traj(2,1)", "在线加噪采样 mask 比例"),
         ("position_ids", "[3,1184] int32", "3D M-RoPE 位置（temporal/height/width 三通道）", "RoPE cos/sin"),
         ("vision_mask", "[1184] bool", "vision token 位置（image_pad / vision_start / vision_pad）", "辅助/调试"),
-        ("pixel_values", f"[{s0['npix']},1176] f16", "3 张图的像素 patch：每行=14×14×3 通道×2 时间帧，CLIP 归一化（可逆,已验证可重建回原图）", "frozen ViT 输入"),
-        ("image_grid_thw", "[3,3] int64", f"每图 (t,h,w) patch 网格 = {s0['grid'][0]}", "ViT 索引 + M-RoPE"),
+        ("pixel_values", f"[{s0['npix']},1176] f16", "3 张图的像素 patch：每行=14×14×3 通道×2 时间帧，CLIP 归一化（可逆；保留它使 embeds 永远可独立复验）", "复验源（v2 训练不再喂 ViT）"),
+        ("image_grid_thw", "[3,3] int64", f"每图 (t,h,w) patch 网格 = {s0['grid'][0]}", "索引 + M-RoPE"),
+        ("<b>image_embeds</b> ⭐v2", "[168,2048] bf16", "frozen ViT 输出<b>离线预计算</b>(fp32 highest → bf16,单份;loader `concat([ie,ie])` 翻倍到 336)——训练时直接散射到占位符位置,pod 上不再跑 ViT", "<b>模型的图像输入</b>"),
         ("L / n_blocks", "标量", "序列长 / response 块数", "静态形状"),
     ]
     schema_html = "".join(
-        f"<tr><td><code>{E(a)}</code></td><td><code>{E(b)}</code></td><td>{c}</td><td>{d}</td></tr>"
+        f"<tr><td><code>{a}</code></td><td><code>{E(b)}</code></td><td>{c}</td><td>{d}</td></tr>"
         for a, b, c, d in schema_rows)
 
     stages = [
-        ("Stage 0 — 原始数据", "—",
-         "WOD-E2E tfrecords（263 shards，877 GB）。每帧一个 <code>E2EDFrame</code> proto：8 路相机 JPEG、"
-         "16 点自车历史（@0.25s）、20 点未来轨迹（@4Hz，<b>真值</b>）、导航 intent、rater 偏好轨迹。",
-         "<code>/home/kaiwen/data/fast-ddrive/waymo/train/</code>"),
+        ("Stage 0 — 原始数据", "—", "",
+         "WOD-E2E tfrecords(263 train + 93 val shards,~1.1 TB)。每帧一个 <code>E2EDFrame</code> proto:"
+         "8 路相机 JPEG、16 点自车历史(@0.25s)、20 点未来轨迹(@4Hz,<b>真值</b>)、导航 intent、rater 偏好轨迹。",
+         "<code>/home/kaiwen/data/fast-ddrive/waymo/</code>"),
         ("Stage 1 — 抽取 + 造 prompt/target", "autovla env",
-         "<code>fast_ddrive/data/convert_wod_e2e.py --with_target</code>：取<b>左前/正前/右前</b> 3 路相机存 JPEG；"
-         "用固定指令模板 + 导航命令 + 7 点自车历史（@0.5s，含位置/速度/加速度）拼出 prompt"
-         "（对官方 sample.json <b>逐字节验证</b>过）；target JSON 里 <b>trajectory=真值 5 点@1s</b>，"
-         "future_meta_behavior 由轨迹+intent 派生，critical_objects/explanation 是伪标签（已知限制，可 teacher-distill 升级）。",
-         "输出：train JSON + JPEGs"),
+         "✅ prompt 对官方 sample.json 逐字节验证",
+         "<code>fast_ddrive/data/convert_wod_e2e.py --with_target</code>:取<b>左前/正前/右前</b> 3 路相机存 JPEG;"
+         "固定指令模板 + 导航命令 + 7 点自车历史(@0.5s)拼 prompt;target JSON 里 <b>trajectory=真值 5 点@1s</b>,"
+         "future_meta_behavior 派生,critical_objects/explanation 是伪标签(已知限制,可 teacher-distill 升级)。"
+         "val split 加 <code>--rated_only</code>(479 个 rater 评分帧)。",
+         "输出:train/val JSON + JPEGs"),
         ("Stage 2 — Token 化 + SASD 结构", "ddrive env",
-         "<code>jax_ddrive/eval/prep_train_jax.py</code>：HF processor（chat template；每图 resize 到 ≤64 个 merged "
-         "token → 16×14 patch 网格）；<code>process_gpt</code> 规范化 answer（去 mdm 标记、explanation 补 "
-         "<code>&lt;|NULL|&gt;</code>、轨迹格式化成 ±06.2f）；标 labels（assistant 区间）；deep-scaffold 检测出 "
-         "scaffold/value、按 section 切块（rbi/turn）、配权重和 Beta(α,β)；算 3D M-RoPE position_ids；"
-         "尾部 pad <code>|&lt;MASK&gt;|</code> 到 32 的倍数 → L=1184 全集统一。",
-         "输出：每帧一个 npz（12 个数组）"),
-        ("Stage 3 — 打包成训练容器", "—",
-         "<code>prep_to_parquet.py</code>（bit-exact 字节 blob + shape 列）→ 6499 个 parquet → "
-         "<code>pack_parquet.py</code> 合并成 130 个（纯 concat，内容不变）→ "
-         "<code>parquet_file_to_tfexample_ar.py</code> → <b>130 个 ArrayRecord shard（tf.train.Example）</b>。"
-         "grain 直接随机访问读取。",
-         "输出：<code>hf/wod_e2e_sasd_full_tfexample_ar/</code>"),
+         "✅ round-2:12 列 vs 从 raw 重跑 bit-exact",
+         "<code>jax_ddrive/eval/prep_train_jax.py</code>:HF processor(chat template;每图 16×14 patch 网格);"
+         "<code>process_gpt</code> 规范化 answer;标 labels;deep-scaffold 检测 scaffold/value、按 section 切块"
+         "(rbi/turn)、配权重和 Beta(α,β);3D M-RoPE position_ids;pad 到 L=1184。",
+         "输出:每帧一个 npz(12 个数组)"),
+        ("Stage 3 — Parquet(bit-exact 真相源)", "pyarrow",
+         "✅ 三方计数对账;packed=唯一本地 parquet 源",
+         "<code>prep_to_parquet.py</code>(原始字节 blob + shape 列,无损)→ "
+         "<code>pack_parquet.py</code>(纯 concat 合并成 130 个文件,内容不变)。",
+         "输出:<code>wod_e2e_sasd_full_packed/</code> 178G"),
+        ("Stage 4 — AR v2:预计算 ViT embeds ⭐", "jax venv + 5090 GPU",
+         "✅ 构建期四道内建检查:每 shard jit-vs-eager ViT 抽查(观测 ≤5e-6,硬上限 1e-3)· bitwise recompute + bf16 roundtrip · 计数对账 · AR↔parquet 逐字节(test_ar_pipeline.py)",
+         "<code>jax_ddrive/scripts/parquet_to_ar_with_embeds.py</code>(~19 样本/s,原子可断点续):"
+         "对每帧跑 frozen ViT(fp32 highest)→ bf16 存为 <code>image_embeds</code>,连同 13 个原字段一起打成 "
+         "ArrayRecord(tf.train.Example)。<b>这就是 TPU 训练直接消费的生产格式。</b>",
+         "输出:v2 AR 四个 split(下表)"),
     ]
     stages_html = "".join(
-        f'<div class="stage"><span class="env">{env}</span><h3>{name}</h3><p>{desc}</p>'
-        f'<p class="kv">{io}</p></div>' + ('<div class="arrow">⬇︎</div>' if i < len(stages) - 1 else "")
-        for i, (name, env, desc, io) in enumerate(stages))
+        f'<div class="stage{" v2" if "⭐" in name else ""}"><span class="env">{env}</span>'
+        f'<h3>{name}</h3>'
+        + (f'<p class="kv" style="color:var(--ok)">{ver}</p>' if ver else "")
+        + f'<p>{desc}</p><p class="kv">{io}</p></div>'
+        + ('<div class="arrow">⬇︎</div>' if i < len(stages) - 1 else "")
+        for i, (name, env, ver, desc, io) in enumerate(stages))
+
+    split_rows = [
+        ("wod_e2e_sasd_full_v2_ar", "415,663", "130", "生产训练(full)"),
+        ("wod_e2e_sasd_50k_v2_ar", "50,331", "787", "shakeout 训练"),
+        ("wod_e2e_sasd_val_v2_ar", "479", "8", "val(rated 帧,训练格式带 target)"),
+        ("wod_e2e_sasd_v2_ar", "400", "7", "烟测/单测"),
+    ]
+    splits_html = "".join(
+        f"<tr><td><code>{d}</code></td><td>{r}</td><td>{sh}</td>"
+        f"<td>{fmt_bytes(sizes[d])}</td><td>{role}</td></tr>"
+        for d, r, sh, role in split_rows)
 
     cards = "".join(
         f'<a class="scard" href="sample_{s["k"]:02d}.html">'
-        f'<img src="assets/{s["k"]:02d}/side_by_side__orig_vs_recon.png" loading="lazy" '
+        f'<img src="assets/{s["k"]:02d}/triptych__orig_recon_embedsPCA.png" loading="lazy" '
         f'alt="sample {s["k"]:02d}">'
         f'<div><span class="badge ok">✅ {sum(1 for _, v in s["checks"] if v == "✅")}/'
-        f'{len(s["checks"])} checks</span> <span class="badge info">L={s["L"]}</span> '
-        f'<span class="badge info">{s["n_blocks"]} blocks</span></div>'
+        f'{len(s["checks"])} checks</span> '
+        + (f'<span class="badge val">val</span> ' if s["split"] == "val"
+           else '<span class="badge info">train</span> ')
+        + f'<span class="badge v2">emb {s["emb"]["bitwise_frac"]:.2%}</span></div>'
         f'<div class="t">{s["k"]:02d} · {E(s["sid"])}</div></a>'
         for s in S)
 
+    n_train = sum(1 for s in S if s["split"] == "train")
+    n_val = n - n_train
     body = f"""
-<h1>Fast-dDrive SASD 训练数据集 — 是什么、怎么来的、怎么喂给模型</h1>
-<p class="sub">数据集：<code>wod_e2e_sasd_full_tfexample_ar</code> · 415,663 个训练帧 · {n_ar_files} 个
-ArrayRecord shard（共 {fmt_bytes(ar_total)}）· 全部样本统一 L=1184 ·
-本站 10 个样本均通过 round-2 逐列 bit-exact 验证（见各样本页 checks 表）</p>
+<h1>Fast-dDrive SASD 训练数据集 <span class="badge v2">v2</span> — 是什么、怎么来的、怎么喂给模型</h1>
+<p class="sub">生产格式:<code>wod_e2e_sasd_*_v2_ar</code>(ArrayRecord,13 原字段 + 预计算
+<code>image_embeds</code>)· 全量 415,663 帧 · 本站 {n} 个样本({n_train} train + {n_val} val)
+均通过 round-2 验证:12 列 vs 从 raw 重跑 bit-exact + embeds 从像素复算两层判据</p>
 
-<div class="card"><b>一句话:</b> 每条记录 = 一个驾驶瞬间。<b>三张前视相机图</b>（像素存在
-<code>pixel_values</code>，<u>不在</u> input_ids 里）+ <b>文本 prompt</b>（任务指令、导航命令、3 秒自车历史）
-+ <b>JSON 答案</b>（critical_objects / explanation / future_meta_behavior / <b>真值轨迹</b>），
-外加一套 SASD 训练结构（哪些 token 可加噪、各属哪个 section、权重和噪声调度是什么）。</div>
+<div class="card"><b>一句话:</b> 每条记录 = 一个驾驶瞬间。<b>三张前视相机图</b>(像素在
+<code>pixel_values</code>,<b>v2 还存了它们的 frozen-ViT 输出 <code>image_embeds</code></b> ——
+训练时直接用,pod 上不再跑 ViT)+ <b>文本 prompt</b>(任务指令、导航命令、3 秒自车历史)
++ <b>JSON 答案</b>(critical_objects / explanation / future_meta_behavior / <b>真值轨迹</b>),
+外加一套 SASD 训练结构(哪些 token 可加噪、各属哪个 section、权重和噪声调度)。</div>
+
+<div class="card"><h3 style="margin-top:0">v1 → v2 变了什么</h3>
+<table><tr><th></th><th>AR v1(已退役,仅存 GCS)</th><th>AR v2(生产格式)</th></tr>
+<tr><td>字段</td><td>12 数组 + 3 标量(只有像素)</td><td>同样 13 个字段全保留 + <b>image_embeds bf16 [168,2048]</b></td></tr>
+<tr><td>训练时图像处理</td><td>每 step 在 host 跑 frozen ViT(数据循环被卡住)</td><td>读现成 embeds → 纯 IO;pod 零 ViT/transformers 依赖</td></tr>
+<tr><td>v6e-1 实测吞吐</td><td>65 TFLOP/s/device</td><td><b>83.4 TFLOP/s/device(+28%)</b></td></tr>
+<tr><td>谁能读</td><td>无训练路径读它(都走 parquet)</td><td><code>make_sasd_loader</code> 按扩展名自动探测;FSDP harness 与 MaxText 直接消费;iterator 状态进 ckpt → <b>resume 续流不重放</b>(v6e-1 实测续训 12..17)</td></tr>
+<tr><td>split</td><td>train only</td><td>full / 50k / 400 / <b>val 479(训练格式带 target)</b></td></tr></table></div>
 
 <h2 id="record">① 处理后的一条记录长什么样</h2>
-<p>13 个字段。注意:<code>input_ids</code> 中的"图像部分"只是 56×3 个相同的占位符
-<code>&lt;|image_pad|&gt;</code>(id 151655),真正的像素在 <code>pixel_values</code> 列,
-forward 时 ViT 输出才被散射到占位符位置。</p>
+<p>14 个字段。注意:<code>input_ids</code> 中的"图像部分"只是 56×3 个相同的占位符
+<code>&lt;|image_pad|&gt;</code>(id 151655);像素在 <code>pixel_values</code>,
+<b>模型实际吃的图像表示在 <code>image_embeds</code></b>(forward 时散射到占位符位置)。</p>
 <table><tr><th>字段</th><th>形状/类型</th><th>含义</th><th>训练时用途</th></tr>{schema_html}</table>
 
 <h3>一个样本的序列布局(样本 00,L=1184 个 token 各是什么)</h3>
@@ -280,16 +327,23 @@ forward 时 ViT 输出才被散射到占位符位置。</p>
 <p class="kv">上条:区域/section(灰=prompt 文本,蓝=图像占位区,橙/绿/紫/红=答案四个 section,黑=MASK pad)。
 下条:训练角色——深灰 scaffold(JSON 骨架,冻结)、红 value(被加噪+训练的内容)、黑 pad。</p>
 
-<h2 id="pipeline">② 从 raw 数据怎么处理出来的</h2>
+<h2 id="pipeline">② 从 raw 数据怎么处理出来的(每级带验证)</h2>
 <div class="flow">{stages_html}</div>
-<div class="note">验证情况:本站 10 个样本从 raw tfrecord 重跑了整条链并与 ArrayRecord 记录<b>逐列
-bit-exact</b> 比对(12 数组列 + 9 项结构自检 + answer 文本 round-trip + 轨迹=真值@1s ± 0.005 +
-像素重建),全部通过;语义链路另有端到端证据——同一 prep 管线产出的 479 帧 val 集上,
-JAX/PyTorch 双栈官方指标 ADE@3s 0.839/0.814、RFS 7.93/7.91 持平。</div>
+<h3>v2 AR 四个 split(本地 + GCS 镜像)</h3>
+<table><tr><th>目录(/home/kaiwen/data/fast-ddrive/hf/)</th><th>行数</th><th>shards</th><th>大小</th><th>角色</th></tr>
+{splits_html}</table>
+<div class="note">本站验证(round-2,2026-06-12):对 {n} 个样本从 raw tfrecord 重跑整条链,
+12 个数组列与 v2 AR 记录<b>逐列 bit-exact</b>;<code>image_embeds</code> 用存储的像素重新过
+frozen ViT(fp32 highest → bf16)比对,两层判据 = bitwise ≥98.5%(实测 ~99.8%)且每个
+mismatch ≤1.5× 自身 bf16 ulp 或 |Δ|≤2e-3(全部通过;bf16 级全局 rel 仅作诊断报告——单个大幅值
+元素的 1-ulp 翻转就有 ~2⁻⁸ 相对量级,对它设门限是范畴错误)。端到端旁证:同一 prep 管线的
+479 帧 val 上 JAX/PyTorch 官方指标 ADE@3s 0.839/0.814、RFS 7.93/7.91 持平。</div>
 
-<h2 id="feed">③ 训练时怎么喂给模型(每个 train step)</h2>
+<h2 id="feed">③ 训练时怎么喂给模型(每个 train step,v2 路径)</h2>
 <div class="card">
-<p><b>1. 读取:</b> grain loader 按 host 切分全局 shuffle 流(确定性、可断点续跑),每 step 取一批记录。</p>
+<p><b>1. 读取:</b> <code>make_sasd_loader</code> 按扩展名自动探测 AR(lazy 随机访问,全量可用)/
+parquet;按 host 切分全局 shuffle 流,确定性、可断点续;<b>iterator 状态随 checkpoint 保存,
+resume 续流不重放</b>。batch 里直接带 <code>image_embeds (B,168,2048) bf16</code>。</p>
 <p><b>2. 在线加噪(<code>noise.make_batch</code>):</b> 每个 response 块抽
 <code>t ~ Beta(α,β)</code> → 以概率 <code>p=(1-ε)t+ε</code> 把该块的 <b>value</b> token 替换成
 <code>|&lt;MASK&gt;|</code>(scaffold 冻结;<code>&lt;|im_end|&gt;</code> 必 mask)。轨迹块 α,β=(2,1)
@@ -298,14 +352,16 @@ JAX/PyTorch 双栈官方指标 ADE@3s 0.839/0.814、RFS 7.93/7.91 持平。</div
 <pre>row 0 (mdm):  [ x_t  = 答案被随机 mask     | x_0 = 干净原序列 ]   ← labels: 只在被 mask 的位置
 row 1 (comp): [ x̄_t = 互补位置被 mask      | x_0 = 干净原序列 ]   ← labels: 互补位置
 </pre>
-<p><b>4. 图像:</b> frozen ViT 跑 <code>pixel_values</code> → 每图 56 个 [2048] embed,复制两份
-(noisy/clean 半边),散射到两行序列里 <code>&lt;|image_pad|&gt;</code> 的位置(stop_gradient,ViT 不训练)。</p>
-<p><b>5. 位置 & 注意力:</b> position_ids 平铺两份 → M-RoPE cos/sin;由 rbi/turn 构建 [2L,2L]
-hybrid block-causal mask(下图)。</p>
+<p><b>4. 图像(v2):</b> 直接取记录里的 <code>image_embeds</code> →
+<code>concat([ie,ie])</code> 翻倍到 [336,2048] → 散射到两行序列里 <code>&lt;|image_pad|&gt;</code>
+的位置。<b>不再有任何 ViT 前向</b>(v1 在这里每 step 跑一次 frozen ViT —— 数据循环因此从
+65 提到 83.4 TFLOP/s/device)。</p>
+<p><b>5. 位置 & 注意力:</b> position_ids 平铺两份 → M-RoPE cos/sin(contiguous-chunk 布局,
+非 MaxText 内建 interleaved);由 rbi/turn 构建 [2L,2L] hybrid block-causal mask(下图)。</p>
 <p><b>6. loss:</b>
 <code>Σ section_weighted_CE(noisy 半边 logits, labels, w) + causal_CE(clean 半边 row0, 原 labels)</code>,
-除以 <code>2×答案 token 数</code>。两套消费方:NNX FSDP harness(<code>train_tpu.py</code>)和
-MaxText <code>objective="sasd"</code> —— 共用同一 mask/loss/加噪数学(bit-exact port)。</p>
+除以 <code>2×答案 token 数</code>。消费方:NNX FSDP harness(<code>train_tpu.py</code>)和
+MaxText <code>objective="sasd"</code>(fork @ a645b25,vendored 自包含 <code>sasd_data/</code>)。</p>
 </div>
 <div class="grid c2">
 <div><img src="assets/00/attn_mask.png" alt="attention mask">
@@ -315,19 +371,20 @@ MaxText <code>objective="sasd"</code> —— 共用同一 mask/loss/加噪数学
 <p class="kv">3D M-RoPE:文本区三通道重合对角线;图像区 t 持平、h/w 锯齿;图像段只前进
 max(h,w),所以末端位置 ≈1040 &lt; 1184。</p></div>
 </div>
-<p>每个样本页底部都有"加噪后模型实际看到的序列"文本示例(row 0 与互补 row 1)。</p>
+<p>每个样本页底部都有"加噪后模型实际看到的序列"文本示例(mdm 行 + 互补行)。</p>
 
-<h2 id="samples">④ 10 个已验证样本(点进去看完整编码)</h2>
+<h2 id="samples">④ {n} 个已验证样本(点进去看完整编码;缩略图 = 原图 | 像素重建 | embeds PCA)</h2>
 <div class="cards">{cards}</div>
 """
     open(os.path.join(OUT, "index.html"), "w").write(page(
-        "Fast-dDrive SASD 数据集 — 总览", body))
+        "Fast-dDrive SASD 数据集 v2 — 总览", body, n))
 
 
 # ───────────────────────────────────────────────────────── sample pages ────
 def write_sample(s, n):
     k, sid = s["k"], s["sid"]
     a = f"assets/{k:02d}"
+    emb = s["emb"]
     checks_html = "".join(f"<tr><td><code>{E(nm)}</code></td><td>{v}</td></tr>"
                           for nm, v in s["checks"])
     secs_html = "".join(
@@ -343,34 +400,44 @@ def write_sample(s, n):
     next_html = (f'<a href="sample_{k + 1:02d}.html">样本 {k + 1:02d} →</a>'
                  if k < n - 1 else '<a href="index.html">回总览 →</a>')
     n_ok = sum(1 for _, v in s["checks"] if v == "✅")
+    split_badge = ('<span class="badge val">val split</span>' if s["split"] == "val"
+                   else '<span class="badge info">train split</span>')
 
     body = f"""
 <div class="pn">{prev_html}{next_html}</div>
-<h1>样本 {k:02d} <span class="badge ok">✅ {n_ok}/{len(s["checks"])} checks PASS</span></h1>
-<p class="sub"><code>{E(sid)}</code> · ArrayRecord shard {s["loc"]["shard"]} row {s["loc"]["row"]}
-· L={s["L"]} · 答案区间 [{s["rs"]}, {s["re"]}) · {s["n_blocks"]} blocks
-· 每图 {s["runs"]} merged tokens · pixel_values [{s["npix"]},1176] · MASK 尾部 pad {s["mask_tail"]}</p>
+<h1>样本 {k:02d} {split_badge} <span class="badge ok">✅ {n_ok}/{len(s["checks"])} checks PASS</span></h1>
+<p class="sub"><code>{E(sid)}</code> · v2 AR({s["split"]})shard {s["loc"]["shard"]}
+row {s["loc"]["row"]} · L={s["L"]} · 答案区间 [{s["rs"]}, {s["re"]}) · {s["n_blocks"]} blocks
+· 每图 {s["runs"]} merged tokens · pixel_values [{s["npix"]},1176] f16
+· image_embeds [168,2048] bf16 · MASK 尾部 pad {s["mask_tail"]}</p>
 
 <h2>1 · 原始输入:三张前视相机图</h2>
 <div class="grid c3">{origs}</div>
-<h3>数据集里的像素 vs 原图(左=原图缩放,右=从 <code>pixel_values</code> 反演重建)</h3>
-<div class="grid c2"><div><img src="{a}/side_by_side__orig_vs_recon.png" alt="recon"></div>
-<div class="kv"><p>右列由数据集 fp16 patch 逆变换(逆 patchify + 逆 CLIP 归一化)得到,与原图逐像素一致
-→ 证明 <code>pixel_values</code> 确实是这三张图、顺序=左/中/右。</p>
-<p>每图被 resize 到 16×14=224 个 14×14 patch → ViT 后 2×2 合并 → <b>56 个 image token</b>。</p></div></div>
 
-<h2>2 · 原始输入:文本 prompt(含数值自车历史)与训练目标</h2>
+<h2>2 · 像素 → 重建 → <span class="badge v2">v2</span> ViT embeds(模型实际吃的图像表示)</h2>
+<p class="kv">每行一台相机:左=原图缩放;中=从数据集 <code>pixel_values</code> 反演重建(逐像素一致
+→ 像素列正确);右=该图 56 个 <code>image_embeds</code>(8×7 merged-token 网格)的 top-3 PCA→RGB
+——语义相近区域颜色相近、空间结构与图像对应,直观确认 embeds 编码的就是这张图。</p>
+<img src="{a}/triptych__orig_recon_embedsPCA.png" alt="triptych">
+<h3>embeds 数值验证:从存储像素重新过 frozen ViT(fp32 highest → bf16)</h3>
+<div class="grid c2">
+<div><img src="{a}/embeds_recompute_diff.png" alt="embeds diff"></div>
+<div class="kv"><p>bitwise 一致 <b>{emb["bitwise_frac"]:.4%}</b>;全部 mismatch 都是舍入边界翻转
+(≤1.5× 自身 bf16 ulp 或 |Δ|≤2e-3);max|Δ| = {emb["max_abs_diff"]:.2e};bf16 级全局 rel
+{emb["global_rel"]:.2e}(仅诊断)。热图无空间结构 → 纯数值噪声而非内容差异。
+真正的损坏(错图/错行)会让 bitwise 一致率崩到 ~0%。</p></div></div>
+
+<h2>3 · 原始输入:文本 prompt(含数值自车历史)与训练目标</h2>
 <details><summary>展开 prompt 原文(Stage-1 生成,navigation = {E(s["vd"]["nav"])})</summary>
 <pre>{E(s["prompt"])}</pre></details>
 <details><summary>展开 target:原始 gpt JSON(Stage-1)</summary><pre>{E(s["gpt_raw"])}</pre></details>
 <h3>BEV 俯视图:prompt 里的历史 + 答案里编码的轨迹 vs 真值</h3>
 <img src="{a}/bev_trajectory.png" alt="bev">
 <p class="kv">蓝=prompt 中 7 个历史点(@0.5s);红 ×=答案 JSON 编码的 5 个 waypoint(@1s);
-灰=tfrecord 真值 20 点(@4Hz)。红 × 落在灰线上 → 答案轨迹就是真值(检查项
-<code>traj:encoded_5wp==GT@1s</code>)。fmb: {E(s["vd"]["fmb_longitudinal"])} /
-{E(s["vd"]["fmb_lateral"])}。</p>
+灰=tfrecord 真值 20 点(@4Hz)。红 × 落在灰线上 → 答案轨迹就是真值。fmb:
+{E(s["vd"]["fmb_longitudinal"])} / {E(s["vd"]["fmb_lateral"])}。</p>
 
-<h2>3 · 编码结果:token 序列</h2>
+<h2>4 · 编码结果:token 序列</h2>
 <img src="{a}/sequence_layout.png" alt="layout">
 <details><summary>展开完整解码的 input_ids(占位符折叠;⟨…×N⟩ 表示 N 个连续相同 token)</summary>
 <pre>{E(s["full"])}</pre></details>
@@ -380,37 +447,39 @@ def write_sample(s, n):
 <table><tr><th>block</th><th>section</th><th>#token</th><th>loss 权重</th><th>α</th><th>β</th></tr>
 {secs_html}</table>
 
-<h2>4 · 位置编码与注意力 mask(模型的另两路输入)</h2>
+<h2>5 · 位置编码与注意力 mask(模型的另两路输入)</h2>
 <div class="grid c2"><div><img src="{a}/position_ids.png" alt="mrope"></div>
 <div><img src="{a}/attn_mask.png" alt="mask"></div></div>
 
-<h2>5 · 训练 step 实际看到的序列(在线加噪,seed 0)</h2>
+<h2>6 · 训练 step 实际看到的序列(在线加噪,seed 0)</h2>
 <p class="kv">row 0(mdm 行)mask 了 {s["n_masked"]}/{s["n_resp"]} 个答案 token;
 row 1(互补行)mask 了 {s["n_comp"]} 个(两行 mask 的 value 位置互补)。下面是两行
 noisy 半边的答案区段:</p>
 <details open><summary>row 0(mdm)</summary><pre>{E(s["noisy"])}</pre></details>
 <details><summary>row 1(complementary)</summary><pre>{E(s["comp"])}</pre></details>
 
-<h2>6 · 验证结果(ar 记录 vs 从 raw 重跑整条链)</h2>
+<h2>7 · 验证结果(v2 AR 记录 vs 从 raw 重跑整条链 + embeds 复算)</h2>
 <table><tr><th>check</th><th>结果</th></tr>{checks_html}</table>
 <div class="pn">{prev_html}{next_html}</div>
 """
     open(os.path.join(OUT, f"sample_{k:02d}.html"), "w").write(page(
-        f"样本 {k:02d} · {sid}", body, active=f"s{k}"))
+        f"样本 {k:02d} · {sid}", body, n))
 
 
 def write_readme():
     open(os.path.join(OUT, "README.md"), "w").write(
-        "# Fast-dDrive SASD dataset review site\n\n"
-        "Static, self-contained (relative paths only). Three ways to view from a Mac\n"
-        "connected over SSH:\n\n"
+        "# Fast-dDrive SASD dataset **v2** review site\n\n"
+        "Static, self-contained (relative paths only). Covers the v2 ArrayRecord format\n"
+        "(13 fields + precomputed `image_embeds`), the raw→AR build chain, the v2 train\n"
+        "feed path, and 12 round-2-verified examples (10 train + 2 val).\n\n"
+        "Three ways to view from a Mac connected over SSH:\n\n"
         "1. **Port-forward (recommended)** — on the desktop:\n"
         "   `bash serve.sh` (serves on :8890), then on the Mac:\n"
         "   `ssh -L 8890:localhost:8890 <desktop>` and open http://localhost:8890\n"
         "2. **Copy to Mac** — `scp -r <desktop>:" + OUT + " ~/Desktop/` then open `index.html`.\n"
-        "3. **VS Code Remote** — install Live Server, right-click `index.html` → Open with\n"
-        "   Live Server (VS Code auto-forwards the port).\n\n"
-        "Regenerate after a new verify run:\n"
+        "3. **VS Code Remote** — Live Server on `index.html` (auto port-forward).\n\n"
+        "Regenerate after a new verify run (`NT=10 NV=2 bash "
+        "jax_ddrive/scripts/verify_ar_round2.sh`):\n"
         "`PYTHONPATH=jax_ddrive ddrive-python jax_ddrive/scripts/make_dataset_website.py`\n")
     sv = os.path.join(OUT, "serve.sh")
     open(sv, "w").write('#!/usr/bin/env bash\ncd "$(dirname "$0")"\n'

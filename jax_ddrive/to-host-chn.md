@@ -10,7 +10,9 @@
 > (loss 0.31/0.56)。详见 `docs/4collect/OVERNIGHT_TPU_PROGRESS{,-chn}.md`。
 > 📌 **数据集(2026-06-12 白天):** 全量 **415,663 帧** parquet 构建完成;**Round-2 语义验证:10/10
 > 样本与从 raw 重跑整条链 bit-exact**(全部列、answer 文本 round-trip、轨迹==真值@1s、像素重建);
-> 可视化复查网站 `jax_ddrive/visualizations/`。
+> 可视化复查网站 `jax_ddrive/visualizations/`。*Phase 8 后更新:* round-2 与网站已升级到 **v2** ——
+> **12/12 PASS(10 train + 2 val)**,含 `image_embeds` 从像素复算(两层 bf16 判据)与 PCA 三联图;
+> 判据与复跑命令见 `DATASET_V2.md` §6。
 > 📌 **状态(2026-06-12 overnight,当前真相):** 生产训练闭环在真实 TPU 上**端到端重验证通过**
 > (`V2_TPU_VALIDATION_PASS`):**dataset v2**(ArrayRecord;12 数组含 pixel_values + 预计算
 > frozen-ViT `image_embeds` bf16 [168,2048] 单份)× **AR reader**(`make_sasd_loader` 按扩展名
@@ -65,7 +67,7 @@
   v2 AR:全量 369 G / 50k 45 G(均已镜像到 GCS bucket `gs://project-…-ddrive-sasd/`)。
 
 ### 诚实的开放项
-- **Pseudo text labels**:`critical_objects`/`explanation` 是伪标签(WOD-E2E 没有文本标签;只有 trajectory+meta 是真 GT)。teacher-distill 升级管线已在小样本验证(见 memory/分支内脚本),未全量执行。
+- **Pseudo text labels（默认）+ teacher-distill 升级管线（已建）**:三档 parquet（400/50k/415k）默认是伪 `critical_objects`/`explanation`（trajectory 是真 GT）。teacher-distill（Route A）管线已构建并验证 → distill-400 完成、distill-50k 进行中（统一 L=1280）。详见 §2.4 与 `docs/2implementation-details/LABELING.md`。
 - **≥8-chip 多节点跑未发生**:FSDP 数学在 CPU 8-device 仿真 + 单芯 TPU 已证;多节点只差 GCP trial 容量(Waymo 内部容量下跑验证阶梯 step 2 即可)。
 - **训练循环 eval 未接线**(`eval_interval: 0`):val v2 AR(479,训练格式)已就绪,接上是小改动。
 - HF datasets 是**私有的**(WOD license 禁止再分发);GCS bucket 属 $300 trial 项目(注意到期迁移)。
@@ -158,14 +160,21 @@ WOD-E2E tfrecords ──convert_wod_e2e.py──▶ val_rated.json (479) + front
 (JAX 和 PyTorch 用的是不同 decoder —— section-diffusion vs scaffold-speculative —— 却落在
 持平水平;在匹配样本上 JAX 轨迹等于 PyTorch 到 **0.01 m**。)
 
-### 2.4 诚实的限制 —— 训练文本标签
-原始 WOD-E2E tfrecords 含**图像、ego states、intent、trajectories —— 但没有文本标签**
-(没有 critical-object flags,没有 explanation prose)。所以 `convert_wod_e2e.py --with_target`
-构建的训练 target 里,**trajectory 是真实 ground truth**(真正的监督信号),
-`future_meta_behavior` 是**派生的**(speed 来自 waypoint dynamics,lateral 来自 `EgoIntent`),
-`critical_objects`/`explanation` 是**伪标签**。这足以演示一个 loss 下降的真实数据训练 loop;
-若要生产级训练保真度,你要么 teacher-distill 文本 sections(跑 release 模型来给它们打标,保留 GT
-trajectory),要么提供 Waymo 自己的 perception labels。
+### 2.4 训练文本标签 —— 伪标签 + teacher-distill 升级
+原始 WOD-E2E tfrecords 含**图像、ego states、intent、trajectories —— 但没有文本标签**。所以
+`convert_wod_e2e.py --with_target` 构建的训练 target 里,**trajectory 是真实 GT**,
+`future_meta_behavior` 派生(longitudinal 来自 waypoint speeds,lateral 来自 `EgoIntent`),
+`critical_objects`/`explanation` 是**伪标签**。
+
+**升级管线已构建并验证(Route A,teacher-distill)**:用 release 3B checkpoint 给文本三段打标、
+保留 GT 轨迹 + GT 派生的 longitudinal(**hybrid fmb** 策略,因为 release teacher 推理时看不到未来,
+其 longitudinal 仅 4/10 与 GT 一致)。蒸馏答案更长 → 数据集为**统一 L=1280**(与旧 L=1184 不兼容;
+loss-zero padding 已验证)。**当前状态(2026-06-12):distill-400 完成
+(`train/distill_400/parquet_L1280`,400/400 验证);distill-50k 进行中(`train/distill_50k/`,
+~22 GPU·h,可断点续跑)。** 论文真标签来自 dVLM-AD 的 **GPT-4.1** 标注(未开源)→ 论文级保真度走 Route B。
+
+> 标签的概念/provenance/管线/脚本、以及 **400 vs 800 vs 50k vs 415k 身份图**,权威说明见
+> **`docs/2implementation-details/LABELING.md`**。
 
 ### 2.5 验证 & audit
 - `jax_ddrive/scripts/run_all_verification.sh` → **10 个 gate**:`cpu_mask_loss, cpu_lora, cpu_noise,

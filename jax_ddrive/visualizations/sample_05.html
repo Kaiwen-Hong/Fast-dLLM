@@ -1,0 +1,166 @@
+<!doctype html><html lang="zh"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>样本 05 · 6c1968916f97cf11f599d7a2f87827d0-051</title><style>
+:root { --bg:#f7f8fa; --card:#fff; --ink:#1c2733; --mut:#6b7a8c; --acc:#0b66c3;
+        --ok:#1d8a4e; --line:#e3e8ee; --code:#f1f4f8; --v2:#7c3aed; }
+* { box-sizing: border-box; }
+body { margin:0; font:15px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,
+       "Helvetica Neue",Arial,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+       color:var(--ink); background:var(--bg); }
+nav { position:sticky; top:0; z-index:9; background:#102a43; color:#d9e2ec;
+      padding:10px 26px; display:flex; gap:18px; align-items:center; flex-wrap:wrap; }
+nav a { color:#d9e2ec; text-decoration:none; font-weight:600; font-size:14px; }
+nav a:hover { color:#fff; text-decoration:underline; }
+nav .brand { color:#fff; font-size:16px; margin-right:8px; }
+main { max-width:1180px; margin:0 auto; padding:28px 26px 80px; }
+h1 { font-size:26px; margin:18px 0 6px; }
+h2 { font-size:20px; margin:38px 0 10px; padding-top:8px; border-top:2px solid var(--line); }
+h3 { font-size:16px; margin:22px 0 8px; }
+.sub { color:var(--mut); margin:0 0 18px; }
+.card { background:var(--card); border:1px solid var(--line); border-radius:10px;
+        padding:16px 20px; margin:14px 0; }
+.grid { display:grid; gap:14px; }
+.grid.c2 { grid-template-columns:1fr 1fr; } .grid.c3 { grid-template-columns:1fr 1fr 1fr; }
+@media (max-width:900px){ .grid.c2,.grid.c3{grid-template-columns:1fr;} }
+table { border-collapse:collapse; width:100%; font-size:13.5px; }
+th,td { border:1px solid var(--line); padding:6px 10px; text-align:left; vertical-align:top; }
+th { background:#eef2f7; }
+code, .tok { font:12.5px/1.55 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+       background:var(--code); padding:1px 5px; border-radius:4px; }
+pre { font:12.5px/1.55 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+      background:var(--code); border:1px solid var(--line); border-radius:8px;
+      padding:12px 14px; overflow-x:auto; white-space:pre-wrap; word-break:break-word; }
+img { max-width:100%; height:auto; border:1px solid var(--line); border-radius:8px;
+      background:#fff; }
+.badge { display:inline-block; padding:2px 10px; border-radius:999px; font-size:12.5px;
+         font-weight:700; }
+.badge.ok { background:#e3f6ec; color:var(--ok); }
+.badge.info { background:#e4eefb; color:var(--acc); }
+.badge.v2 { background:#f1e9fe; color:var(--v2); }
+.badge.val { background:#fdebd0; color:#9c640c; }
+details { margin:10px 0; }
+details > summary { cursor:pointer; font-weight:600; color:var(--acc); }
+.flow { display:flex; flex-direction:column; gap:0; margin:18px 0; }
+.stage { background:var(--card); border:1px solid var(--line); border-left:5px solid var(--acc);
+         border-radius:10px; padding:12px 18px; }
+.stage.v2 { border-left-color:var(--v2); }
+.stage h3 { margin:2px 0 6px; }
+.stage .env { float:right; font-size:12px; color:var(--mut); }
+.arrow { text-align:center; color:var(--mut); font-size:20px; line-height:1.4; }
+.kv { color:var(--mut); font-size:13.5px; }
+.cards { display:grid; grid-template-columns:repeat(auto-fill,minmax(330px,1fr)); gap:16px; }
+.scard { background:var(--card); border:1px solid var(--line); border-radius:10px;
+         padding:12px; text-decoration:none; color:var(--ink); transition:box-shadow .15s; }
+.scard:hover { box-shadow:0 4px 14px rgba(16,42,67,.12); }
+.scard img { width:100%; }
+.scard .t { font:12px ui-monospace,Menlo,monospace; color:var(--mut); margin-top:6px;
+            word-break:break-all; }
+.pn { display:flex; justify-content:space-between; margin:26px 0 8px; }
+.pn a { color:var(--acc); font-weight:700; text-decoration:none; }
+.note { background:#fff8e6; border:1px solid #f1de9d; border-radius:8px; padding:10px 14px;
+        font-size:13.5px; }
+</style></head><body><nav><span class="brand">Fast-dDrive SASD dataset v2 review</span><a href="index.html">总览 / Pipeline / 喂给模型</a><span style="color:#829ab1">样本:</span><a href="sample_00.html">00</a><a href="sample_01.html">01</a><a href="sample_02.html">02</a><a href="sample_03.html">03</a><a href="sample_04.html">04</a><a href="sample_05.html">05</a><a href="sample_06.html">06</a><a href="sample_07.html">07</a><a href="sample_08.html">08</a><a href="sample_09.html">09</a><a href="sample_10.html">10</a><a href="sample_11.html">11</a></nav><main>
+<div class="pn"><a href="sample_04.html">← 样本 04</a><a href="sample_06.html">样本 06 →</a></div>
+<h1>样本 05 <span class="badge info">train split</span> <span class="badge ok">✅ 28/28 checks PASS</span></h1>
+<p class="sub"><code>6c1968916f97cf11f599d7a2f87827d0-051</code> · v2 AR(train)shard 0
+row 5 · L=1184 · 答案区间 [890, 1167) · 7 blocks
+· 每图 [56, 56, 56] merged tokens · pixel_values [672,1176] f16
+· image_embeds [168,2048] bf16 · MASK 尾部 pad 16</p>
+
+<h2>1 · 原始输入:三张前视相机图</h2>
+<div class="grid c3"><div><img src="assets/05/orig_0.jpg" loading="lazy" alt="FRONT_LEFT 左前"><p class="kv">image1 · FRONT_LEFT 左前(原始 JPEG,1920×1280)</p></div><div><img src="assets/05/orig_1.jpg" loading="lazy" alt="FRONT 正前"><p class="kv">image2 · FRONT 正前(原始 JPEG,1920×1280)</p></div><div><img src="assets/05/orig_2.jpg" loading="lazy" alt="FRONT_RIGHT 右前"><p class="kv">image3 · FRONT_RIGHT 右前(原始 JPEG,1920×1280)</p></div></div>
+
+<h2>2 · 像素 → 重建 → <span class="badge v2">v2</span> ViT embeds(模型实际吃的图像表示)</h2>
+<p class="kv">每行一台相机:左=原图缩放;中=从数据集 <code>pixel_values</code> 反演重建(逐像素一致
+→ 像素列正确);右=该图 56 个 <code>image_embeds</code>(8×7 merged-token 网格)的 top-3 PCA→RGB
+——语义相近区域颜色相近、空间结构与图像对应,直观确认 embeds 编码的就是这张图。</p>
+<img src="assets/05/triptych__orig_recon_embedsPCA.png" alt="triptych">
+<h3>embeds 数值验证:从存储像素重新过 frozen ViT(fp32 highest → bf16)</h3>
+<div class="grid c2">
+<div><img src="assets/05/embeds_recompute_diff.png" alt="embeds diff"></div>
+<div class="kv"><p>bitwise 一致 <b>99.7628%</b>;全部 mismatch 都是舍入边界翻转
+(≤1.5× 自身 bf16 ulp 或 |Δ|≤2e-3);max|Δ| = 3.12e-02;bf16 级全局 rel
+7.14e-04(仅诊断)。热图无空间结构 → 纯数值噪声而非内容差异。
+真正的损坏(错图/错行)会让 bitwise 一致率崩到 ~0%。</p></div></div>
+
+<h2>3 · 原始输入:文本 prompt(含数值自车历史)与训练目标</h2>
+<details><summary>展开 prompt 原文(Stage-1 生成,navigation = GO_STRAIGHT)</summary>
+<pre>You are an expert autonomous driving agent.
+Task 1: Critical Object Detection
+For each class below, answer &quot;yes&quot; or &quot;no&quot; to indicate whether it affects the ego vehicle’s behavior or future trajectory:
+[nearby_vehicle, pedestrian, cyclist, construction, traffic_element, weather_condition, road_hazard, emergency_vehicle, animal, special_vehicle, conflicting_vehicle, door_opening_vehicle]
+Task 2: Scene Reasoning
+Predict the future behavior of the identified critical objects and explain how the identified critical objects or conditions affect the ego vehicle’s next 3-second trajectory.
+Task 3: Meta-Behavior Prediction
+Predict the ego vehicle’s future meta-driving behavior:
+- speed ∈ {keep, accelerate, decelerate, stop, other}
+- command ∈ {straight, yield, left_turn, right_turn, lane_follow, lane_change_left, lane_change_right, reverse, overtake, other}
+Task 4: Trajectory Prediction
+Predict the optimal 5-second future trajectory (5 waypoints, 1 s intervals).
+
+Input:
+- &lt;image&gt;: three front-view frames from left front, center front, right front cameras. 
+- High-level navigation command: GO_STRAIGHT
+- Historical ego state: Provided are the previous ego vehicle status recorded over the last 3.0 seconds (at 0.5-second intervals).(t-3.0s) [-32.72, -1.89], Acceleration: X 0.02, Y -0.11 m/s², Velocity: X 11.13, Y 1.17 m/s,; (t-2.5s) [-27.16, -1.33], Acceleration: X 0.00, Y -0.09 m/s², Velocity: X 11.11, Y 0.96 m/s,; (t-2.0s) [-21.62, -0.88], Acceleration: X -0.04, Y -0.06 m/s², Velocity: X 11.03, Y 0.81 m/s,; (t-1.5s) [-16.10, -0.49], Acceleration: X -0.07, Y -0.09 m/s², Velocity: X 10.94, Y 0.65 m/s,; (t-1.0s) [-10.64, -0.20], Acceleration: X -0.10, Y -0.12 m/s², Velocity: X 10.76, Y 0.40 m/s,; (t-0.5s) [-5.27, -0.04], Acceleration: X -0.10, Y -0.12 m/s², Velocity: X 10.55, Y 0.16 m/s,; (t+0.0s) [0.00, 0.00], Acceleration: X -0.06, Y -0.14 m/s², Velocity: X 10.48, Y 0.02 m/s,
+
+Output:</pre></details>
+<details><summary>展开 target:原始 gpt JSON(Stage-1)</summary><pre>{&quot;critical_objects&quot;: {&quot;nearby_vehicle&quot;: &quot;no&quot;, &quot;pedestrian&quot;: &quot;no&quot;, &quot;cyclist&quot;: &quot;no&quot;, &quot;construction&quot;: &quot;no&quot;, &quot;traffic_element&quot;: &quot;no&quot;, &quot;weather_condition&quot;: &quot;no&quot;, &quot;road_hazard&quot;: &quot;no&quot;, &quot;emergency_vehicle&quot;: &quot;no&quot;, &quot;animal&quot;: &quot;no&quot;, &quot;special_vehicle&quot;: &quot;no&quot;, &quot;conflicting_vehicle&quot;: &quot;no&quot;, &quot;door_opening_vehicle&quot;: &quot;no&quot;}, &quot;explanation&quot;: &quot;The ego vehicle is expected to slow down and go straight along its current path. No critical objects are detected in the scene that require immediate evasive action, so the planned trajectory follows the navigation command.&quot;, &quot;future_meta_behavior&quot;: {&quot;longitudinal&quot;: &quot;slow down&quot;, &quot;lateral&quot;: &quot;go straight&quot;}, &quot;trajectory&quot;: &quot;[[+10.42,-00.32], [+20.73,-01.07], [+30.62,-02.00], [+39.67,-02.84], [+47.70,-03.30]]&quot;}</pre></details>
+<h3>BEV 俯视图:prompt 里的历史 + 答案里编码的轨迹 vs 真值</h3>
+<img src="assets/05/bev_trajectory.png" alt="bev">
+<p class="kv">蓝=prompt 中 7 个历史点(@0.5s);红 ×=答案 JSON 编码的 5 个 waypoint(@1s);
+灰=tfrecord 真值 20 点(@4Hz)。红 × 落在灰线上 → 答案轨迹就是真值。fmb:
+slow down / go straight。</p>
+
+<h2>4 · 编码结果:token 序列</h2>
+<img src="assets/05/sequence_layout.png" alt="layout">
+<details><summary>展开完整解码的 input_ids(占位符折叠;⟨…×N⟩ 表示 N 个连续相同 token)</summary>
+<pre>&lt;|im_start|&gt;system
+You are a helpful assistant.&lt;|im_end|&gt;
+&lt;|im_start|&gt;user
+You are an expert autonomous driving agent.
+Task 1: Critical Object Detection
+For each class below, answer &quot;yes&quot; or &quot;no&quot; to indicate whether it affects the ego vehicle’s behavior or future trajectory:
+[nearby_vehicle, pedestrian, cyclist, construction, traffic_element, weather_condition, road_hazard, emergency_vehicle, animal, special_vehicle, conflicting_vehicle, door_opening_vehicle]
+Task 2: Scene Reasoning
+Predict the future behavior of the identified critical objects and explain how the identified critical objects or conditions affect the ego vehicle’s next 3-second trajectory.
+Task 3: Meta-Behavior Prediction
+Predict the ego vehicle’s future meta-driving behavior:
+- speed ∈ {keep, accelerate, decelerate, stop, other}
+- command ∈ {straight, yield, left_turn, right_turn, lane_follow, lane_change_left, lane_change_right, reverse, overtake, other}
+Task 4: Trajectory Prediction
+Predict the optimal 5-second future trajectory (5 waypoints, 1 s intervals).
+
+Input:
+- &lt;|vision_start|&gt;⟨&lt;|image_pad|&gt;×56⟩&lt;|vision_end|&gt;&lt;|vision_start|&gt;⟨&lt;|image_pad|&gt;×56⟩&lt;|vision_end|&gt;&lt;|vision_start|&gt;⟨&lt;|image_pad|&gt;×56⟩&lt;|vision_end|&gt;: three front-view frames from left front, center front, right front cameras. 
+- High-level navigation command: GO_STRAIGHT
+- Historical ego state: Provided are the previous ego vehicle status recorded over the last 3.0 seconds (at 0.5-second intervals).(t-3.0s) [-32.72, -1.89], Acceleration: X 0.02, Y -0.11 m/s², Velocity: X 11.13, Y 1.17 m/s,; (t-2.5s) [-27.16, -1.33], Acceleration: X 0.00, Y -0.09 m/s², Velocity: X 11.11, Y 0.96 m/s,; (t-2.0s) [-21.62, -0.88], Acceleration: X -0.04, Y -0.06 m/s², Velocity: X 11.03, Y 0.81 m/s,; (t-1.5s) [-16.10, -0.49], Acceleration: X -0.07, Y -0.09 m/s², Velocity: X 10.94, Y 0.65 m/s,; (t-1.0s) [-10.64, -0.20], Acceleration: X -0.10, Y -0.12 m/s², Velocity: X 10.76, Y 0.40 m/s,; (t-0.5s) [-5.27, -0.04], Acceleration: X -0.10, Y -0.12 m/s², Velocity: X 10.55, Y 0.16 m/s,; (t+0.0s) [0.00, 0.00], Acceleration: X -0.06, Y -0.14 m/s², Velocity: X 10.48, Y 0.02 m/s,
+
+Output:&lt;|im_end|&gt;
+&lt;|im_start|&gt;assistant
+{&quot;critical_objects&quot;: {&quot;nearby_vehicle&quot;: &quot;no&quot;, &quot;pedestrian&quot;: &quot;no&quot;, &quot;cyclist&quot;: &quot;no&quot;, &quot;construction&quot;: &quot;no&quot;, &quot;traffic_element&quot;: &quot;no&quot;, &quot;weather_condition&quot;: &quot;no&quot;, &quot;road_hazard&quot;: &quot;no&quot;, &quot;emergency_vehicle&quot;: &quot;no&quot;, &quot;animal&quot;: &quot;no&quot;, &quot;special_vehicle&quot;: &quot;no&quot;, &quot;conflicting_vehicle&quot;: &quot;no&quot;, &quot;door_opening_vehicle&quot;: &quot;no&quot;}, &quot;explanation&quot;: &quot;The ego vehicle is expected to slow down and go straight along its current path. No critical objects are detected in the scene that require immediate evasive action, so the planned trajectory follows the navigation command.⟨&lt;|NULL|&gt;×24⟩&quot;, &quot;future_meta_behavior&quot;: {&quot;longitudinal&quot;: &quot;slow down&lt;|NULL|&gt;&quot;, &quot;lateral&quot;: &quot;go straight&lt;|NULL|&gt;&quot;}, &quot;trajectory&quot;: &quot;[[ +010.42, -000.32], [ +020.73, -001.07], [ +030.62, -002.00], [ +039.67, -002.84], [ +047.70, -003.30]]&quot;}&lt;|im_end|&gt;
+⟨|&lt;MASK&gt;|×16⟩</pre></details>
+<details open><summary>训练目标(labels 区间解码 = process_gpt 规范化后的答案)</summary>
+<pre>{&quot;critical_objects&quot;: {&quot;nearby_vehicle&quot;: &quot;no&quot;, &quot;pedestrian&quot;: &quot;no&quot;, &quot;cyclist&quot;: &quot;no&quot;, &quot;construction&quot;: &quot;no&quot;, &quot;traffic_element&quot;: &quot;no&quot;, &quot;weather_condition&quot;: &quot;no&quot;, &quot;road_hazard&quot;: &quot;no&quot;, &quot;emergency_vehicle&quot;: &quot;no&quot;, &quot;animal&quot;: &quot;no&quot;, &quot;special_vehicle&quot;: &quot;no&quot;, &quot;conflicting_vehicle&quot;: &quot;no&quot;, &quot;door_opening_vehicle&quot;: &quot;no&quot;}, &quot;explanation&quot;: &quot;The ego vehicle is expected to slow down and go straight along its current path. No critical objects are detected in the scene that require immediate evasive action, so the planned trajectory follows the navigation command.&lt;|NULL|&gt;&lt;|NULL|&gt;&lt;|NULL|&gt;&lt;|NULL|&gt;&lt;|NULL|&gt;&lt;|NULL|&gt;&lt;|NULL|&gt;&lt;|NULL|&gt;&lt;|NULL|&gt;&lt;|NULL|&gt;&lt;|NULL|&gt;&lt;|NULL|&gt;&lt;|NULL|&gt;&lt;|NULL|&gt;&lt;|NULL|&gt;&lt;|NULL|&gt;&lt;|NULL|&gt;&lt;|NULL|&gt;&lt;|NULL|&gt;&lt;|NULL|&gt;&lt;|NULL|&gt;&lt;|NULL|&gt;&lt;|NULL|&gt;&lt;|NULL|&gt;&quot;, &quot;future_meta_behavior&quot;: {&quot;longitudinal&quot;: &quot;slow down&lt;|NULL|&gt;&quot;, &quot;lateral&quot;: &quot;go straight&lt;|NULL|&gt;&quot;}, &quot;trajectory&quot;: &quot;[[ +010.42, -000.32], [ +020.73, -001.07], [ +030.62, -002.00], [ +039.67, -002.84], [ +047.70, -003.30]]&quot;}</pre></details>
+<h3>分 section 的块结构(权重 + Beta 噪声调度)</h3>
+<table><tr><th>block</th><th>section</th><th>#token</th><th>loss 权重</th><th>α</th><th>β</th></tr>
+<tr><td>0</td><td><code>critical_objects</code></td><td>92</td><td>1.5</td><td>1</td><td>2</td></tr><tr><td>1</td><td><code>explanation</code></td><td>37</td><td>1</td><td>1</td><td>1</td></tr><tr><td>2</td><td><code>explanation</code></td><td>33</td><td>1</td><td>1</td><td>1</td></tr><tr><td>3</td><td><code>future_meta_behavior</code></td><td>24</td><td>2</td><td>1</td><td>1.5</td></tr><tr><td>4</td><td><code>trajectory</code></td><td>43</td><td>3</td><td>2</td><td>1</td></tr><tr><td>5</td><td><code>trajectory</code></td><td>39</td><td>3</td><td>2</td><td>1</td></tr><tr><td>6</td><td><code>trajectory</code></td><td>8</td><td>3</td><td>2</td><td>1</td></tr></table>
+
+<h2>5 · 位置编码与注意力 mask(模型的另两路输入)</h2>
+<div class="grid c2"><div><img src="assets/05/position_ids.png" alt="mrope"></div>
+<div><img src="assets/05/attn_mask.png" alt="mask"></div></div>
+
+<h2>6 · 训练 step 实际看到的序列(在线加噪,seed 0)</h2>
+<p class="kv">row 0(mdm 行)mask 了 76/277 个答案 token;
+row 1(互补行)mask 了 110 个(两行 mask 的 value 位置互补)。下面是两行
+noisy 半边的答案区段:</p>
+<details open><summary>row 0(mdm)</summary><pre>
+&lt;|im_start|&gt;assistant
+{&quot;critical_objects&quot;: {&quot;nearby_vehicle&quot;: &quot;|&lt;MASK&gt;|&quot;, &quot;pedestrian&quot;: &quot;no&quot;, &quot;cyclist&quot;: &quot;no&quot;, &quot;construction&quot;: &quot;no&quot;, &quot;traffic_element&quot;: &quot;no&quot;, &quot;weather_condition&quot;: &quot;no&quot;, &quot;road_hazard&quot;: &quot;no&quot;, &quot;emergency_vehicle&quot;: &quot;no&quot;, &quot;animal&quot;: &quot;no&quot;, &quot;special_vehicle&quot;: &quot;no&quot;, &quot;conflicting_vehicle&quot;: &quot;|&lt;MASK&gt;|&quot;, &quot;door_opening_vehicle&quot;: &quot;no&quot;}, &quot;explanation&quot;: &quot;The ego vehicle is expected to slow down and go straight along its current path. No critical objects are detected in the scene that require immediate evasive action, so the planned trajectory follows the navigation command.⟨&lt;|NULL|&gt;×24⟩&quot;, &quot;future_meta_behavior&quot;: {&quot;longitudinal&quot;: &quot;slow down&lt;|NULL|&gt;&quot;, &quot;lateral&quot;: &quot;go straight&lt;|NULL|&gt;&quot;}, &quot;trajectory&quot;: &quot;[[⟨|&lt;MASK&gt;|×4⟩.|&lt;MASK&gt;|2,⟨|&lt;MASK&gt;|×5⟩3|&lt;MASK&gt;|], [⟨|&lt;MASK&gt;|×6⟩3,|&lt;MASK&gt;|0|&lt;MASK&gt;|1⟨|&lt;MASK&gt;|×3⟩], [⟨|&lt;MASK&gt;|×2⟩3|&lt;MASK&gt;|.⟨|&lt;MASK&gt;|×2⟩,⟨|&lt;MASK&gt;|×7⟩], [⟨|&lt;MASK&gt;|×7⟩,⟨|&lt;MASK&gt;|×2⟩0⟨|&lt;MASK&gt;|×4⟩], [⟨|&lt;MASK&gt;|×7⟩,|&lt;MASK&gt;|00|&lt;MASK&gt;|.|&lt;MASK&gt;|0]]&quot;}|&lt;MASK&gt;|
+⟨|&lt;MASK&gt;|×16⟩</pre></details>
+<details><summary>row 1(complementary)</summary><pre>
+&lt;|im_start|&gt;assistant
+{&quot;critical_objects&quot;: {&quot;nearby_vehicle&quot;: &quot;no&quot;, &quot;pedestrian&quot;: &quot;|&lt;MASK&gt;|&quot;, &quot;cyclist&quot;: &quot;|&lt;MASK&gt;|&quot;, &quot;construction&quot;: &quot;|&lt;MASK&gt;|&quot;, &quot;traffic_element&quot;: &quot;|&lt;MASK&gt;|&quot;, &quot;weather_condition&quot;: &quot;|&lt;MASK&gt;|&quot;, &quot;road_hazard&quot;: &quot;|&lt;MASK&gt;|&quot;, &quot;emergency_vehicle&quot;: &quot;|&lt;MASK&gt;|&quot;, &quot;animal&quot;: &quot;|&lt;MASK&gt;|&quot;, &quot;special_vehicle&quot;: &quot;|&lt;MASK&gt;|&quot;, &quot;conflicting_vehicle&quot;: &quot;no&quot;, &quot;door_opening_vehicle&quot;: &quot;|&lt;MASK&gt;|&quot;}, &quot;explanation&quot;: &quot;⟨|&lt;MASK&gt;|×64⟩&quot;, &quot;future_meta_behavior&quot;: {&quot;longitudinal&quot;: &quot;⟨|&lt;MASK&gt;|×3⟩&quot;, &quot;lateral&quot;: &quot;⟨|&lt;MASK&gt;|×3⟩&quot;}, &quot;trajectory&quot;: &quot;[[ +010|&lt;MASK&gt;|4|&lt;MASK&gt;|, -000.|&lt;MASK&gt;|2], [ +020.7|&lt;MASK&gt;|, -|&lt;MASK&gt;|0|&lt;MASK&gt;|.07], [ +0|&lt;MASK&gt;|0|&lt;MASK&gt;|62, -002.00], [ +039.67, -0|&lt;MASK&gt;|2.84], [ +047.70, -⟨|&lt;MASK&gt;|×2⟩3|&lt;MASK&gt;|3|&lt;MASK&gt;|]]&quot;}|&lt;MASK&gt;|
+⟨|&lt;MASK&gt;|×16⟩</pre></details>
+
+<h2>7 · 验证结果(v2 AR 记录 vs 从 raw 重跑整条链 + embeds 复算)</h2>
+<table><tr><th>check</th><th>结果</th></tr><tr><td><code>col:input_ids</code></td><td>✅</td></tr><tr><td><code>col:labels</code></td><td>✅</td></tr><tr><td><code>col:rbi</code></td><td>✅</td></tr><tr><td><code>col:turn</code></td><td>✅</td></tr><tr><td><code>col:scaffold</code></td><td>✅</td></tr><tr><td><code>col:weight_vec</code></td><td>✅</td></tr><tr><td><code>col:block_alpha</code></td><td>✅</td></tr><tr><td><code>col:block_beta</code></td><td>✅</td></tr><tr><td><code>col:position_ids</code></td><td>✅</td></tr><tr><td><code>col:vision_mask</code></td><td>✅</td></tr><tr><td><code>col:pixel_values</code></td><td>✅</td></tr><tr><td><code>col:image_grid_thw</code></td><td>✅</td></tr><tr><td><code>col:L</code></td><td>✅</td></tr><tr><td><code>col:n_blocks</code></td><td>✅</td></tr><tr><td><code>col:image_embeds_shape(168,2048)bf16</code></td><td>✅</td></tr><tr><td><code>embeds:recompute_bf16(two-tier)</code></td><td>✅</td></tr><tr><td><code>struct:L%32==0</code></td><td>✅</td></tr><tr><td><code>struct:n_image_runs==n_images</code></td><td>✅</td></tr><tr><td><code>struct:run_lengths==grid_thw/4</code></td><td>✅</td></tr><tr><td><code>struct:sum_runs==n_patches/4</code></td><td>✅</td></tr><tr><td><code>struct:vision_mask_formula</code></td><td>✅</td></tr><tr><td><code>struct:labels_after_assistant</code></td><td>✅</td></tr><tr><td><code>struct:labels_end_at_im_end</code></td><td>✅</td></tr><tr><td><code>struct:weights_in_vocab</code></td><td>✅</td></tr><tr><td><code>text:answer==process_gpt(orig)</code></td><td>✅</td></tr><tr><td><code>traj:encoded_5wp==GT@1s(±0.005)</code></td><td>✅</td></tr><tr><td><code>prompt:7_history_points</code></td><td>✅</td></tr><tr><td><code>struct:block_weights_match_section</code></td><td>✅</td></tr></table>
+<div class="pn"><a href="sample_04.html">← 样本 04</a><a href="sample_06.html">样本 06 →</a></div>
+</main></body></html>

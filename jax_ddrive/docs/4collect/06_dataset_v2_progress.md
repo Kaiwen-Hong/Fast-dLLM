@@ -93,6 +93,16 @@ and `../../to-host.md`; this file records what happened and in what order.*
 * local cleanup: ✅ superseded v1 AR (158 G) deleted (GCS copy verified, 157.78 GiB);
   final local layout = packed parquet source-of-truth (178 G) + v2 AR train
   full/50k/400 + val (+ small v1 sets); 1.2 T free.
+* **round-2 + review website upgraded to v2 (06-12 afternoon): ✅ 12/12 PASS** (10 train
+  + 2 val) — from-raw re-run of the whole chain, 12 columns bit-exact vs the v2 AR rows,
+  plus `image_embeds` recomputed from stored pixels (eager fp32 highest → bf16): bitwise
+  99.76–99.87%, every mismatch ≤1.5× its own bf16 ulp (criterion intentionally does NOT
+  gate the bf16-level global rel — a benign 1-ulp flip at a near-max element exceeds
+  1e-3; same lesson as the tail-sample two-tier redesign above). Website
+  (`jax_ddrive/visualizations/`) regenerated for v2: schema/pipeline/feed-path rewritten,
+  + per-sample embeds-PCA triptychs and recompute-diff heatmaps. Tooling:
+  `scripts/verify_ar_round2.{py,sh}`, `scripts/make_dataset_website.py`; status SSOT:
+  `DATASET_V2.md` §6.
 
 ## Where things landed (commits)
 

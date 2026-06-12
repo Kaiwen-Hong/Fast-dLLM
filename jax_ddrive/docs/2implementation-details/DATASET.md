@@ -1,13 +1,17 @@
-# DATASET.md — the SASD training dataset (single source of truth)
+# DATASET.md — the v1 SASD dataset & round-2 semantic verification (stable reference)
 
-> **Living doc.** Update this file whenever the dataset format, artifacts, build chain, or
-> verification status changes. Last updated: **2026-06-12**.
+> **Role (per `docs/README.md`):** stable reference for the **v1** dataset — the 12-array
+> record content, the raw→parquet build chain, and the round-2 from-raw semantic
+> verification. The 12 arrays are byte-identical in v2, so everything here remains the
+> ground truth for them. **The production training format is v2** (adds precomputed
+> `image_embeds`): see `DATASET_V2.md` (living SSOT). Last updated: **2026-06-12**.
 >
 > **中文 TL;DR:** 每条记录 = 一个驾驶瞬间:三张前视相机图(像素在 `pixel_values`,**不在**
 > `input_ids` 里——那里只有 `<|image_pad|>` 占位符)+ 文本 prompt(指令、导航命令、3 秒自车历史)
 > + JSON 答案(trajectory 是**真值**,critical_objects/explanation 是伪标签)+ SASD 训练结构
-> (rbi/scaffold/权重/Beta 调度)。全量 **415,663 帧**已打包成 130 个 ArrayRecord shard,
-> 10 个样本经 round-2 从 raw 重跑全链 **bit-exact 验证通过**。可视化复查网站:
+> (rbi/scaffold/权重/Beta 调度)。全量 **415,663 帧**;这 12 个数组在 v2(生产格式,另加
+> 预计算 `image_embeds`,见 `DATASET_V2.md`)中逐字节不变。round-2 从 raw 重跑全链验证:
+> v1 10/10、**v2 12/12(含 embeds 复算)** 均通过。可视化复查网站(v2):
 > **`jax_ddrive/visualizations/index.html`**(`bash serve.sh` + `ssh -L 8890:localhost:8890`)。
 
 ---
@@ -53,19 +57,20 @@ has no text labels). Upgrade path: teacher-distill via
 
 ## 2. Artifacts on disk / GCS (truth as of 2026-06-12)
 
-Local, under `/home/kaiwen/data/fast-ddrive/hf/`:
+v1 artifacts, local under `/home/kaiwen/data/fast-ddrive/hf/` (v2 inventory: `DATASET_V2.md` §3):
 
 | Dir | Content | Size |
 |---|---|---|
-| `wod_e2e_sasd_full_packed/` | **full 415,663 rows**, 130 parquet — the sole local parquet source | 178 G |
-| `wod_e2e_sasd_full_tfexample_ar/` | same rows, 130 ArrayRecord shards (1:1 with packed, same row order) | 158 G |
+| `wod_e2e_sasd_full_packed/` | **full 415,663 rows**, 130 parquet — the bit-exact source of truth | 178 G |
+| `wod_e2e_sasd_full_tfexample_ar/` | v1 AR (pixels-only). **Local copy deleted after v2 shipped; GCS only** | — (GCS) |
 | `wod_e2e_sasd_50k/` | 50,331-frame subset, 787 parquet (also private HF `kaiwen2/wod-e2e-fast-ddrive-sasd-50k`) | 22 G |
-| `wod_e2e_sasd/` + `wod_e2e_sasd_ar/` | 400-sample dev subset (parquet + AR) | 175 M + 156 M |
+| `wod_e2e_sasd/` + `wod_e2e_sasd_ar/` | 400-sample dev subset (parquet + v1 AR) | 175 M + 156 M |
 
 Deleted in the 2026-06-12 Tier-A cleanup: `wod_e2e_sasd_full/` (the 6,499 small parquet
 files; the packed copy was integrity-gated first). GCS mirror at
 `gs://project-8a53f5ab-2ea2-4892-a78-ddrive-sasd/` holds full packed parquet (177.8 GiB),
-full tfexample AR (157.8 GiB), 50k, 400-sample sets, and `maxtext_sasd_params{,_v2}`.
+full v1 tfexample AR (157.8 GiB), 50k, 400-sample sets, `maxtext_sasd_params{,_v2}`,
+and the v2 AR sets.
 Raw WOD-E2E tfrecords kept locally (train 877 G / val 226 G) — only needed again if image
 preprocessing changes (resolution/cameras/temporal); text-label redo does not need raw.
 Datasets are **private** (WOD license forbids redistribution).
@@ -110,11 +115,11 @@ Consumers: the NNX FSDP harness (`ddrive_jax/train/train_tpu.py`) and the MaxTex
 (`objective="sasd"`, `dataset_type="waymo_sasd"`) — same math, bit-exact port
 (`maxtext-dlm-fork/src/maxtext/diffusion/sasd.py`).
 
-> **Reality check (verified in code 2026-06-12): nothing reads ArrayRecord yet.** All three
-> training paths funnel into `make_sasd_loader`, whose `_RowSource` eagerly decodes
-> *parquet* (fine at 400-sample scale only). MaxText also does not checkpoint the grain
-> iterator for this dataset_type (resume replays data). Both gaps are scheduled in the v2
-> plan (§6).
+> **Historical note:** as of 2026-06-12 daytime nothing read ArrayRecord (all paths used the
+> eager-parquet `_RowSource`) and MaxText did not checkpoint the grain iterator. **Both gaps
+> were closed by Phase 8 the same night** — `make_sasd_loader` auto-detects AR (lazy
+> `ArRecordSource`, full-scale) and `waymo_sasd` joined the grain checkpoint family (resume
+> continues the stream). See `DATASET_V2.md` §4.
 
 ## 5. Verification status & how to re-verify
 
@@ -126,37 +131,23 @@ trajectory == GT@1 s (±0.005 = 2-decimal rounding), 7 history points present, a
 reconstruction (inverse patchify + de-normalize) visually identical to the originals with
 correct left/center/right camera order.
 
-```bash
-# re-run (N samples from train tfrecord shard 0; ~3 min):
-N=10 bash jax_ddrive/scripts/verify_ar_round2.sh
-# artifacts: /home/kaiwen/data/fast-ddrive/verify_round2/{review/report.md, review/NN_<sid>/}
-```
+(Historical v1 record: the run above targeted the now-retired v1 AR; its artifacts live in
+`/home/kaiwen/data/fast-ddrive/verify_round2/`. The 12 arrays are byte-identical in v2,
+so these conclusions carry over.)
+
+**Current tooling** — `verify_ar_round2.sh` now targets the **v2** AR (train + val splits,
+plus the `image_embeds` from-pixels recompute) and the review website covers v2:
+**12/12 PASS on 2026-06-12** — see `DATASET_V2.md` §6 for the criterion, status, and
+re-run/regenerate commands.
 
 End-to-end semantic evidence beyond round-2: the same prep pipeline feeds the 479-frame
 rated-val eval where JAX/PyTorch official metrics are on par (ADE@3s 0.839/0.814,
 RFS 7.93/7.91) — a mis-encoded dataset could not produce those numbers.
 
-**Review website** (what the data looks like / how it's built / how it's fed, with the 10
-verified examples): `jax_ddrive/visualizations/index.html`. Static, relative paths only.
-View from a Mac: `bash jax_ddrive/visualizations/serve.sh` on the desktop, then
-`ssh -L 8890:localhost:8890 <desktop>` → http://localhost:8890. Regenerate after a new
-verify run: `PYTHONPATH=jax_ddrive <ddrive-python> jax_ddrive/scripts/make_dataset_website.py`.
+## 6. Dataset v2 — shipped
 
-## 6. Dataset v2 (planned — decisions locked 2026-06-12)
-
-Spec: keep all 13 fields (incl. `pixel_values`, for easy verification) **+ new
-`image_embeds`** = frozen-ViT output, fp32-computed → **bf16-stored**, single copy
-(loader doubles), built for both 50k and 415k. Motivation: host-side per-step ViT is
-~7% MFU on the v6e-1 smoke; precomputed embeds make the data loop pure IO and drop
-ViT/transformers deps from the pod. Built-in verification: sample records → recompute
-fp32 embeds from stored pixels → cast bf16 → bitwise compare.
-
-Plan order: ① embeds+AR converter (packed parquet → new AR; atomic, resumable; smoke
-400 → 50k → full) ② AR reader (grain `ArrayRecordDataSource` + tf.Example parse + embeds
-tile) replacing `_RowSource`, with order-equality tests ③ wire `SasdLoader.grain_iterator`
-into the MaxText checkpoint + kill/resume test ④ 479-frame val AR ⑤ MaxText fork commit +
-PATCHES.md + vendor `ddrive_jax` modules ⑥ `gsutil rsync` (~720 GB) to the trial bucket
-⑦ after validation, the old local AR may be deleted (GCS copy exists).
-
-When v2 ships, update §1–§5 here (schema row for `image_embeds`, artifact table, reader
-path in §4) and re-run round-2 + the website against the v2 AR.
+The plan that lived here (add precomputed bf16 `image_embeds`, AR reader, iterator-state
+checkpointing, val AR, fork commit, GCS sync, v1-AR retirement) **shipped on 2026-06-12
+overnight** and was re-validated end-to-end on a real TPU (`V2_TPU_VALIDATION_PASS`).
+Spec, builder, reader, tests: **`DATASET_V2.md`** (living SSOT). Build story:
+`docs/4collect/06_dataset_v2_progress.md`.
