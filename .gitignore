@@ -28,3 +28,4 @@ fast_dvlm/data/ALLaVA-4V/
 
 # Claude Code local cache/state (sessions, runtime state, session log) — not for version control
 .claude/
+jax_ddrive/visualizations/
