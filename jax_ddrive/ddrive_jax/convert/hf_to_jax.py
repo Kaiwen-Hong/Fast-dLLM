@@ -61,46 +61,79 @@ def _set(model, path: str, value: np.ndarray):
 def load_fast_ddrive_text(snapshot_dir: str, cfg: Qwen25TextConfig | None = None,
                           *, dtype=jnp.float32, rngs: nnx.Rngs | None = None,
                           verbose: bool = True) -> tuple[Qwen25TextModel, dict]:
+    """STREAMING loader: one safetensors tensor at a time (never the full state dict).
+
+    The original eager variant materialized all ~6.2 GB of tensors before loading, putting
+    the fp32 parity gates at a ~25 GB host peak — over the OOM line on the 30 GB no-swap
+    box whenever a few GB of sessions are resident. Same signature/returns/semantics
+    (incl. the tie check, chunked to keep its transient small).
+    """
+    import gc
+
     cfg = cfg or Qwen25TextConfig.fast_ddrive(dtype=dtype)
     rngs = rngs or nnx.Rngs(0)
-    tensors = _load_all_tensors(snapshot_dir)
     if verbose:
-        print(f"[convert] {len(tensors)} tensors; building Qwen25TextModel "
-              f"({cfg.n_layers}L/{cfg.d_model}d, vocab {cfg.vocab_size}, dtype {dtype.__name__})")
+        print(f"[convert] building Qwen25TextModel ({cfg.n_layers}L/{cfg.d_model}d, "
+              f"vocab {cfg.vocab_size}, dtype {dtype.__name__}); streaming weights")
     model = Qwen25TextModel(cfg, rngs=rngs)
 
-    n_loaded, n_missing = 0, []
+    want: dict[str, tuple[str, bool]] = {}
     for i in range(cfg.n_layers):
-        for hf, (path, tr) in _name_map_text(i).items():
-            if hf not in tensors:
-                n_missing.append(hf); continue
-            arr = tensors[hf]
-            if tr:
-                arr = arr.T
-            _set(model, path, arr)
-            n_loaded += 1
-    _set(model, "embed_tokens/embedding", tensors["model.embed_tokens.weight"]); n_loaded += 1
-    _set(model, "norm/weight", tensors["model.norm.weight"]); n_loaded += 1
+        want.update(_name_map_text(i))
+    want["model.embed_tokens.weight"] = ("embed_tokens/embedding", False)
+    want["model.norm.weight"] = ("norm/weight", False)
 
-    # Tie check: confirm stored lm_head.weight matches embed (so embed.attend == PyTorch lm_head).
+    n_loaded, seen = 0, set()
+    embed_b = lm_head_b = None          # as-stored dtype refs, kept only for the tie check
+    vit_keys = total_keys = 0
+    for fname in sorted(os.listdir(snapshot_dir)):
+        if not fname.endswith(".safetensors"):
+            continue
+        with safe_open(os.path.join(snapshot_dir, fname), framework="numpy") as f:
+            for k in f.keys():
+                total_keys += 1
+                if k.startswith("visual."):
+                    vit_keys += 1
+                if k == "lm_head.weight":
+                    lm_head_b = f.get_tensor(k)
+                    continue
+                if k not in want:
+                    continue
+                path, tr = want[k]
+                arr = f.get_tensor(k)
+                if k == "model.embed_tokens.weight":
+                    embed_b = arr
+                if tr:
+                    arr = arr.T
+                _set(model, path, arr)
+                seen.add(k)
+                del arr
+                n_loaded += 1
+        gc.collect()
+    n_missing = [k for k in want if k not in seen]
+
+    # Tie check: confirm stored lm_head.weight matches embed (so embed.attend == PyTorch
+    # lm_head). Chunked fp32 max-abs to keep the transient ~50 MB instead of ~2.5 GB.
     tie_ok = None
-    if "lm_head.weight" in tensors:
-        e = tensors["model.embed_tokens.weight"].astype(np.float32)
-        h = tensors["lm_head.weight"].astype(np.float32)
-        if e.shape == h.shape:
-            tie_ok = float(np.abs(e - h).max())
-            if verbose:
-                print(f"[convert] tie check: max|embed - lm_head| = {tie_ok:.3e} "
-                      f"({'TIED' if tie_ok < 1e-5 else 'UNTIED — using stored lm_head'})")
-        if tie_ok is not None and tie_ok >= 1e-5 and not cfg.tie_embeddings:
-            _set(model, "lm_head/kernel", h.T); n_loaded += 1
+    if lm_head_b is not None and embed_b is not None and embed_b.shape == lm_head_b.shape:
+        m = 0.0
+        for s in range(0, embed_b.shape[0], 8192):
+            m = max(m, float(np.max(np.abs(
+                embed_b[s:s + 8192].astype(np.float32)
+                - lm_head_b[s:s + 8192].astype(np.float32)))))
+        tie_ok = m
+        if verbose:
+            print(f"[convert] tie check: max|embed - lm_head| = {tie_ok:.3e} "
+                  f"({'TIED' if tie_ok < 1e-5 else 'UNTIED — using stored lm_head'})")
+        if tie_ok >= 1e-5 and not cfg.tie_embeddings:
+            _set(model, "lm_head/kernel", lm_head_b.T)
+            n_loaded += 1
 
     info = {"n_loaded": n_loaded, "n_missing": n_missing, "tie_max_abs": tie_ok,
-            "vit_keys": sum(1 for k in tensors if k.startswith("visual.")),
-            "total_keys": len(tensors)}
+            "vit_keys": vit_keys, "total_keys": total_keys}
     if verbose:
         print(f"[convert] loaded {n_loaded} text tensors; {len(n_missing)} missing; "
-              f"{info['vit_keys']} visual.* keys deferred (Phase 4)")
+              f"{vit_keys} visual.* keys deferred (Phase 4)")
     return model, info
 
 
