@@ -186,7 +186,7 @@ def main():
         return np.asarray(out)  # [N//4, 2048] fp32
 
     t0, n_total, n_verified, emb_shape = time.time(), 0, 0, None
-    max_eager_diff = 0.0
+    eager_diffs = []
     for i, pf in enumerate(pfiles):
         out = os.path.join(args.dst, f"{args.split}-{i:05d}-of-{nsh:05d}.arrayrecord")
         src_rows = pq.read_metadata(pf).num_rows
@@ -204,14 +204,23 @@ def main():
                 e16 = e32.astype(ml_dtypes.bfloat16)
                 emb_shape = e16.shape
                 if n_shard == 0:
-                    # cross-check the jitted mirror against the VALIDATED eager __call__
+                    # cross-check the jitted mirror against the VALIDATED eager __call__.
+                    # Two-tier criterion: a per-sample hard cap at 1e-3 catches structural
+                    # bugs (wrong mask/rope -> O(0.1)); a rolling MEDIAN cap at 1e-4 catches
+                    # systematic precision drift (TF32 -> ~7.5e-4 on EVERY sample) while
+                    # tolerating rare fp32 reduction-noise tails (observed up to ~2.5e-4 on
+                    # isolated samples; bf16 storage resolution is ~4e-3, so tails are
+                    # immaterial to what is stored).
                     ref = np.asarray(vit(jnp.asarray(r["pixel_values"], jnp.float32),
                                          r["image_grid_thw"]))
                     d = float(np.max(np.abs(e32 - ref)) / (np.max(np.abs(ref)) + 1e-12))
-                    max_eager_diff = max(max_eager_diff, d)
-                    # fp32 jit-vs-eager reduction noise is ~1e-5; TF32 contamination would be
-                    # ~7.5e-4 and a real mirror bug O(0.1) — 2e-4 separates all three.
-                    assert d < 2e-4, f"jit mirror diverges from eager ViT: rel {d:.2e}"
+                    eager_diffs.append(d)
+                    assert d < 1e-3, f"jit mirror diverges from eager ViT: rel {d:.2e}"
+                    if len(eager_diffs) >= 8:
+                        med = float(np.median(eager_diffs))
+                        assert med < 1e-4, (
+                            f"systematic jit-vs-eager elevation: median {med:.2e} over "
+                            f"{len(eager_diffs)} shards (TF32 regression?)")
                 if n_total % args.verify_every == 0:
                     e32b = embeds_fp32(r["pixel_values"], r["image_grid_thw"])
                     assert np.array_equal(e32, e32b), f"non-deterministic recompute @ {r['sample_id']}"
@@ -249,8 +258,11 @@ def main():
             },
             "files": [f"{args.split}-{i:05d}-of-{nsh:05d}.arrayrecord" for i in range(nsh)]}
     json.dump(info, open(os.path.join(args.dst, f"dataset_info_{args.split}.json"), "w"), indent=2)
+    dmax = max(eager_diffs) if eager_diffs else float("nan")
+    dmed = float(np.median(eager_diffs)) if eager_diffs else float("nan")
     print(f"AR_WITH_EMBEDS_DONE total={n_total} shards={nsh} grids={len(fwd_cache)} "
-          f"emb_shape={emb_shape} verified={n_verified} max_eager_rel_diff={max_eager_diff:.2e} "
+          f"emb_shape={emb_shape} verified={n_verified} "
+          f"eager_rel_diff(max={dmax:.2e},median={dmed:.2e}) "
           f"elapsed={(time.time()-t0)/60:.1f}min", flush=True)
 
 
