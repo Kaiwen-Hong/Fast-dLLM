@@ -15,7 +15,7 @@ format schemas → `DATASET.md` (v1 Parquet) / `DATASET_V2.md` (v2 AR + `image_e
 | dataset | rows | size | created | format / AR? | local | GCS | CNS | status |
 |---|---|---|---|---|---|---|---|---|
 | **distilled-400 (small)** | 400 | 175 MB / 7 shards (+1.7 MB JSON) | 2026-06-12 15:15 | **Parquet v1, L=1280** — pixel_values, **NO image_embeds → not AR / not v2** | `train/distill_400/{parquet_L1280, train_targets_distilled_400.json}` | `gs://project-8a53f5ab-2ea2-4892-a78-ddrive-sasd/wod_e2e_sasd_distilled_0612-small_L1280/` (uploaded 2026-06-12 21:14 UTC) | `/cns/<cell>/home/<ldap>/fast_ddrive/wod_e2e_sasd_distilled_0612-small_L1280/` *(pending — run `fileutil cp` step 2, then fill cell/ldap)* | ✅ labels done (teacher Route A, hybrid fmb), loss-zero 400/400; trainable via Parquet loader. ⚠️ not yet v2-AR |
-| **distilled-50k (middle)** | 50,331 | TBD | *in progress* | Parquet v1, L=1280 (planned) | `train/distill_50k/` (teacher + finalize running) | — | — | 🔄 Stage 2 teacher running (~22 GPU·h); finalize will build parquet + `FINALIZE_REPORT.json` |
+| **distilled-50k (middle)** | 50,331 | — | *stopped 2026-06-13* | (not built) | (cleaned) | — | — | ⏸ **stopped — not needed for this milestone** (see `5blockers/0612-blocker-v0.md`); stopped at 3/21 chunks, intermediates deleted; pipeline resumable (`distill_teacher_chunked.py` + `finalize_distill_50k.py`) if revisited |
 
 ## Notes / TODO
 - **CNS copy (step 2)** is run on a Google-internal host (`fileutil` not on the 5090 desktop): `fileutil cp -R -f gs://…/wod_e2e_sasd_distilled_0612-small_L1280 /cns/<cell>/home/<ldap>/…`. Replace `<cell>`/`<ldap>` and paste the real path back into the CNS column above.

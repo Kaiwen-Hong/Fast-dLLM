@@ -112,8 +112,9 @@ Three canonical *sizes* (small / middle / full) PLUS one intermediate source art
 | **415k "full"** | `hf/wod_e2e_sasd_full_packed/` | 415,663 | tokenized parquet (+ AR) | all 263 train shards (pseudo labels) |
 
 The three canonical parquet sets above carry **pseudo** text labels (built before distill).
-The **distilled** outputs are separate (L=1280): `train/distill_400/` (done),
-`train/distill_50k/` (in progress), `train/train_targets_distilled_{10,800}.json`. Because
+The **distilled** outputs are separate (L=1280): `train/distill_400/` (done, on GCS),
+`train/distill_50k/` (stopped 2026-06-13, not needed for this milestone — intermediates
+cleaned), `train/train_targets_distilled_{10,800}.json`. Because
 the teacher needs raw images and only `train_targets.json` (800) keeps them, distilling the
 800 automatically covered the 400 (400 ⊂ 800) — that is why a fully-annotated **400** can be
 built in minutes with no teacher run. **Live distill status: `../../to-host-chn.md` §2.4.**
@@ -132,7 +133,8 @@ $JX jax_ddrive/scripts/parquet_to_ar_with_embeds.py \
    /home/kaiwen/data/fast-ddrive/train/distill_400/parquet_L1280 \
    /home/kaiwen/data/fast-ddrive/hf/wod_e2e_sasd_distilled_400_v2_ar --split train
 # ~19 samples/s on the 5090; resumable; writes dataset_info_train.json.
-# 50k: same command on train/distill_50k/parquet_L1280 once finalize builds it.
+# 50k distill was stopped 2026-06-13 (not needed this milestone); if revisited, rebuild
+# its distilled parquet first (distill_teacher_chunked.py -> finalize_distill_50k.py), then run this.
 ```
 
 **Why this is cheap / low-risk:**

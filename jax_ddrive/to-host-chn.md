@@ -67,7 +67,7 @@
   v2 AR:全量 369 G / 50k 45 G(均已镜像到 GCS bucket `gs://project-…-ddrive-sasd/`)。
 
 ### 诚实的开放项
-- **Pseudo text labels（默认）+ teacher-distill 升级管线（已建）**:三档 parquet（400/50k/415k）默认是伪 `critical_objects`/`explanation`（trajectory 是真 GT）。teacher-distill（Route A）管线已构建并验证 → distill-400 完成、distill-50k 进行中（统一 L=1280）。详见 §2.4 与 `docs/2implementation-details/LABELING.md`。
+- **Pseudo text labels（默认）+ teacher-distill 升级管线（已建）**:三档 parquet（400/50k/415k）默认是伪 `critical_objects`/`explanation`（trajectory 是真 GT）。teacher-distill（Route A）管线已构建并验证 → distill-400 完成（L=1280,已上传 GCS）;distill-50k **已暂停**（本里程碑不需要,2026-06-13 停,中间产物已清理）。详见 §2.4 与 `docs/2implementation-details/LABELING.md`。
 - **≥8-chip 多节点跑未发生**:FSDP 数学在 CPU 8-device 仿真 + 单芯 TPU 已证;多节点只差 GCP trial 容量(Waymo 内部容量下跑验证阶梯 step 2 即可)。
 - **训练循环 eval 未接线**(`eval_interval: 0`):val v2 AR(479,训练格式)已就绪,接上是小改动。
 - HF datasets 是**私有的**(WOD license 禁止再分发);GCS bucket 属 $300 trial 项目(注意到期迁移)。
@@ -169,9 +169,10 @@ WOD-E2E tfrecords ──convert_wod_e2e.py──▶ val_rated.json (479) + front
 **升级管线已构建并验证(Route A,teacher-distill)**:用 release 3B checkpoint 给文本三段打标、
 保留 GT 轨迹 + GT 派生的 longitudinal(**hybrid fmb** 策略,因为 release teacher 推理时看不到未来,
 其 longitudinal 仅 4/10 与 GT 一致)。蒸馏答案更长 → 数据集为**统一 L=1280**(与旧 L=1184 不兼容;
-loss-zero padding 已验证)。**当前状态(2026-06-12):distill-400 完成
-(`train/distill_400/parquet_L1280`,400/400 验证);distill-50k 进行中(`train/distill_50k/`,
-~22 GPU·h,可断点续跑)。** 论文真标签来自 dVLM-AD 的 **GPT-4.1** 标注(未开源)→ 论文级保真度走 Route B。
+loss-zero padding 已验证)。**当前状态(2026-06-13):distill-400 完成
+(`train/distill_400/parquet_L1280`,400/400 验证,已上传 GCS);distill-50k **已暂停**(本里程碑不需要,
+2026-06-13 停于 3/21 chunk,中间产物已清理;`distill_teacher_chunked.py`+`finalize_distill_50k.py` 可续跑)。**
+论文真标签来自 dVLM-AD 的 **GPT-4.1** 标注(未开源)→ 论文级保真度走 Route B。
 
 > 标签的概念/provenance/管线/脚本、以及 **400 vs 800 vs 50k vs 415k 身份图**,权威说明见
 > **`docs/2implementation-details/LABELING.md`**。

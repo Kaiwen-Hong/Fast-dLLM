@@ -112,12 +112,28 @@ Independent of the build-time checks (§1), `jax_ddrive/scripts/verify_ar_round2
 re-verifies sampled v2 records **from the raw tfrecords**: it re-runs the whole chain
 (stage 1 converter → stage 2 prep), compares the 12 source arrays bit-exact against the
 AR rows, and re-derives `image_embeds` from the stored `pixel_values` (eager frozen ViT,
-fp32 highest → bf16) under a two-tier criterion — bitwise fraction ≥ 98.5% (observed
-~99.8%) AND every mismatched element ≤ 1.5× its own bf16 ulp or |Δ| ≤ 2e-3 (the bf16-level
-global rel is reported, not gated: a benign 1-ulp flip at a near-max element already
-exceeds 1e-3; the builder's 1e-3 cap applies to fp32 pre-quantization values). Plus
-structure self-checks, answer-text round-trip, trajectory == GT@1 s, pixel reconstruction,
-and an embeds-PCA triptych for eyeballing.
+fp32 highest → bf16) under a two-tier criterion.
+
+**What "bitwise fraction" means:** `image_embeds` is a [168 token × 2048] bf16 array =
+344,064 numbers; the bitwise fraction is the share of those whose 16-bit pattern is
+*identical* between the stored value and the from-pixels recompute. **Why it is not 100%:**
+the dataset was built with the *jitted* ViT and this check recomputes with the *eager*
+ViT — the two XLA programs sum in different orders (~1e-5 fp32 drift), and at the
+fp32→bf16 cast (only ~2–3 significant digits) values near a rounding boundary land on the
+*adjacent* bf16 step. So the ~0.15% mismatches are all rounding-boundary flips, not content
+differences (the recompute-diff heatmap shows no spatial structure). **Acceptance (two
+tier):** bitwise fraction ≥ 98.5% (observed ~99.8%) AND every mismatched element ≤ 1.5× its
+own bf16 ulp or |Δ| ≤ 2e-3. The bf16-level global rel is reported, **not gated** — a benign
+1-ulp flip at a near-max element already exceeds 1e-3; the builder's 1e-3 cap (§1) applies
+to the fp32 pre-quantization values, not bf16. A genuinely wrong row/image fails the
+bitwise tier catastrophically (→ ~0%), which is the test's discriminating power.
+
+The website's per-sample triptych is **`JPEG │ pixel_values⁻¹ │ PCA(image_embeds)`**: the
+middle column reconstructs the image from `pixel_values` alone (the preprocessing is
+invertible) and is **independent of the embedding**; the right column is a 3-PCA→RGB
+*projection* of `image_embeds` for eyeballing — the ViT output is **not invertible**, so it
+is a visualization, not a reconstruction. Also run: structure self-checks, answer-text
+round-trip, and trajectory == GT@1 s.
 
 * **Status: 12/12 PASS (2026-06-12)** — 10 train (`wod_e2e_sasd_full_v2_ar` shard 0
   rows 0–9) + 2 val (`wod_e2e_sasd_val_v2_ar` rows 0–1). Artifacts:

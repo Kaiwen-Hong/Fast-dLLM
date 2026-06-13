@@ -68,18 +68,28 @@ row 6 · L=1184 · 答案区间 [882, 1159) · 7 blocks
 <h2>1 · 原始输入:三张前视相机图</h2>
 <div class="grid c3"><div><img src="assets/06/orig_0.jpg" loading="lazy" alt="FRONT_LEFT 左前"><p class="kv">image1 · FRONT_LEFT 左前(原始 JPEG,1920×1280)</p></div><div><img src="assets/06/orig_1.jpg" loading="lazy" alt="FRONT 正前"><p class="kv">image2 · FRONT 正前(原始 JPEG,1920×1280)</p></div><div><img src="assets/06/orig_2.jpg" loading="lazy" alt="FRONT_RIGHT 右前"><p class="kv">image3 · FRONT_RIGHT 右前(原始 JPEG,1920×1280)</p></div></div>
 
-<h2>2 · 像素 → 重建 → <span class="badge v2">v2</span> ViT embeds(模型实际吃的图像表示)</h2>
-<p class="kv">每行一台相机:左=原图缩放;中=从数据集 <code>pixel_values</code> 反演重建(逐像素一致
-→ 像素列正确);右=该图 56 个 <code>image_embeds</code>(8×7 merged-token 网格)的 top-3 PCA→RGB
-——语义相近区域颜色相近、空间结构与图像对应,直观确认 embeds 编码的就是这张图。</p>
+<h2>2 · 三列各是什么:<code>JPEG</code> │ <code>pixel_values⁻¹</code> │ <code>PCA(image_embeds)</code></h2>
+<p class="kv">每行一台相机,三列<b>来自不同字段</b>:
+<b>左 = 原始 JPEG</b>(仅缩放显示);
+<b>中 = 从 <code>pixel_values</code> 反演重建</b>——预处理(缩放 + CLIP 归一化 + patch 化)是
+<b>可逆</b>的,逆变换逐像素还原。<u>这一列只用 <code>pixel_values</code>,和 embedding 无关</u>;
+<b>右 = <code>image_embeds</code> 的 top-3 PCA→RGB</b>。注意 embedding 过了 ViT 是<b>不可逆</b>的,
+<u>无法重建回像素</u>——右列只是把 56 个 [2048] 向量投影到 3 维当颜色看(语义相近区域颜色相近、
+空间结构与图像对应),用来直观确认"embeds 编码的就是这张图",<b>不是重建</b>。
+所以中、右两列分别独立验证了 v2 记录里两个图像字段的内容。</p>
 <img src="assets/06/triptych__orig_recon_embedsPCA.png" alt="triptych">
-<h3>embeds 数值验证:从存储像素重新过 frozen ViT(fp32 highest → bf16)</h3>
+<h3>embeds 数值验证:从存储像素重新过 frozen ViT(fp32 highest → bf16),与存储的 embeds 逐元素比</h3>
 <div class="grid c2">
 <div><img src="assets/06/embeds_recompute_diff.png" alt="embeds diff"></div>
-<div class="kv"><p>bitwise 一致 <b>99.8416%</b>;全部 mismatch 都是舍入边界翻转
-(≤1.5× 自身 bf16 ulp 或 |Δ|≤2e-3);max|Δ| = 3.12e-02;bf16 级全局 rel
-6.38e-04(仅诊断)。热图无空间结构 → 纯数值噪声而非内容差异。
-真正的损坏(错图/错行)会让 bitwise 一致率崩到 ~0%。</p></div></div>
+<div class="kv"><p><b>bitwise 一致 99.8416%</b> 的含义:<code>image_embeds</code> 是
+[168 token × 2048 维] = <b>344,064 个 bf16 数</b>;这是其中<b>16-bit 位模式逐位完全相同</b>的比例
+(剩下 ~0.15% ≈ 500 个数有差)。</p>
+<p><b>为什么不是 100%:</b>构建数据集用的是 <b>jit 编译版</b> ViT,这里复验用 <b>eager 版</b>——两个
+XLA 程序 fp32 累加顺序不同,有 ~1e-5 量级微差;转 bf16(仅 ~2–3 位有效数字)时,落在舍入边界附近的
+值被舍到<b>相邻的那一个 bf16 档</b>。这 ~0.15% 全部被验证为相邻舍入(≤1.5× 自身 bf16 ulp 或
+|Δ|≤2e-3),max|Δ| = 3.12e-02;热图无空间结构 → 纯数值噪声,非内容差异。
+bf16 级全局 rel 6.38e-04(仅诊断,不设门限)。</p>
+<p><b>判别力:</b>若存的是错图/错行,两组 embeds 基本不相关,bitwise 一致率会崩到 ~0%,而不是 99.8%。</p></div></div>
 
 <h2>3 · 原始输入:文本 prompt(含数值自车历史)与训练目标</h2>
 <details><summary>展开 prompt 原文(Stage-1 生成,navigation = GO_STRAIGHT)</summary>
