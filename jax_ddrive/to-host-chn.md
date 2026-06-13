@@ -3,9 +3,10 @@
 给在 Waymo TPU 基础设施上跑这个项目的人的自包含交接文档。覆盖:做了什么、验证了什么(带数字)、
 怎么复现、怎么在 TPU 上部署、以及验收标准。分支 `jax-ddrive-port`,未推到 GitHub。
 
-> **最后更新:2026-06-12**(Phase 8 = dataset v2 + 生产数据路径,完成)。文档导航与维护规则见
+> **最后更新:2026-06-13**(from-base overfit 管线 + B1 导出 + B2 自包含推理)。文档导航与维护规则见
 > `docs/README.md`;数据格式权威规格见 `docs/2implementation-details/DATASET_V2.md`(v1 细节与
-> Round-2 语义验证见 `DATASET.md`)。
+> Round-2 语义验证见 `DATASET.md`);**内部 TPU 推理部署权威规格见
+> `docs/2implementation-details/INFERENCE_DEPLOY.md`**。
 > 📌 **历史基线(2026-06-08):** Phase 7(MaxText port)完成并在真实 v6e-1 上用真实权重跑通
 > (loss 0.31/0.56)。详见 `docs/4collect/OVERNIGHT_TPU_PROGRESS{,-chn}.md`。
 > 📌 **数据集(2026-06-12 白天):** 全量 **415,663 帧** parquet 构建完成;**Round-2 语义验证:10/10
@@ -23,6 +24,16 @@
 > target)均已构建、抽样审计(逐字节 vs parquet)、上传 GCS。MaxText fork 已 commit(`a645b25`,
 > 含 vendored 自包含 `sasd_data/`)+ `PATCHES.md` 逐文件文档化。
 > 📌 仍开放:**≥8-chip 多节点跑**(纯 GCP trial 容量问题,外部/瞬时;Waymo 容量下即验证阶梯 step 2)。
+> 📌 **状态(2026-06-13,from-base + 推理):** 从**干净 base Qwen2.5-VL**(非 release)打通整条管线
+> (详见 `docs/2implementation-details/INFERENCE_DEPLOY.md` + `docs/4collect/07_from_base_b1_b2_progress.md`):
+> **A1** base ViT 与 release 不同(NVIDIA 微调过 ViT,367/390 张量超 bf16 舍入)→ from-base embeds 一律用 base ViT;
+> **bf16 加载补丁**(base 快照全 BF16,三处 safetensors 读法加固,F32 路径逐位不变);
+> **A2** base MaxText 参数 ckpt(434/434,3.086B);**A3** distilled-400 base-ViT v2 AR(400/7,eager 2.2e-5);
+> **A4/A5** 本地从-base 训练(adafactor + `MEM_FRACTION=0.93`,42.7 TFLOP/s;A5 overfit loss 5.5→~0.36 进行中)。
+> **B1** `maxtext_to_hf_export.py`(MaxText→bf16 HF):**round-trip 824/824 逐位通过**。
+> **B2** `src/maxtext/diffusion/eval_sasd/`(vendored 验证版多模态采样器,自包含、PYTHONPATH=fork/src 零 ddrive_jax,
+> bf16 加固):**自包含 import 测试通过**;fork-only 生成 / bf16 加载 / 嵌入彩排 = **post-A5 GPU 双检已挂载**。
+> 推理输入离线预算成 npz(B3),内部侧只需 tokenizer 解码;只有标量验证日志带出。
 
 ---
 

@@ -83,6 +83,14 @@ block-causal mask + 3D M-RoPE + embeds scatter),取 masked 位置 logits,按 sch
 **一句话总结**:B1+B2 是两个各半天的确定性工程;B3 用离线 prep 归零;B4 用一次彩排关闭;
 B5 显式出范围。**没有未知数级别的 blocker。**
 
+> **DiffusionGemma 交叉引用(2026-06-13,详见 `0613-diffusiongemma-insights-v0.md`)**:
+> - **B1**:Google 的扩散网络**不能**用来论证"AR 权重 = 扩散权重"(它加载的是单独扩散预训练
+>   ckpt,非 AR 权重复用);我们"网络侧零改"的结论**靠我们自己的代码证据**(434/434 映射完整、
+>   SASD 零新参、MASK/NULL 是已有词表行),独立成立。
+> - **B5 / §4 Option B**:DiffusionGemma `_sampler.py`(jitted `while_loop` + 跨块 KV-cache,
+>   冻结前缀靠**自定义 attention mask** 而非 end_index override)是该终态的**官方可落地参考实现**——
+>   未来做 serving 时照它走,本里程碑不动。
+
 ---
 
 ## 4. 备选方案对比与推荐
@@ -90,7 +98,7 @@ B5 显式出范围。**没有未知数级别的 blocker。**
 | 路线 | 内容 | 新代码量 | 交付时间 | 风险 | 评价 |
 |---|---|---|---|---|---|
 | **A** | MaxText 训 → B1 导出 → 在 TPU 上跑 `jax_ddrive` 的 NNX 采样器(双仓部署) | 0.5 天 | 快 | 低,但内部要装两个仓 | 可行,打包不如 D 干净 |
-| **B** | 把 section-diffusion 采样器**移植进 MaxText**(训推一栈) | **数天级**:去噪循环、scaffold、eval mask、解掩码 schedule 全部在 MaxText 层上重写 + 整套**生成 parity 重验** | 慢 | **高**(最易引入细微数值分歧;历史上 JAX 采样器达到 0.01 m 一致花了完整验证轮) | 是 serving 的正确终态,**不是本里程碑的正确手段** |
+| **B** | 把 section-diffusion 采样器**移植进 MaxText**(训推一栈) | **数天级**:去噪循环、scaffold、eval mask、解掩码 schedule 全部在 MaxText 层上重写 + 整套**生成 parity 重验** | 慢 | **高**(最易引入细微数值分歧;历史上 JAX 采样器达到 0.01 m 一致花了完整验证轮) | 是 serving 的正确终态,**不是本里程碑的正确手段**。**官方参考实现见 DiffusionGemma `_sampler.py`(`0613-diffusiongemma-insights-v0.md`)** |
 | **C** | 改用 NNX harness(`train_tpu.py`)在 TPU 上训练,训推同栈零转换 | 0 | 快 | 中:harness 从未上过真 TPU;放弃已验证的 MaxText 生产路径(iter-ckpt/多机都是 MaxText 给的) | 应急备胎,不建议主路线 |
 | **D(推荐)** | = A + 打包:导出工具 + 采样器 **vendor 进 fork**,内部只拿一个仓 | ~1 天 | 快 | 低 | **训练用刚验证完的生产路径,推理用已验证 0.01 m 的采样器,只补一座格式桥** |
 

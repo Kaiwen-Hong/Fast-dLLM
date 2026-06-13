@@ -59,6 +59,24 @@ DTYPES = {"input_ids": "int64", "labels": "int64", "rbi": "int32", "turn": "int3
           "image_embeds": "bfloat16"}
 
 
+def _st_tensor_f32(path, key):
+    """Read one safetensors tensor as fp32 numpy, tolerant of BF16/F16/F32.
+    safetensors' numpy framework cannot decode bf16, so parse the header and
+    decode raw bytes via ml_dtypes. Bit-identical to
+    ``f.get_tensor(key).astype(np.float32)`` for F32/F16 sources (the release
+    snapshot is F32); the BASE Qwen snapshot is BF16, hence this path."""
+    with open(path, "rb") as fh:
+        n = int.from_bytes(fh.read(8), "little")
+        hdr = json.loads(fh.read(n))
+        data_start = 8 + n
+        m = hdr[key]
+        b, e = m["data_offsets"]
+        fh.seek(data_start + b)
+        raw = fh.read(e - b)
+    npdt = {"F32": np.float32, "F16": np.float16, "BF16": ml_dtypes.bfloat16}[m["dtype"]]
+    return np.frombuffer(raw, dtype=npdt).reshape(m["shape"]).astype(np.float32)
+
+
 def load_vit_streaming(snapshot_dir):
     """Stream-load the frozen ViT one tensor at a time (~1 GB host peak, never the full
     state dict).  Mirror of the proven maxtext waymo_sasd_data_processing loader."""
@@ -89,19 +107,21 @@ def load_vit_streaming(snapshot_dir):
     for fname in sorted(os.listdir(snapshot_dir)):
         if not fname.endswith(".safetensors"):
             continue
-        with safe_open(os.path.join(snapshot_dir, fname), framework="numpy") as f:
-            for k in f.keys():
-                if k not in want:
-                    continue
-                path, tfm = want[k]
-                arr = f.get_tensor(k).astype(np.float32)
-                if tfm == "T":
-                    arr = arr.T
-                elif tfm == "conv":
-                    arr = arr.reshape(arr.shape[0], -1).T
-                _set(vit, path, jnp.asarray(arr))
-                del arr
-                n += 1
+        sf_path = os.path.join(snapshot_dir, fname)
+        with safe_open(sf_path, framework="numpy") as f:
+            keys = list(f.keys())   # listing is bf16-safe; decoding is not
+        for k in keys:
+            if k not in want:
+                continue
+            path, tfm = want[k]
+            arr = _st_tensor_f32(sf_path, k)   # BF16/F16/F32 -> fp32 (base ckpt is bf16)
+            if tfm == "T":
+                arr = arr.T
+            elif tfm == "conv":
+                arr = arr.reshape(arr.shape[0], -1).T
+            _set(vit, path, jnp.asarray(arr))
+            del arr
+            n += 1
         gc.collect()
     assert n == 1 + 12 * cfg.depth + 5, f"unexpected ViT tensor count {n}"
     return vit, n
@@ -248,10 +268,14 @@ def main():
             "scalar_fields": {"sample_id": "bytes", "L": "int64", "n_blocks": "int64"},
             "image_embeds": {
                 "shape_single": list(emb_shape) if emb_shape else None,
-                "provenance": "frozen Fast-dDrive ViT (release snapshot), fp32 forward on GPU "
-                              "with jax_default_matmul_precision=highest (TF32 disabled), cast "
-                              "bfloat16; per-sample K=1 calls (no batching), jitted mirror of "
-                              "VisionTransformer.__call__ cross-checked vs eager per shard",
+                "provenance": ("frozen ViT from snapshot below (see 'snapshot' / 'vit_source'), "
+                               "fp32 forward on GPU with jax_default_matmul_precision=highest "
+                               "(TF32 disabled), cast bfloat16; per-sample K=1 calls (no batching), "
+                               "jitted mirror of VisionTransformer.__call__ cross-checked vs eager "
+                               "per shard"),
+                "vit_source": ("base-Qwen2.5-VL" if "Qwen2.5-VL" in args.snap
+                               else "release-Fast-dDrive" if "Fast-dDrive" in args.snap
+                               else "unknown"),
                 "snapshot": args.snap,
                 "doubling": "loader must concat([ie, ie], axis=0) -> [2N, D] for the doubled "
                             "[noisy|clean] sequence (first N rows = noisy half, second N = clean)",
