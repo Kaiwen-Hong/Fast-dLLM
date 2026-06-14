@@ -389,6 +389,33 @@ vision_mask)是框架中立的 numpy → 经 grain 加载。ViT image embeds 可
 - FSDP 跨 N chips 时 per-chip 内存 ~1/N → **full fine-tune + AdamW** 可行(扔掉
   5090-only 的 bf16+remat+Adafactor+LoRA 技巧;把 `remat` 作为超长序列的旋钮保留)。
 
+### 6.6 代码与数据发布到 GCS + 内部 ingestion(code-publish,2026-06-13)
+
+生产路径走 **MaxText fork**(非上面的 NNX-mesh 选项);内部侧的可执行 runbook 是
+`docs/6for_internal/0613-test_training.md`(从 GCS 拉 → 内部 TPU 训练 → 导出 → 推理)。
+GCS 是中转桶 `gs://project-8a53f5ab-2ea2-4892-a78-ddrive-sasd`。
+
+**代码发布(自动化,带时间戳):**
+```bash
+bash /home/kaiwen/upload_code_to_gcs.sh
+# 打包 maxtext-dlm-fork + jax_ddrive(排除 .git/__pycache__/visualizations),
+# 上传 gs://…/code/fastddrive-<YYYYMMDD_HHMMSS>.tgz(不可变快照,时间戳即身份),
+# 并刷新 gs://…/code/fastddrive-LATEST.txt 指向最新。代码每次变更后重跑即可。
+# 解包后结构:fastddrive-<TS>/{maxtext-dlm-fork, jax_ddrive}
+```
+内部侧把它下载并解到 google3 源码树:
+`/google/src/cloud/kaiwenh/fastdllm/google3/experimental/waymo/users/xqin/third_party/fastddrive-<TS>`
+(命令见内部 runbook §4)。
+
+**数据发布(已在 GCS):** `maxtext_sasd_params_base/`(base 参数)、
+`wod_e2e_sasd_distilled_0613-400_baseViT_v2_ar/`(数据集)、`base_qwen25vl_3b_snapshot/`
+(导出参照 + tokenizer)。**大数据在内部走 CNS**(不放 pod $HOME):经 Cloudtop 中转——
+`gcloud storage cp -r gs://…/<artifact> ~/ddrive_stage/` → `fileutil cp -R -parallelism 50
+~/ddrive_stage/<artifact> $DATA_ROOT/` → 删本地。**CNS 大池**(取代旧的 500G `/cns/sf-d/…`):
+```
+DATA_ROOT=/cns/is-d/home/chauffeur/perception_training/kaiwenh/data
+```
+
 ---
 
 ## 7. 标准 —— 什么已验证 vs 什么是预期

@@ -56,19 +56,28 @@ emits ONE JSON answer with 4 sections: `critical_objects` (12 yes/no), `explanat
 Source bucket (transfer to CNS as needed): `gs://project-8a53f5ab-2ea2-4892-a78-ddrive-sasd`
 (referred to below as `$SRC`).
 
+> **Where big data lives on the internal side:** put **all large artifacts** (datasets, the base
+> snapshot, training checkpoints, exported HF snapshots) under CNS, NOT the pod's `$HOME` (ephemeral
+> / small):
+> ```
+> DATA_ROOT=/cns/is-d/home/chauffeur/perception_training/kaiwenh/data
+> ```
+> The commands below use `$DATA_ROOT` for every big read/write; only the code tarball + venv stay in
+> `$HOME`. MaxText reads/writes Orbax checkpoints to CNS paths directly (`base_output_directory=$DATA_ROOT/...`).
+
 | path under `$SRC` | what | size |
 |---|---|---|
 | `maxtext_sasd_params_base/fast_ddrive_qwen25_3b_BASE_params/` | **base init weights** (Orbax, bf16, 434/434) | 4.6 GB |
 | `wod_e2e_sasd_distilled_0613-400_baseViT_v2_ar/` | **dataset** (ArrayRecord, 7 shards, precomputed **base-ViT** image_embeds; full 4-section labels) | 364 MB |
-| `code/maxtext_fork.tgz` | **the MaxText fork** (training + B1 export + B2 `eval_sasd` inference; bf16-hardened) | 78 MB |
+| `code/fastddrive-<TS>.tgz` | **timestamped code bundle** = `maxtext-dlm-fork` (training + B1 export + B2 inference) **+** `jax_ddrive` (offline prep); `code/fastddrive-LATEST.txt` names the newest | ~38 MB |
 | `base_qwen25vl_3b_snapshot/` | **base HF snapshot** (needed for B1 export ref + tokenizer/decode) | 7.0 GB |
 
-(Optional, not required for training: `code/jax_ddrive.tgz` is only for the *offline* input-prep,
-which runs locally — see Stage 3.)
+Code is published with `bash /home/kaiwen/upload_code_to_gcs.sh` (re-run on every code change → a new
+immutable `fastddrive-<TS>.tgz` + bumped `LATEST` pointer). See `../../to-host-chn.md` §6.6.
 
 ---
 
-## 3. Code layout (inside `maxtext_fork.tgz`)
+## 3. Code layout (inside the bundle, at `fastddrive-<TS>/maxtext-dlm-fork/`)
 
 ```
 maxtext-dlm-fork/
@@ -89,38 +98,60 @@ maxtext-dlm-fork/
 
 ---
 
-## 4. Environment setup (on the TPU host / pod)
+## 4. Environment setup — ingest code + data (Cloudtop → google3 / CNS)
+
+**Ingestion model (mirrors how the owner does it):** GCS is the staging bucket. **Code** goes into
+the google3 source tree (timestamped); **big data** goes to **CNS** via a Cloudtop hop
+(`gcloud storage cp` to local disk → `fileutil cp -parallelism 50` to CNS → delete local).
 
 ```bash
-SRC=gs://project-8a53f5ab-2ea2-4892-a78-ddrive-sasd     # or your CNS mirror
-cd ~
-gsutil -q cp $SRC/code/maxtext_fork.tgz . && tar xzf maxtext_fork.tgz
-gsutil -m -q rsync -r $SRC/wod_e2e_sasd_distilled_0613-400_baseViT_v2_ar ~/wod_e2e_sasd_distilled_0613-400_baseViT_v2_ar
-gsutil -m -q rsync -r $SRC/base_qwen25vl_3b_snapshot ~/base_qwen25vl_3b_snapshot      # for export+decode
+gcloud auth login kaiwenh@google.com
+SRC=gs://project-8a53f5ab-2ea2-4892-a78-ddrive-sasd
+DATA_ROOT=/cns/is-d/home/chauffeur/perception_training/kaiwenh/data      # the big (multi-TB) pool
+fileutil mkdir -p $DATA_ROOT
+
+# ---- (a) CODE: pull the timestamped snapshot, extract into the google3 tree ----
+TS=$(gsutil cat $SRC/code/fastddrive-LATEST.txt | sed 's/\.tgz$//')      # e.g. fastddrive-20260613_185807
+G3=/google/src/cloud/kaiwenh/fastdllm/google3/experimental/waymo/users/xqin/third_party
+gcloud storage cp $SRC/code/$TS.tgz ~/ && tar xzf ~/$TS.tgz -C $G3 && rm ~/$TS.tgz
+FORK=$G3/$TS/maxtext-dlm-fork          # training + B1 export + B2 inference
+DDRIVE=$G3/$TS/jax_ddrive              # only for the OFFLINE input-prep (Stage 3a)
+
+# ---- (b) DATA: GCS -> Cloudtop local -> CNS (50-thread fileutil), then clean local ----
+for A in wod_e2e_sasd_distilled_0613-400_baseViT_v2_ar maxtext_sasd_params_base base_qwen25vl_3b_snapshot; do
+  gcloud storage cp -r $SRC/$A ~/ddrive_stage/
+  fileutil cp -R -parallelism 50 ~/ddrive_stage/$A $DATA_ROOT/
+  rm -rf ~/ddrive_stage/$A
+done
+
+# ---- (c) venv ----
 curl -LsSf https://astral.sh/uv/install.sh | sh && export PATH="$HOME/.local/bin:$PATH"
 uv venv -p 3.11 ~/venv && source ~/venv/bin/activate
-uv pip install -q -r maxtext-dlm-fork/src/dependencies/requirements/generated_requirements/tpu-requirements.txt
-uv pip install -q safetensors pyarrow transformers ml_dtypes flax     # flax/nnx required by eval_sasd
+uv pip install -q -r $FORK/src/dependencies/requirements/generated_requirements/tpu-requirements.txt
+uv pip install -q safetensors pyarrow transformers ml_dtypes flax       # flax/nnx required by eval_sasd
 
 # sanity: B2 inference is self-contained (must import ZERO ddrive_jax):
-PYTHONPATH=$HOME/maxtext-dlm-fork/src JAX_PLATFORMS=cpu \
-  python -m maxtext.diffusion.tests.eval_sasd_import_test     # -> EVAL_SASD_SELFCONTAINED_PASS
+PYTHONPATH=$FORK/src JAX_PLATFORMS=cpu python -m maxtext.diffusion.tests.eval_sasd_import_test
+  # -> EVAL_SASD_SELFCONTAINED_PASS
 ```
+The owner re-publishes code with `bash upload_code_to_gcs.sh` (packs the fork + jax_ddrive, uploads
+`code/fastddrive-<TS>.tgz`, bumps `fastddrive-LATEST.txt`) — see `../../to-host-chn.md` §6.6 (代码与数据发布).
+`$FORK` / `$DATA_ROOT` are used in every command below.
 
 ---
 
 ## 5. STAGE 1 — TPU training (from base)
 
 ```bash
-SRC=gs://project-8a53f5ab-2ea2-4892-a78-ddrive-sasd
-RUNOUT=$SRC/run_overfit400_base          # or a CNS path; Orbax checkpoints land here
+DATA_ROOT=/cns/is-d/home/chauffeur/perception_training/kaiwenh/data
+RUNOUT=$DATA_ROOT/run_overfit400_base          # Orbax checkpoints land on CNS
 source ~/venv/bin/activate
-export PYTHONPATH=$HOME/maxtext-dlm-fork/src
-cd ~/maxtext-dlm-fork
+export PYTHONPATH=$FORK/src
+cd $FORK
 python -m maxtext.trainers.pre_train.train src/maxtext/configs/sasd_waymo.yml \
   model_name=qwen2.5-3b hardware=tpu \
-  load_parameters_path=$SRC/maxtext_sasd_params_base/fast_ddrive_qwen25_3b_BASE_params \
-  sasd_data_dir=$HOME/wod_e2e_sasd_distilled_0613-400_baseViT_v2_ar \
+  load_parameters_path=$DATA_ROOT/maxtext_sasd_params_base/fast_ddrive_qwen25_3b_BASE_params \
+  sasd_data_dir=$DATA_ROOT/wod_e2e_sasd_distilled_0613-400_baseViT_v2_ar \
   sasd_seq_len=1280 max_target_length=2576 \
   base_output_directory=$RUNOUT run_name=overfit400-base \
   steps=30000 checkpoint_period=3000 opt_type=adamw per_device_batch_size=1
@@ -148,13 +179,15 @@ Runs on the TPU **host CPU** (numpy/jax CPU; ~minutes). **Point `param_ckpt_dir`
 `items/` subdir** — the exporter restores just the 434 params from it (no extraction step needed).
 
 ```bash
+DATA_ROOT=/cns/is-d/home/chauffeur/perception_training/kaiwenh/data
 STEP=30000   # or whichever checkpoint you want to export
-PYTHONPATH=$HOME/maxtext-dlm-fork/src JAX_PLATFORMS=cpu \
+cd $FORK
+PYTHONPATH=$FORK/src JAX_PLATFORMS=cpu \
 python scripts/maxtext_to_hf_export.py src/maxtext/configs/sasd_waymo.yml model_name=qwen2.5-3b \
-  param_ckpt_dir=$RUNOUT/run_overfit400-base/checkpoints/$STEP/items \
-  ref_snapshot=$HOME/base_qwen25vl_3b_snapshot \
-  out_dir=$HOME/overfit400_base_hf \
-  verify_against=$HOME/base_qwen25vl_3b_snapshot   # OPTIONAL: only for a base-ckpt round-trip test
+  param_ckpt_dir=$DATA_ROOT/run_overfit400_base/overfit400-base/checkpoints/$STEP/items \
+  ref_snapshot=$DATA_ROOT/base_qwen25vl_3b_snapshot \
+  out_dir=$DATA_ROOT/overfit400_base_hf \
+  verify_against=$DATA_ROOT/base_qwen25vl_3b_snapshot   # OPTIONAL: only for a base-ckpt round-trip test
 ```
 - Writes a **bf16** HF snapshot: 434 trained text tensors (inverse-mapped) + 390 `visual.*` copied
   verbatim from the base ref + config/tokenizer. `lm_head` omitted (tied).
@@ -170,8 +203,8 @@ python scripts/maxtext_to_hf_export.py src/maxtext/configs/sasd_waymo.yml model_
 torch host), then ship the npz in. **CRITICAL: match the TRAINING image resolution** or the image
 token count / mRoPE won't line up:
 ```bash
-# ddrive/torch env, with jax_ddrive on PYTHONPATH:
-python scripts/prep_jax_eval_inputs.py \
+# OFFLINE (Cloudtop / any torch host). $DDRIVE = the jax_ddrive from the same code bundle.
+PYTHONPATH=$DDRIVE python $FORK/scripts/prep_jax_eval_inputs.py \
   --sample train_targets_distilled_400.json --img_dir <dir with images/> \
   --snapshot <base or release HF snapshot> \
   --out sample0.npz --idx 0
@@ -179,13 +212,15 @@ python scripts/prep_jax_eval_inputs.py \
   # writes x_t0, rbi, position_ids, orig_len, pixel_values, image_grid_thw, target_ids
 ```
 For ~20 train + ~20 val samples, loop `--idx`. (Optional `--with_embeds` runs the ViT offline and
-stores bf16 `image_embeds` so the TPU skips the ViT entirely.)
+stores bf16 `image_embeds` so the TPU skips the ViT entirely.) Ship the resulting npz(s) into
+`$DATA_ROOT/eval_inputs/` on the internal side (that's where §7b/§8 read them).
 
 ### 7b. Generate on the TPU (fork-only; fp32 first, then bf16)
 ```bash
-PYTHONPATH=$HOME/maxtext-dlm-fork/src python -m maxtext.diffusion.eval_sasd.driver \
-  --npz sample0.npz --snapshot $HOME/overfit400_base_hf --dtype fp32 \
-  --tokenizer $HOME/base_qwen25vl_3b_snapshot --vlog validation_log.jsonl --run_id overfit400-base --sample s0
+DATA_ROOT=/cns/is-d/home/chauffeur/perception_training/kaiwenh/data
+PYTHONPATH=$FORK/src python -m maxtext.diffusion.eval_sasd.driver \
+  --npz $DATA_ROOT/eval_inputs/sample0.npz --snapshot $DATA_ROOT/overfit400_base_hf --dtype fp32 \
+  --tokenizer $DATA_ROOT/base_qwen25vl_3b_snapshot --vlog validation_log.jsonl --run_id overfit400-base --sample s0
 # then --dtype bf16  (run BOTH precisions; record both)
 # -> SASD_EVAL_PASS + metrics {valid_json, traj_parseable, traj_exact, token_agreement, traj_max_abs_delta}
 ```
@@ -196,8 +231,9 @@ A correctly-overfit model reproduces the sample's GT trajectory (traj_exact True
 ## 8. STAGE 4 — embedding parity (does the TPU ViT match the reference?)
 
 ```bash
-PYTHONPATH=$HOME/maxtext-dlm-fork/src python -m maxtext.diffusion.eval_sasd.embedding_parity \
-  --npz sample0.npz --snapshot $HOME/overfit400_base_hf --vlog validation_log.jsonl
+DATA_ROOT=/cns/is-d/home/chauffeur/perception_training/kaiwenh/data
+PYTHONPATH=$FORK/src python -m maxtext.diffusion.eval_sasd.embedding_parity \
+  --npz $DATA_ROOT/eval_inputs/sample0.npz --snapshot $DATA_ROOT/overfit400_base_hf --vlog validation_log.jsonl
 # -> EMBED_PARITY_PASS  (gate on cosine>=0.999; bf16-vs-fp32 max_rel ~3e-2 is NORMAL through a 32-layer ViT)
 ```
 Report BOTH fp32 and bf16 (abundant TPUs; the value is a complete numerical-drift record).
