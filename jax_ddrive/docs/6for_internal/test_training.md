@@ -1,6 +1,8 @@
-# 0613-test_training.md — STEP 2: internal-TPU test training + inference
+# test_training.md — STEP 2: internal-TPU test training + inference
 
-> **PREREQ — do STEP 1 first:** `0613-transfer-codebase.md` (paste it to the agent) pulls the code
+*Last updated: 2026-06-14 — changelog: [`updates-latest-0614.md`](updates-latest-0614.md); `history/` is archive (agent can skip).*
+
+> **PREREQ — do STEP 1 first:** `transfer-codebase.md` (paste it to the agent) pulls the code
 > into google3 and writes `~/.fastddrive_env`. Every block below starts with `source ~/.fastddrive_env`
 > (→ `$FORK` / `$DDRIVE` / `$DATA_ROOT` / `$SRC`). If `~/.fastddrive_env` doesn't exist, you skipped STEP 1.
 
@@ -104,7 +106,7 @@ maxtext-dlm-fork/
 
 ## 4. Environment setup — data ingestion + venv
 
-> **Prerequisite: STEP 1 done** (`0613-transfer-codebase.md`) — the code is in google3 and
+> **Prerequisite: STEP 1 done** (`transfer-codebase.md`) — the code is in google3 and
 > `~/.fastddrive_env` exists (defines `$SRC` / `$FORK` / `$DDRIVE` / `$DATA_ROOT`). Everything below
 > `source`s it, so paths never need re-deriving.
 

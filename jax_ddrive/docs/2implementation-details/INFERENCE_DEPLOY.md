@@ -143,7 +143,7 @@ PYTHONPATH=src python -m maxtext.diffusion.eval_sasd.embedding_parity \
 ## 5. Internal-TPU runbook (deployment arc: local → free-1-TPU → internal-8-TPU)
 
 **The actionable, step-by-step runbook for the internal coding agent is
-`../6for_internal/0613-test_training.md`** (live GCS paths + exact commands). Summary of the arc:
+`../6for_internal/test_training.md`** (live GCS paths + exact commands). Summary of the arc:
 
 1. **Build artifacts (local, this repo)** — base param ckpt (`save_fast_ddrive_params_ckpt.py`
    from the base snapshot), distilled-400 **base-ViT** v2 AR (`parquet_to_ar_with_embeds.py

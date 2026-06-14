@@ -12,8 +12,9 @@ stable reference or a frozen historical log.
 | [`quick-refresh.md`](quick-refresh.md) | Distilled-dataset quick tracker: per-set location (local / GCS / CNS), build date, size, format/AR status. Update when a distilled set is built or moved. |
 | [`5blockers/0612-blocker-v0.md`](5blockers/0612-blocker-v0.md) | 内部 TPU 部署的正式 blocker 分析(B1–B5)+ 备选路线 + from-base 衍生项(V1–V4)+ overfit 成功标准 + **可带出的简化验证日志规格** + 待拍板决策清单。版本化:`5blockers/MMDD-blocker-vN.md`,新版本新文件,旧版不改。 |
 | [`5blockers/0613-diffusiongemma-insights-v0.md`](5blockers/0613-diffusiongemma-insights-v0.md) | DiffusionGemma(Google 2026-06-11 发布的离散扩散 LLM)代码精读对我们推理/训练的可迁移洞见:多 agent 工作流深读 + **对抗校验**(推翻了"AR 权重=扩散权重"类比、修正了跨块冻结机制);B1–B5 影响、红线清单、训练/dataloader 裁定。补充 `0612-blocker-v0.md`。 |
-| [`6for_internal/0613-transfer-codebase.md`](6for_internal/0613-transfer-codebase.md) | **STEP 1(粘贴给内部 agent)**:自包含 bootstrap —— 从 GCS 拉带时间戳的代码包进 google3、写 `~/.fastddrive_env`、指向 repo 内文档。代码优先,先拿 full context。 |
-| [`6for_internal/0613-test_training.md`](6for_internal/0613-test_training.md) | **STEP 2(repo 已在后)**:`source ~/.fastddrive_env` → 数据 ingestion(Cloudtop→CNS)→ 内部 TPU 从-base 训练 → B1 导出 → B2 推理(T2)→ 嵌入彩排 → 验证日志。含 gotchas、tested-vs-pending。 |
+| [`6for_internal/transfer-codebase.md`](6for_internal/transfer-codebase.md) | **STEP 1(粘贴给内部 agent)**:自包含 bootstrap —— 从 GCS 拉带时间戳的代码包进 google3、写 `~/.fastddrive_env`、指向 repo 内文档。代码优先,先拿 full context。 |
+| [`6for_internal/test_training.md`](6for_internal/test_training.md) | **STEP 2(repo 已在后)**:`source ~/.fastddrive_env` → 数据 ingestion(Cloudtop→CNS)→ 内部 TPU 从-base 训练 → B1 导出 → B2 推理(T2)→ 嵌入彩排 → 验证日志。含 gotchas、tested-vs-pending。 |
+| [`6for_internal/updates-latest-0614.md`](6for_internal/updates-latest-0614.md) | **内部文档 changelog**(滚动更新记录,最新在最上;agent 不必读)。`6for_internal/history/` 是归档(旧 changelog / 被取代的文档),agent 无需读。 |
 
 The MaxText fork side is documented in the fork itself:
 `maxtext-dlm-fork/PATCHES.md` (file-by-file diff vs upstream, vendor sync rules, validation
@@ -58,3 +59,8 @@ commands).
    docs, not by editing the plan.
 5. Big artifacts (datasets, ckpts, oracles) live under `/home/kaiwen/data/fast-ddrive/`
    and on GCS — docs reference them by path; nothing heavy in git.
+6. **`6for_internal/` runbooks** (`transfer-codebase.md`, `test_training.md`) are **living, undated,
+   edited in place** and shipped to the internal side in the code bundle. Record each change in
+   `6for_internal/updates-latest-<date>.md` (rolling changelog, newest on top); when a newer
+   `updates-latest-*` supersedes it, move the old one into `6for_internal/history/` (which the
+   internal agent does not read). Do NOT re-add a date prefix to the runbook filenames.

@@ -1,8 +1,10 @@
 # STEP 1 — 把 Fast-dDrive 代码库搬进内部环境(transfer codebase)
 
+*Last updated: 2026-06-14 — 更新记录见 [`updates-latest-0614.md`](updates-latest-0614.md);`history/` 是归档,agent 无需读。*
+
 > **怎么用:** 把这一整篇**直接粘贴给内部 coding agent**(在 Cloudtop 上、能访问 GCS)。它会从 GCS
 > 拉带时间戳的代码包、解到 google3 源码树、并写一个稳定的 env 文件。**跑完这一步,agent 就有了完整
-> 仓库(代码 + 全部文档)作为上下文**,再进 STEP 2(`0613-test_training.md`,那时已在仓库里)。
+> 仓库(代码 + 全部文档)作为上下文**,再进 STEP 2(`test_training.md`,那时已在仓库里)。
 >
 > 这一步**只搬代码**(几十 MB,几秒;上传脚本会打印实际大小):先拿到 codebase 拿 full context。**不**拉 12 GB+ 的数据、
 > **不**装 venv —— 那些在 STEP 2(数据只有真正训练时才用到)。
@@ -41,7 +43,7 @@ echo "env  -> ~/.fastddrive_env  (内容如下)"; cat ~/.fastddrive_env
 ## 现在你有了完整上下文 —— 跑任何东西前先读这几篇(都在刚解出来的仓库里)
 ```bash
 source ~/.fastddrive_env
-ls $DDRIVE/docs/6for_internal/0613-test_training.md            # STEP 2:数据 + 训练 + 导出 + 推理(接着做这个)
+ls $DDRIVE/docs/6for_internal/test_training.md            # STEP 2:数据 + 训练 + 导出 + 推理(接着做这个)
 ls $DDRIVE/docs/2implementation-details/INFERENCE_DEPLOY.md    # 设计权威:B1/B2、bf16、嵌入彩排、tested-vs-pending
 ls $DDRIVE/docs/5blockers/0612-blocker-v0.md                  # 内部 TPU 部署的 blocker 分析(背景)
 ls $FORK/PATCHES.md                                          # MaxText fork 逐文件 diff
@@ -58,4 +60,4 @@ owner 改了代码就 `bash /home/kaiwen/upload_code_to_gcs.sh` 重发一个新�
 刷新 `fastddrive-LATEST.txt`;agent 重跑上面的"拉最新代码包"即可拿到新版本(时间戳即版本身份)。
 
 ---
-**→ 接 STEP 2:`$DDRIVE/docs/6for_internal/0613-test_training.md`**
+**→ 接 STEP 2:`$DDRIVE/docs/6for_internal/test_training.md`**

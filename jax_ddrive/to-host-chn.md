@@ -394,7 +394,7 @@ vision_mask)是框架中立的 numpy → 经 grain 加载。ViT image embeds 可
 ### 6.6 代码与数据发布到 GCS + 内部 ingestion(code-publish,2026-06-13)
 
 生产路径走 **MaxText fork**(非上面的 NNX-mesh 选项);内部侧的可执行 runbook 是
-`docs/6for_internal/0613-test_training.md`(从 GCS 拉 → 内部 TPU 训练 → 导出 → 推理)。
+`docs/6for_internal/test_training.md`(从 GCS 拉 → 内部 TPU 训练 → 导出 → 推理)。
 GCS 是中转桶 `gs://project-8a53f5ab-2ea2-4892-a78-ddrive-sasd`。
 
 **代码发布(自动化,带时间戳):**

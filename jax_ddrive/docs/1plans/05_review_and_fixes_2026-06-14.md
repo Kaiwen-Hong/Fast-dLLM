@@ -29,7 +29,7 @@ bit-identical for F32) + module import (`driver._sections`, `IMAGE_ID`, `run_eva
 - **INFERENCE_DEPLOY.md**: parity `5e-3`→`5e-2`; `code/maxtext_fork.tgz`→`fastddrive-<TS>.tgz`(+LATEST);
   `--verify_against`→`verify_against=`; `$DDRIVE`/`$FORK` defined; `168 = 3×56` clarified; T2 status made
   honest (30k regressed; `token_agreement` was a broken metric); metric list updated.
-- **0613-test_training.md**: §6 trained export drops `verify_against` (else spurious `B1_ROUNDTRIP_FAIL`);
+- **test_training.md**: §6 trained export drops `verify_against` (else spurious `B1_ROUNDTRIP_FAIL`);
   §7a npz are **OWNER-built + shipped to `eval_inputs/`** (the TPU has no torch) — skip prep on the TPU;
   §7b metric list + T2 status note.
 - **PATCHES.md**: dual vendoring pins (`b18e861` + `4b0f4f2`); validation repointed to
@@ -46,7 +46,7 @@ bit-identical for F32) + module import (`driver._sections`, `IMAGE_ID`, `run_eva
 1. **Committed** fork B1/B2/B3 + fixes → `master` `20d9cd1` (fork has no git remote → local commit,
    consistent with the existing SASD history on master).
 2. **Re-published** the code bundle → `gs://<bucket>/code/fastddrive-20260614_021422.tgz` (38M);
-   `fastddrive-LATEST.txt` updated. The internal pull (`0613-transfer-codebase.md`) now gets the fixes.
+   `fastddrive-LATEST.txt` updated. The internal pull (`transfer-codebase.md`) now gets the fixes.
    *(Note: the published tarball packs the WORKING TREE, so it includes the uncommitted ddrive_jax fix.)*
 3. **Built + shipped the eval npz set** → `eval_inputs/` — see below.
 
