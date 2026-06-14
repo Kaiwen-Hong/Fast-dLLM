@@ -1,4 +1,8 @@
-# 0613-test_training.md — internal-TPU test training + inference (for the internal coding agent)
+# 0613-test_training.md — STEP 2: internal-TPU test training + inference
+
+> **PREREQ — do STEP 1 first:** `0613-transfer-codebase.md` (paste it to the agent) pulls the code
+> into google3 and writes `~/.fastddrive_env`. Every block below starts with `source ~/.fastddrive_env`
+> (→ `$FORK` / `$DDRIVE` / `$DATA_ROOT` / `$SRC`). If `~/.fastddrive_env` doesn't exist, you skipped STEP 1.
 
 **Audience:** an autonomous coding agent running on the company's internal TPU. This is a
 self-contained runbook + context to (1) train an **overfit** SASD model from the clean base
@@ -98,33 +102,27 @@ maxtext-dlm-fork/
 
 ---
 
-## 4. Environment setup — ingest code + data (Cloudtop → google3 / CNS)
+## 4. Environment setup — data ingestion + venv
 
-**Ingestion model (mirrors how the owner does it):** GCS is the staging bucket. **Code** goes into
-the google3 source tree (timestamped); **big data** goes to **CNS** via a Cloudtop hop
-(`gcloud storage cp` to local disk → `fileutil cp -parallelism 50` to CNS → delete local).
+> **Prerequisite: STEP 1 done** (`0613-transfer-codebase.md`) — the code is in google3 and
+> `~/.fastddrive_env` exists (defines `$SRC` / `$FORK` / `$DDRIVE` / `$DATA_ROOT`). Everything below
+> `source`s it, so paths never need re-deriving.
+
+**Data ingestion model:** big data goes to **CNS** via a Cloudtop hop —
+`gcloud storage cp` to local disk → `fileutil cp -parallelism 50` to CNS → delete the local copy.
 
 ```bash
-gcloud auth login kaiwenh@google.com
-SRC=gs://project-8a53f5ab-2ea2-4892-a78-ddrive-sasd
-DATA_ROOT=/cns/is-d/home/chauffeur/perception_training/kaiwenh/data      # the big (multi-TB) pool
+source ~/.fastddrive_env
 fileutil mkdir -p $DATA_ROOT
 
-# ---- (a) CODE: pull the timestamped snapshot, extract into the google3 tree ----
-TS=$(gsutil cat $SRC/code/fastddrive-LATEST.txt | sed 's/\.tgz$//')      # e.g. fastddrive-20260613_185807
-G3=/google/src/cloud/kaiwenh/fastdllm/google3/experimental/waymo/users/xqin/third_party
-gcloud storage cp $SRC/code/$TS.tgz ~/ && tar xzf ~/$TS.tgz -C $G3 && rm ~/$TS.tgz
-FORK=$G3/$TS/maxtext-dlm-fork          # training + B1 export + B2 inference
-DDRIVE=$G3/$TS/jax_ddrive              # only for the OFFLINE input-prep (Stage 3a)
-
-# ---- (b) DATA: GCS -> Cloudtop local -> CNS (50-thread fileutil), then clean local ----
+# ---- data: GCS -> Cloudtop local -> CNS (50-thread fileutil), then clean local ----
 for A in wod_e2e_sasd_distilled_0613-400_baseViT_v2_ar maxtext_sasd_params_base base_qwen25vl_3b_snapshot; do
   gcloud storage cp -r $SRC/$A ~/ddrive_stage/
   fileutil cp -R -parallelism 50 ~/ddrive_stage/$A $DATA_ROOT/
   rm -rf ~/ddrive_stage/$A
 done
 
-# ---- (c) venv ----
+# ---- venv ----
 curl -LsSf https://astral.sh/uv/install.sh | sh && export PATH="$HOME/.local/bin:$PATH"
 uv venv -p 3.11 ~/venv && source ~/venv/bin/activate
 uv pip install -q -r $FORK/src/dependencies/requirements/generated_requirements/tpu-requirements.txt
@@ -143,7 +141,7 @@ The owner re-publishes code with `bash upload_code_to_gcs.sh` (packs the fork + 
 ## 5. STAGE 1 — TPU training (from base)
 
 ```bash
-DATA_ROOT=/cns/is-d/home/chauffeur/perception_training/kaiwenh/data
+source ~/.fastddrive_env                       # -> $FORK $DDRIVE $DATA_ROOT $SRC
 RUNOUT=$DATA_ROOT/run_overfit400_base          # Orbax checkpoints land on CNS
 source ~/venv/bin/activate
 export PYTHONPATH=$FORK/src
@@ -179,7 +177,7 @@ Runs on the TPU **host CPU** (numpy/jax CPU; ~minutes). **Point `param_ckpt_dir`
 `items/` subdir** — the exporter restores just the 434 params from it (no extraction step needed).
 
 ```bash
-DATA_ROOT=/cns/is-d/home/chauffeur/perception_training/kaiwenh/data
+source ~/.fastddrive_env
 STEP=30000   # or whichever checkpoint you want to export
 cd $FORK
 PYTHONPATH=$FORK/src JAX_PLATFORMS=cpu \
@@ -203,7 +201,7 @@ python scripts/maxtext_to_hf_export.py src/maxtext/configs/sasd_waymo.yml model_
 torch host), then ship the npz in. **CRITICAL: match the TRAINING image resolution** or the image
 token count / mRoPE won't line up:
 ```bash
-# OFFLINE (Cloudtop / any torch host). $DDRIVE = the jax_ddrive from the same code bundle.
+source ~/.fastddrive_env   # OFFLINE (Cloudtop / any torch host); $DDRIVE = jax_ddrive from the bundle
 PYTHONPATH=$DDRIVE python $FORK/scripts/prep_jax_eval_inputs.py \
   --sample train_targets_distilled_400.json --img_dir <dir with images/> \
   --snapshot <base or release HF snapshot> \
@@ -217,7 +215,7 @@ stores bf16 `image_embeds` so the TPU skips the ViT entirely.) Ship the resultin
 
 ### 7b. Generate on the TPU (fork-only; fp32 first, then bf16)
 ```bash
-DATA_ROOT=/cns/is-d/home/chauffeur/perception_training/kaiwenh/data
+source ~/.fastddrive_env
 PYTHONPATH=$FORK/src python -m maxtext.diffusion.eval_sasd.driver \
   --npz $DATA_ROOT/eval_inputs/sample0.npz --snapshot $DATA_ROOT/overfit400_base_hf --dtype fp32 \
   --tokenizer $DATA_ROOT/base_qwen25vl_3b_snapshot --vlog validation_log.jsonl --run_id overfit400-base --sample s0
@@ -231,7 +229,7 @@ A correctly-overfit model reproduces the sample's GT trajectory (traj_exact True
 ## 8. STAGE 4 — embedding parity (does the TPU ViT match the reference?)
 
 ```bash
-DATA_ROOT=/cns/is-d/home/chauffeur/perception_training/kaiwenh/data
+source ~/.fastddrive_env
 PYTHONPATH=$FORK/src python -m maxtext.diffusion.eval_sasd.embedding_parity \
   --npz $DATA_ROOT/eval_inputs/sample0.npz --snapshot $DATA_ROOT/overfit400_base_hf --vlog validation_log.jsonl
 # -> EMBED_PARITY_PASS  (gate on cosine>=0.999; bf16-vs-fp32 max_rel ~3e-2 is NORMAL through a 32-layer ViT)
