@@ -1,6 +1,6 @@
 # Docs index & maintenance rules
 
-**Start here.** Two documents are the living sources of truth; everything else is either a
+**Start here.** The living docs below are the sources of truth; everything else is either a
 stable reference or a frozen historical log.
 
 ## Living (must stay current — update these when reality changes)
@@ -40,6 +40,7 @@ commands).
 | `1plans/02_tpu_plan.md` | TPU deployment plan |
 | `1plans/03_scaleup_tpu_spec.md` | Phase 6 scale-up spec (dataset + FSDP harness) |
 | `1plans/04_tpu_smallscale_validation.md` | $300-trial small-scale validation plan |
+| `1plans/05_review_and_fixes_2026-06-14.md` | codex+Claude review pass: code/doc fixes (bf16-npz crash, metrics, bf16-safe ViT loader) + commit/publish/eval-npz actions |
 | `4collect/HANDOFF.md`, `4collect/OVERNIGHT_PROGRESS.md` | Phase ≤6 build logs |
 | `4collect/05_maxtext_port_progress.md` | Phase 7 MaxText port log |
 | `4collect/OVERNIGHT_TPU_PROGRESS{,-chn}.md` | first real-TPU runs (v6e-1, 2026-06-08) |
@@ -48,7 +49,7 @@ commands).
 
 ## Maintenance rules
 
-1. **One fact, one home.** Current state lives in the two living docs; don't restate it
+1. **One fact, one home.** Current state lives in the living docs; don't restate it
    elsewhere (link instead). Frozen logs keep the *discovery* story, not the truth.
 2. When a milestone lands: update the living docs **in the same change**, and append a
    dated entry to a `4collect/` log (create `NN_<topic>_progress.md`, numbered).

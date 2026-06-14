@@ -34,6 +34,8 @@
 > **B2** `src/maxtext/diffusion/eval_sasd/`(vendored 验证版多模态采样器,自包含、PYTHONPATH=fork/src 零 ddrive_jax,
 > bf16 加固):**自包含 import 测试通过**;fork-only 生成 / bf16 加载 / 嵌入彩排 = **post-A5 GPU 双检已挂载**。
 > 推理输入离线预算成 npz(B3),内部侧只需 tokenizer 解码;只有标量验证日志带出。
+> (注:B1/B2/B3 + 更新后的 PATCHES.md 目前是 fork **工作区文件、尚未 commit**;发布靠
+> `upload_code_to_gcs.sh` 打包**工作区**而非 git,故不影响内部使用。)
 
 ---
 
@@ -214,7 +216,7 @@ fast_ddrive/                         # PyTorch release + 我们的新增
   eval/evaluate_waymo_metrics.py     # 官方 ADE/RFS(release 的)
   eval/waymo_rfs_utils.py            # RFS(纯 numpy)
 jax_ddrive/
-  to-host.md / to-host-chn.md        # 英文原版 / 本文件(中文版)
+  to-host-chn.md                     # 本文件(中文版;英文 to-host.md 已于 2026-06-12 退役)
   README.md
   docs/3summary/{REPORT,FEATURES}.md
   docs/2implementation-details/{ARCHITECTURE,EVAL_PIPELINE,AUDIT,01_pytorch_reference_algorithm}.md

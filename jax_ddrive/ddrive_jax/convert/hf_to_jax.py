@@ -10,9 +10,11 @@ No mask-token mean-init needed (|<MASK>|=151665, <|NULL|>=151666 already trained
 """
 from __future__ import annotations
 
+import json
 import os
 
 import jax.numpy as jnp
+import ml_dtypes
 import numpy as np
 from flax import nnx
 from safetensors import safe_open
@@ -20,14 +22,35 @@ from safetensors import safe_open
 from ..models.qwen2_5_text import Qwen25TextConfig, Qwen25TextModel
 
 
+_ST_NPDT = {"F32": np.float32, "F16": np.float16, "BF16": ml_dtypes.bfloat16}
+
+
 def _load_all_tensors(snapshot_dir: str) -> dict[str, np.ndarray]:
+    """Load every tensor from the snapshot's safetensors shards as fp32 numpy.
+
+    Parses the safetensors header and decodes raw bytes via ml_dtypes, so this is tolerant of
+    BF16 sources: safetensors' framework="numpy" get_tensor() cannot decode bf16, and the BASE
+    Qwen2.5-VL snapshot is bf16 (the same gotcha the fork's eval_sasd loaders already guard).
+    Bit-identical to get_tensor().astype(np.float32) for F32/F16; downstream casts to model dtype."""
     out: dict[str, np.ndarray] = {}
     for fname in sorted(os.listdir(snapshot_dir)):
         if not fname.endswith(".safetensors"):
             continue
-        with safe_open(os.path.join(snapshot_dir, fname), framework="numpy") as f:
-            for k in f.keys():
-                out[k] = f.get_tensor(k)
+        path = os.path.join(snapshot_dir, fname)
+        with open(path, "rb") as fh:
+            n = int.from_bytes(fh.read(8), "little")
+            hdr = json.loads(fh.read(n))
+            data_start = 8 + n
+            for k, m in hdr.items():
+                if k == "__metadata__":
+                    continue
+                npdt = _ST_NPDT.get(m["dtype"])
+                if npdt is None:
+                    raise ValueError(f"_load_all_tensors: unsupported dtype {m['dtype']} for {k}")
+                b, e = m["data_offsets"]
+                fh.seek(data_start + b)
+                raw = fh.read(e - b)
+                out[k] = np.frombuffer(raw, dtype=npdt).reshape(m["shape"]).astype(np.float32)
     return out
 
 

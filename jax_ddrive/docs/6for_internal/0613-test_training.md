@@ -184,8 +184,9 @@ PYTHONPATH=$FORK/src JAX_PLATFORMS=cpu \
 python scripts/maxtext_to_hf_export.py src/maxtext/configs/sasd_waymo.yml model_name=qwen2.5-3b \
   param_ckpt_dir=$DATA_ROOT/run_overfit400_base/overfit400-base/checkpoints/$STEP/items \
   ref_snapshot=$DATA_ROOT/base_qwen25vl_3b_snapshot \
-  out_dir=$DATA_ROOT/overfit400_base_hf \
-  verify_against=$DATA_ROOT/base_qwen25vl_3b_snapshot   # OPTIONAL: only for a base-ckpt round-trip test
+  out_dir=$DATA_ROOT/overfit400_base_hf
+# do NOT add verify_against to a TRAINED export — the text weights changed, so the bitwise round-trip
+# would spuriously FAIL. verify_against is ONLY for the base-ckpt sanity check (see note below).
 ```
 - Writes a **bf16** HF snapshot: 434 trained text tensors (inverse-mapped) + 390 `visual.*` copied
   verbatim from the base ref + config/tokenizer. `lm_head` omitted (tied).
@@ -197,13 +198,16 @@ python scripts/maxtext_to_hf_export.py src/maxtext/configs/sasd_waymo.yml model_
 ## 7. STAGE 3 — inference + T2 (generate from the overfit model)
 
 ### 7a. Build inference inputs OFFLINE (torch host; produces an npz per sample)
-`prep_jax_eval_inputs.py` imports `ddrive_jax` and torch — run it **off the TPU** (locally or on a
-torch host), then ship the npz in. **CRITICAL: match the TRAINING image resolution** or the image
-token count / mRoPE won't line up:
+**The npz inputs are OWNER-built and shipped** — they live in `$DATA_ROOT/eval_inputs/` (built locally
+by the owner; the TPU host has no torch / HF processor / images). **If they're already there, SKIP to
+§7b.** The command below is the OWNER's build reference (run off the TPU on a torch host with the WOD
+sample JSON + camera JPEGs). `prep_jax_eval_inputs.py` imports `ddrive_jax` and torch. **CRITICAL:
+match the TRAINING image resolution** or the image token count / mRoPE won't line up:
 ```bash
 source ~/.fastddrive_env   # OFFLINE (Cloudtop / any torch host); $DDRIVE = jax_ddrive from the bundle
 PYTHONPATH=$DDRIVE python $FORK/scripts/prep_jax_eval_inputs.py \
-  --sample train_targets_distilled_400.json --img_dir <dir with images/> \
+  --sample <WOD distilled targets JSON, e.g. train_targets_distilled_400.json> \
+  --img_dir <WOD camera-JPEG dir for those samples> \
   --snapshot <base or release HF snapshot> \
   --out sample0.npz --idx 0
   # defaults already match training: --min_pixels 784 --max_pixels 50176  (-> 168 image tokens)
@@ -220,9 +224,14 @@ PYTHONPATH=$FORK/src python -m maxtext.diffusion.eval_sasd.driver \
   --npz $DATA_ROOT/eval_inputs/sample0.npz --snapshot $DATA_ROOT/overfit400_base_hf --dtype fp32 \
   --tokenizer $DATA_ROOT/base_qwen25vl_3b_snapshot --vlog validation_log.jsonl --run_id overfit400-base --sample s0
 # then --dtype bf16  (run BOTH precisions; record both)
-# -> SASD_EVAL_PASS + metrics {valid_json, traj_parseable, traj_exact, token_agreement, traj_max_abs_delta}
+# -> SASD_EVAL_PASS + metrics {valid_json, traj_parseable, L, n_image_tokens, n_mask_remaining, traj_exact, traj_max_abs_delta, co_match, fmb_match}
 ```
 A correctly-overfit model reproduces the sample's GT trajectory (traj_exact True) and critical_objects.
+> **Status (2026-06-14):** the pipeline runs end-to-end but the overfit is **not yet verbatim** — 12k
+> gave traj Δ1.12m; **30k regressed** to Δ28.8m (a training-recipe issue: the cosine LR schedule is
+> recomputed on resume, perturbing memorised digits — NOT a pipeline bug). The driver now emits
+> `traj_exact` / `traj_max_abs_delta` / `co_match` / `fmb_match`; the old `token_agreement`-vs-target
+> was a broken (scaffold-vs-flat misaligned) metric and has been removed.
 
 ---
 

@@ -48,12 +48,13 @@ from the reference).
 
 - Output is **bf16** (matches the bf16 param ckpt — lossless, half the host RAM of f32, which
   OOM-killed the 30 GB box at f32).
-- **Round-trip identity gate** (`--verify_against`): base → MaxText params → HF export must equal
+- **Round-trip identity gate** (`verify_against=`, BASE ckpt only): base → MaxText params → HF export must equal
   the base snapshot **bitwise**. ✅ **Verified 824/824 (434 text + 390 vision, 0 differing).**
 
 ```bash
 # (CPU) round-trip the BASE param ckpt -> bf16 HF -> expect B1_ROUNDTRIP_PASS
-PYTHONPATH=$DDRIVE:src JAX_PLATFORMS=cpu python scripts/maxtext_to_hf_export.py \
+# $DDRIVE = jax_ddrive root, $FORK = the fork (both from ~/.fastddrive_env); run from $FORK.
+PYTHONPATH=$DDRIVE:$FORK/src JAX_PLATFORMS=cpu python scripts/maxtext_to_hf_export.py \
   src/maxtext/configs/sasd_waymo.yml model_name=qwen2.5-3b \
   param_ckpt_dir=<param ckpt> ref_snapshot=<base HF snapshot> \
   out_dir=<out> verify_against=<base HF snapshot>
@@ -102,7 +103,7 @@ NNX. (Local: flax 0.12.7. Pin it in the internal requirements.)
 ```bash
 PYTHONPATH=src python -m maxtext.diffusion.eval_sasd.driver \
   --npz <inputs.npz> --snapshot <B1 bf16 snapshot> --dtype fp32   # then --dtype bf16
-# -> SASD_EVAL_PASS  (valid JSON + 5-waypoint trajectory; + token_agreement / traj_exact vs target)
+# -> SASD_EVAL_PASS  (valid JSON + 5-waypoint trajectory; + traj_exact / traj_max_abs_delta / co_match / fmb_match vs target)
 ```
 
 ---
@@ -124,7 +125,8 @@ using the parity-validated `build_scaffold` / `get_rope_index_numpy` + the HF pr
 `embedding_parity.py` loads the ViT in fp32 and bf16 from the (bf16) snapshot and compares the
 merged embeds, plus vs the offline reference if present. TPU defaults to bf16 matmul, so "same"
 means **within bf16 tolerance, not bitwise**: it reports `max_rel` + `cosine` and a verdict
-(default thresholds: `max_rel ≤ 5e-3`, `cosine ≥ 0.999` — calibrate on the first run). Produces
+(default thresholds: `cosine ≥ 0.999` primary, `max_rel ≤ 5e-2` loose — see §6; when the npz carries
+the offline reference, its bf16-vs-reference cosine must also clear the gate). Produces
 both fp32 and bf16 numbers (per the user's both-precisions policy for the internal TPU).
 ```bash
 PYTHONPATH=src python -m maxtext.diffusion.eval_sasd.embedding_parity \
@@ -143,8 +145,9 @@ PYTHONPATH=src python -m maxtext.diffusion.eval_sasd.embedding_parity \
    --snap <base>`), offline eval npz (`prep_jax_eval_inputs.py`). ✅ done 2026-06-13.
 2. **Upload to GCS** — ✅ **done 2026-06-13**. Live objects in `gs://<project>-ddrive-sasd/`:
    `maxtext_sasd_params_base/fast_ddrive_qwen25_3b_BASE_params/` (base init weights),
-   `wod_e2e_sasd_distilled_0613-400_baseViT_v2_ar/` (dataset, 7 shards), `code/maxtext_fork.tgz`
-   (updated, contains B1/B2). Launch script: `launch_maxtext_sasd_tpu_frombase.sh`.
+   `wod_e2e_sasd_distilled_0613-400_baseViT_v2_ar/` (dataset, 7 shards), `code/fastddrive-<TS>.tgz`
+   (+ `code/fastddrive-LATEST.txt` pointer; one bundle = fork + jax_ddrive, see `upload_code_to_gcs.sh`).
+   Launch script: `launch_maxtext_sasd_tpu_frombase.sh`.
 3. **Free single TPU smoke** — run `launch_maxtext_sasd_tpu_frombase.sh` (12-step train + resume
    validation), then `maxtext_to_hf_export.py` (expect 824/824), `run_eval` fp32 **then** bf16,
    `run_parity`. B4 numeric rehearsal + the reference the internal run reconciles against.
@@ -166,8 +169,8 @@ Single-chip inference is fine (3B fits one chip); training uses FSDP across the 
 | B2 fork-only generation (release F32 + oracle) | ✅ `SASD_EVAL_PASS` (valid JSON + 5-wp trajectory) |
 | bf16 snapshot load via hardened loader | ✅ `B2_BF16_LOAD_PASS` (export base→bf16, 434 loaded, embed dtype BF16) |
 | Embedding parity fp32/bf16 | ✅ cosine **0.99966** (max_rel 3.0e-2); thresholds recalibrated to cosine≥0.999 primary, max_rel≤5e-2 loose |
-| Offline prep on the eval set | ✅ runs (`build_scaffold`). **GOTCHA: `--min_pixels`/`--max_pixels` MUST match the TRAINING resolution (784 / 784·64 → 168 img tokens), or token count / mRoPE won't line up.** |
-| from-base overfit → T2 (real milestone) | 🔄 **pipeline works end-to-end** (overfit model → correct scaffold → coherent 4-section JSON; critical_objects matched). At 12k steps NOT yet verbatim (token 41%, traj Δ1.12m, valid_json edge) → overfit extended to 30k (≤50k authorized). |
+| Offline prep on the eval set | ✅ runs (`build_scaffold`). **GOTCHA: `--min_pixels`/`--max_pixels` MUST match the TRAINING resolution (784 / 784·64 → 56 merged tokens/img × 3 cams = 168), or token count / mRoPE won't line up.** |
+| from-base overfit → T2 (real milestone) | 🔄 **pipeline works end-to-end** (overfit model → correct scaffold → coherent 4-section JSON; critical_objects matched), but **NOT yet verbatim**. 12k: traj Δ1.12m; 30k did **not** improve and **regressed** (traj Δ28.8m) → a training-recipe issue (LR schedule recomputed on resume), not the pipeline. NOTE: the old `token_agreement`-vs-target was a broken metric (denoised-scaffold vs flat-GT misalignment); replaced by `co_match`/`fmb_match` + trajectory Δ. |
 | Free-1-TPU + internal-8-TPU smoke | ⏳ not started |
 
 ---
