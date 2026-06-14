@@ -115,19 +115,24 @@ eval sample it builds the npz the driver consumes:
 `x_t0, rbi, position_ids, orig_len, pixel_values, image_grid_thw, target_ids[, image_embeds]`,
 using the parity-validated `build_scaffold` / `get_rope_index_numpy` + the HF processor. With
 `--with_embeds` it runs the frozen ViT once (fp32→bf16) so the **internal TPU never loads the ViT**
-— it only needs an `AutoTokenizer` to decode the output. (Mirror of the input half of
-`capture_oracle_sd_mm.py`.) 🧪 not yet run on the eval set.
+— it only needs an `AutoTokenizer` to decode the output. **This precomputed-embeds path is the
+CANONICAL one** (symmetric with training, which also feeds precomputed embeds → no ViT-recompute
+drift, and it avoids the bf16-ViT matmul drift; see §4). ✅ 40-sample eval set built + shipped to
+`gs://<bucket>/eval_inputs/` (20 train + 20 val); the 20 train npz carry the **exact training embeds**
+(pulled from the v2 AR dataset by sample index, verified by prompt + grid match).
 
 ---
 
 ## 4. Embedding parity (user request) 🧪
 
-`embedding_parity.py` loads the ViT in fp32 and bf16 from the (bf16) snapshot and compares the
-merged embeds, plus vs the offline reference if present. TPU defaults to bf16 matmul, so "same"
-means **within bf16 tolerance, not bitwise**: it reports `max_rel` + `cosine` and a verdict
-(default thresholds: `cosine ≥ 0.999` primary, `max_rel ≤ 5e-2` loose — see §6; when the npz carries
-the offline reference, its bf16-vs-reference cosine must also clear the gate). Produces
-both fp32 and bf16 numbers (per the user's both-precisions policy for the internal TPU).
+`embedding_parity.py` loads the ViT in fp32 and bf16 and compares the merged embeds, plus vs the npz's
+precomputed reference embeds. Since the **canonical path skips the ViT** (precomputed embeds), the
+verdict **gates on `fp32_vs_reference`** — do the shipped embeds reproduce a fresh fp32 ViT? (cosine
+≥ 0.999; measured **1.00000** on the training-exact npz). The `fp32_vs_bf16` / `bf16_vs_reference`
+numbers are **DIAGNOSTICS** (the bf16-matmul drift you'd incur IF you ran the bf16 ViT — the BASE ViT
+gives cosine ~**0.998**, larger than the release ViT's 0.99966; that is exactly why the canonical path
+uses precomputed fp32→bf16 embeds and does NOT run the bf16 ViT). With no precomputed embeds (on-device
+fallback) it falls back to gating on `fp32_vs_bf16` — prefer fp32 ViT. Both fp32+bf16 numbers reported.
 ```bash
 PYTHONPATH=src python -m maxtext.diffusion.eval_sasd.embedding_parity \
   --npz <inputs_with_pixels.npz> --snapshot <B1 snapshot>   # -> EMBED_PARITY_PASS/FAIL

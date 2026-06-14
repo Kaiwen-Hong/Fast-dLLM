@@ -79,3 +79,20 @@ bit-identical for F32) + module import (`driver._sections`, `IMAGE_ID`, `run_eva
   fix is unit-verified but was NOT exercised through `prep --with_embeds` end-to-end (no combined env).
 - **Benign smells left** (no correctness impact, flagged in review): `hf_to_jax` tie-check log message;
   `qwen2_5_text` two opposite cos/sin tuple orderings (B2 uses only the M-RoPE path).
+
+## Follow-up (same day): parity reframed to a diagnostic + training-exact embeds
+Per the design discussion, two more changes landed:
+- **(a) `embedding_parity` reframed.** The canonical inference path skips the ViT (precomputed embeds),
+  so the verdict now GATES on `fp32_vs_reference` — do the shipped embeds reproduce a fresh fp32 ViT?
+  (→ **cosine 1.00000, EMBED_PARITY_PASS**). `fp32_vs_bf16` / `bf16_vs_reference` are reported DIAGNOSTICS
+  (the bf16-ViT drift the canonical path never incurs). No-reference (on-device) falls back to gating on
+  `fp32_vs_bf16`. Docstring + INFERENCE_DEPLOY §3/§4 + test_training §8 updated to match. This retires the
+  earlier "EMBED_PARITY_FAIL @ 0.9984" — it was gating on the wrong (bf16-ViT) number.
+- **(b) Training-exact embeds for the 20 train npz.** Replaced the recomputed embeds with the EXACT ones
+  the model trained on, pulled from the v2 AR dataset (`…distilled_0613-400_baseViT_v2_ar`) by sample index
+  (verified: npz prompt == AR `input_ids` prefix + matching `image_grid_thw`). Also swapped in the AR's
+  training pixels (f16) so a fresh-ViT recompute reproduces them (parity 1.00000). The recomputed-vs-training
+  cosine was 0.99908–0.99999 → (b) removed a small but real T2 embed confound. Re-uploaded the 20 train npz.
+  (Val npz keep recomputed embeds — T2' only needs valid JSON.) Scripts: `/tmp/swap_training_embeds.py`.
+- Net: precomputed-embeds path validated end-to-end on real weights; parity is a clean PASS + bf16 diagnostic;
+  T2 memorisation now has zero embed confound on the train set.

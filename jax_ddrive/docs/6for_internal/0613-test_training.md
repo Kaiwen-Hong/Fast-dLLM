@@ -235,15 +235,18 @@ A correctly-overfit model reproduces the sample's GT trajectory (traj_exact True
 
 ---
 
-## 8. STAGE 4 — embedding parity (does the TPU ViT match the reference?)
+## 8. STAGE 4 — embedding parity (precomputed-embeds validation + bf16-ViT drift diagnostic)
 
 ```bash
 source ~/.fastddrive_env
 PYTHONPATH=$FORK/src python -m maxtext.diffusion.eval_sasd.embedding_parity \
   --npz $DATA_ROOT/eval_inputs/sample0.npz --snapshot $DATA_ROOT/overfit400_base_hf --vlog validation_log.jsonl
-# -> EMBED_PARITY_PASS  (gate on cosine>=0.999; bf16-vs-fp32 max_rel ~3e-2 is NORMAL through a 32-layer ViT)
+# -> EMBED_PARITY_PASS  GATES on fp32_vs_reference cosine>=0.999 (the npz's precomputed embeds reproduce a
+#    fresh fp32 ViT). fp32-vs-bf16 is a DIAGNOSTIC only: the BASE ViT's bf16-matmul cosine is ~0.998 (< 0.999),
+#    which is exactly why the canonical path ships precomputed fp32->bf16 embeds and SKIPS the bf16 ViT
+#    (see INFERENCE_DEPLOY §4). The eval_inputs npz already carry image_embeds, so this gates on the reference.
 ```
-Report BOTH fp32 and bf16 (abundant TPUs; the value is a complete numerical-drift record).
+Report BOTH fp32 and bf16 numbers (abundant TPUs; the bf16-ViT diagnostic is a complete drift record).
 
 ---
 
