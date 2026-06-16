@@ -1,6 +1,6 @@
 # test_training.md — STEP 2: internal-TPU test training + inference
 
-*Last updated: 2026-06-14 — changelog: [`updates-latest-0614.md`](updates-latest-0614.md); `history/` is archive (agent can skip).*
+*Last updated: 2026-06-16 — changelog: [`updates-latest-0616.md`](updates-latest-0616.md); `history/` is archive (incl. old 0614).*
 
 > **PREREQ — do STEP 1 first:** `transfer-codebase.md` (paste it to the agent) pulls the code
 > into google3 and writes `~/.fastddrive_env`. Every block below starts with `source ~/.fastddrive_env`
@@ -261,6 +261,10 @@ Report BOTH fp32 and bf16 numbers (abundant TPUs; the bf16-ViT diagnostic is a c
 Append one JSON object per event to `validation_log.jsonl` — **scalars / booleans / counts / hashes
 only**, no weights/images/raw text. `run_eval` and `run_parity` already append their events. Add the
 training + T1 events yourself (schema in `../5blockers/0612-blocker-v0.md` §7). Minimum set:
+- `data_provenance` (run start): the code bundle's `MANIFEST.json` `git_commit` + each consumed
+  artifact's `DATA_MANIFEST.json` `digest` (dataset / base_params / base snapshot / eval_inputs) —
+  records exactly which code + which data this run used. Each artifact ships its `DATA_MANIFEST.json`
+  alongside it (owner-built via `jax_ddrive/scripts/data_manifest.py`), so the agent just reads the digest.
 - `train_final`: init_loss, final fixed-noise eval loss, drop_pct, steps, nan_free.
 - `fixed_eval` (T1, every ~Nk steps): deterministic eval loss with a **fixed mask** (the data
   `make_batch` supports `fixed_mask=` for a reproducible noise pattern) on a fixed batch.

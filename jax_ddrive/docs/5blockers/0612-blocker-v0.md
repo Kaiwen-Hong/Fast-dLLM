@@ -145,13 +145,14 @@ B5 显式出范围。**没有未知数级别的 blocker。**
 {"ts": "...", "run_id": "overfit400-base-r1", "stage": "S2_train", "event": "fixed_eval",
  "metrics": {"step": 4000, "eval_loss": 0.211, "drop_pct": 91.2},
  "threshold": {"drop_pct": ">=95 at plateau"}, "verdict": "INFO",
- "refs": {"git": "fork@a645b25+", "dataset_sha": "dataset_info sha256 前 12 位", "ckpt_step": 4000}}
+ "refs": {"git": "<代码 bundle MANIFEST.json 的 git_commit>", "data_digests": {"dataset": "<DATA_MANIFEST.digest[:12]>", "base_params": "…", "eval_inputs": "…"}, "ckpt_step": 4000}}
 ```
 
 **覆盖的阶段与必含事件**:
 
 | 阶段 | 事件 | 关键 metrics | 对应判定 |
 |---|---|---|---|
+| S0 启动 | `data_provenance` | `{code_git, data_digests:{dataset, base_params, snapshot, eval_inputs}}`(各取 artifact 的 `DATA_MANIFEST.json` 的 `digest`) | 可复现/对账 |
 | S1 数据构建 | `data_build`, `data_audit` | rows/shards、抽样数、`byte_exact`、embeds 复算 `{bitwise_frac, max_rel}`、loss-zero 检查 | 数据正确 |
 | S2 训练 | `train_start`(init loss / config 指纹)、`step_metrics`(每 100 步)、`fixed_eval`(每 500 步)、`ckpt_save` / `resume`(含 `iter_state: bool`)、`train_final`(init/final/drop_pct/plateau/steps) | loss 曲线脱水版 | **T1、T3** |
 | S3 导出 | `export_roundtrip` | `n_tensors`, `identical: bool`, `max_abs_diff` | B1 关闭 |
@@ -160,8 +161,10 @@ B5 显式出范围。**没有未知数级别的 blocker。**
 | S6 TPU 数值彩排 | `tpu_parity` | `{n, traj_max_diff_m, struct_equal_n, dtype}` | **B4 关闭** |
 | 终判 | `FINAL_VERDICT` | 各 gate 的 PASS/FAIL + 一行结论 | 设计正确与否 |
 
-**带出与对账设计**:`refs.git` 锚定代码版本;`refs.dataset_sha` 用 `dataset_info_*.json` 的
-sha256(数据指纹,不含数据本体);样本以 `sid_hash`(sample_id 的 sha256 前 12 位)出现,
+**带出与对账设计**:`refs.git` 锚定代码版本(取代码 bundle `MANIFEST.json` 的 `git_commit`);
+`refs.data_digests` 取各消费 artifact 的 `DATA_MANIFEST.json` 的 `digest`(**内容指纹**:GCS crc32c /
+本地 sha256 汇总,覆盖 dataset/base_params/snapshot/eval_inputs,由 `jax_ddrive/scripts/data_manifest.py`
+生成,不含数据本体);样本以 `sid_hash`(sample_id 的 sha256 前 12 位)出现,
 内部持有 id↔hash 映射即可回查,日志本体不暴露 WOD 标识。
 
 ### 7.1 留给你拍板的日志问题(Q-log)

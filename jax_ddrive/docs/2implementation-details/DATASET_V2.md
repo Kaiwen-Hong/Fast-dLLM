@@ -57,7 +57,13 @@ raw WOD-E2E tfrecords
 The last stage is `jax_ddrive/scripts/parquet_to_ar_with_embeds.py` (resumable: atomic
 `.tmp → os.replace` per shard, skips existing; ~19 samples/s on the 5090). 1:1 source
 parquet file → AR shard. Writes `dataset_info_<split>.json` with `num_samples`,
-`array_dtypes`, embeds provenance and the doubling rule.
+`array_dtypes`, embeds provenance and the doubling rule — **plus a `DATA_MANIFEST.json`** (per-file
+hash + a rolled `digest` + builder git SHA) so a run can pin/verify exactly which data it consumed
+(provenance/integrity, complementing the schema-only `dataset_info`). The standalone
+`jax_ddrive/scripts/data_manifest.py` builds the same manifest for ANY artifact — a GCS prefix via
+`crc32c` metadata (no download, cheap even for the 369 GB full set) or a local dir via sha256 — and
+for the non-dataset artifacts (base params / base snapshot / `eval_inputs/`). The run records each
+artifact's `digest` in `validation_log`'s `data_provenance` event (see `5blockers/0612-blocker-v0.md` §7).
 
 ## 3. Built datasets (local `…/hf/` + GCS `gs://project-8a53f5ab-2ea2-4892-a78-ddrive-sasd/`)
 

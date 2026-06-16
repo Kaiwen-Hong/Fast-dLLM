@@ -424,7 +424,7 @@ bash jax_ddrive/scripts/upload_code_to_gcs.sh   # repo 内、版本化(旧 /home
 
 **数据发布(已在 GCS):** `maxtext_sasd_params_base/`(base 参数)、
 `wod_e2e_sasd_distilled_0613-400_baseViT_v2_ar/`(数据集)、`base_qwen25vl_3b_snapshot/`
-(导出参照 + tokenizer)。**大数据在内部走 CNS**(不放 pod $HOME):经 Cloudtop 中转——
+(导出参照 + tokenizer)。**每个 artifact 同目录放一份 `DATA_MANIFEST.json`**(内容指纹 `digest`(GCS crc32c)+ git SHA;owner 跑 `bash jax_ddrive/scripts/data_manifest.py gs://…/<artifact> --upload` 生成)→ 运行时把 `digest` 记进 `validation_log` 的 `data_provenance` 事件,即可反查/校验用的是哪份数据(数据版本化,补齐"命名路径原地覆盖、无版本"的缺口)。**大数据在内部走 CNS**(不放 pod $HOME):经 Cloudtop 中转——
 `gcloud storage cp -r gs://…/<artifact> ~/ddrive_stage/` → `fileutil cp -R -parallelism 50
 ~/ddrive_stage/<artifact> $DATA_ROOT/` → 删本地。**CNS 大池**(取代旧的 500G `/cns/sf-d/…`):
 ```

@@ -21,7 +21,7 @@
 |---|---|---|
 | **读懂 / 修改代码** | [`01_codebase_map.md`](01_codebase_map.md)（地图+阅读顺序）+ [`02_gotchas.md`](02_gotchas.md)（易误读组件） | 算法真值 [`../2implementation-details/01_pytorch_reference_algorithm.md`](../2implementation-details/01_pytorch_reference_algorithm.md) |
 | **部署到 TPU** | [`../../to-host-chn.md`](../../to-host-chn.md)（交接文档，含验收标准） | [`../2implementation-details/INFERENCE_DEPLOY.md`](../2implementation-details/INFERENCE_DEPLOY.md)（B1 导出 / B2 采样器） |
-| **内部 Google TPU 跑 from-base** | [`../6for_internal/transfer-codebase.md`](../6for_internal/transfer-codebase.md)（STEP 1）→ [`../6for_internal/test_training.md`](../6for_internal/test_training.md)（STEP 2） | blocker/红线 [`../5blockers/0612-blocker-v0.md`](../5blockers/0612-blocker-v0.md) |
+| **内部 Google TPU 跑 from-base** | owner 先 [`../6for_internal/00_owner_publish.md`](../6for_internal/00_owner_publish.md)（STEP 0 发布到 GCS）→ 内部 [`../6for_internal/transfer-codebase.md`](../6for_internal/transfer-codebase.md)（STEP 1）→ [`../6for_internal/test_training.md`](../6for_internal/test_training.md)（STEP 2） | blocker/红线 [`../5blockers/0612-blocker-v0.md`](../5blockers/0612-blocker-v0.md) |
 | **理解数据格式** | [`../2implementation-details/DATASET_V2.md`](../2implementation-details/DATASET_V2.md)（生产 v2 AR） | v1 源格式 [`../2implementation-details/DATASET.md`](../2implementation-details/DATASET.md)、标签 [`../2implementation-details/LABELING.md`](../2implementation-details/LABELING.md) |
 | **跑评测 / 复现指标** | [`../2implementation-details/EVAL_PIPELINE.md`](../2implementation-details/EVAL_PIPELINE.md)（两套栈一个 metric） | — |
 | **查某个数字到底是多少** | [`02_gotchas.md` §规范数字框](02_gotchas.md#规范数字框-canonical-numbers) | — |
@@ -57,9 +57,10 @@
 | [`quick-refresh.md`](../quick-refresh.md) | distilled 数据集快速追踪表（位置/日期/大小/格式） |
 | [`../5blockers/0612-blocker-v0.md`](../5blockers/0612-blocker-v0.md) | 内部 TPU 部署 blocker（B1–B5）+ 备选路线 + overfit 成功标准 + 验证日志规格 + 待拍板清单 |
 | [`../5blockers/0613-diffusiongemma-insights-v0.md`](../5blockers/0613-diffusiongemma-insights-v0.md) | DiffusionGemma 代码精读的可迁移洞见（对抗校验过）+ 红线清单 |
+| [`../6for_internal/00_owner_publish.md`](../6for_internal/00_owner_publish.md) | **STEP 0（owner）**：把代码 + 数据 + manifest 发布到 GCS（`upload_code_to_gcs.sh` + `data_manifest.py`）；内部 STEP 1 的前提 |
 | [`../6for_internal/transfer-codebase.md`](../6for_internal/transfer-codebase.md) | **STEP 1**：内部 bootstrap（拉代码包进 google3、写 env） |
 | [`../6for_internal/test_training.md`](../6for_internal/test_training.md) | **STEP 2**：内部 TPU 从-base 训练 → B1 导出 → B2 推理 → 嵌入彩排 → 验证日志 |
-| [`../6for_internal/updates-latest-0614.md`](../6for_internal/updates-latest-0614.md) | 内部文档 changelog（agent 不必读；`6for_internal/history/` 是归档） |
+| [`../6for_internal/updates-latest-0616.md`](../6for_internal/updates-latest-0616.md) | 内部文档 changelog（滚动,最新在最上;agent 不必读；`6for_internal/history/` 是归档,含旧 0614） |
 
 MaxText fork 侧 file-by-file diff / vendor 规则 → fork 内 `maxtext-dlm-fork/PATCHES.md`。
 

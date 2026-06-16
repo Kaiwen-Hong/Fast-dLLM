@@ -40,5 +40,20 @@ bash jax_ddrive/scripts/upload_code_to_gcs.sh
 2. `git push origin jax-ddrive-port` → **fork 代码这才真正有了 GitHub 备份 + 可 resolve 的 SHA**（这是整件事的最终闭环）。
 3. （可选）确认旧 `/home/kaiwen/jax-dlm-baseline/maxtext-dlm-fork` 不再编辑——**从此 canonical 是 `Fast-dLLM/maxtext-dlm-fork/`**。
 
-## 未纳入（你之前同意先只搞代码）
-- **数据版本化**（`eval_inputs/`、`*_v2_ar` 固定命名原地覆盖、无内容哈希）仍是裸的 provenance 缺口；要做的话在 `MANIFEST.json` 里加数据内容哈希是下一步。
+## 数据版本化（2026-06-16 同日补做）
+代码 provenance 闭环后，把数据侧"命名路径原地覆盖、无版本"的缺口也补上（**简单派、不改数据名**）：
+- 新增 `jax_ddrive/scripts/data_manifest.py`：为任一 artifact（GCS prefix / 本地 dir）生成 `DATA_MANIFEST.json`——GCS 读 `crc32c`+`size`+`generation`（**不下载**，369GB 也秒级）、本地 sha256（>8GB cap 则只记 size + 提示）；一个汇总 `digest` 标识整份；`--upload` 写到 artifact 同目录。
+- `parquet_to_ar_with_embeds.py` 加 best-effort hook：建完数据集自动写 `DATA_MANIFEST.json`（distilled-400 实测 sha256 / 8 文件 / digest 确定可复现）。
+- **运行时闭环**：`validation_log` 的 `data_provenance`（S0 事件）记 `{code_git（取代码 MANIFEST.json）, data_digests:{dataset, base_params, snapshot, eval_inputs}}` → 一次 run = `{哪个 code commit} × {哪几份数据 digest}`，完全可反查/校验。
+- **升级而非新增槽**：`0612 §7` 原有 `refs.dataset_sha`（只哈希 schema 文件 `dataset_info`、仅覆盖数据集）→ 升级为 `refs.data_digests`（**内容指纹**，覆盖全部消费 artifact）。
+- 文档同步：`5blockers/0612-blocker-v0.md §7`、`2implementation-details/DATASET_V2.md`、`6for_internal/test_training.md §9`、`to-host-chn.md §6.6`。
+- **未做（你同意先不做）**：eval_inputs 路径版本化（`eval_inputs/<sha7>/`）—— 现 digest 已能检测变更；路径版本化改 runbook、较重，缓。
+
+### owner 待办（数据侧）
+发布数据时对每个 artifact 跑 `python jax_ddrive/scripts/data_manifest.py gs://…/<artifact> --upload`（写 `DATA_MANIFEST.json` 到 GCS）。本次**未替你执行 GCS 上传**（gsutil 需 owner 认证）。`data_manifest.py` + builder hook 已就位、本地 smoke-test 通过。
+
+## owner 发布 runbook（STEP 0，新增）
+之前 owner 侧发布（commit → 发代码 → 建/传数据 → 写 manifest）散落在 `to-host §6.6` prose + 3 个脚本，且没有"贴给 Claude 就能发布"的单篇 doc（内部侧有 STEP 1/STEP 2，owner 侧空缺）。补 `6for_internal/00_owner_publish.md`：
+- 一页分步:§1 commit → §2 `upload_code_to_gcs.sh`(代码) → §3 `build_full_dataset.sh --upload-gcs`(数据变了) → §4 `for A in …; data_manifest.py $SRC/$A --upload`(4 个 artifact 的 manifest) → §5 自检。
+- 顶部标明"给 owner、不是给内部 agent";流程序列 **STEP 0(owner 发布) → STEP 1(transfer-codebase) → STEP 2(test_training)**。
+- 已注册进 `0overview/00_START_HERE.md`(§2 路由 + §4 living 表) + `transfer-codebase.md` 顶部 PREREQ 指针。

@@ -282,6 +282,20 @@ def main():
             },
             "files": [f"{args.split}-{i:05d}-of-{nsh:05d}.arrayrecord" for i in range(nsh)]}
     json.dump(info, open(os.path.join(args.dst, f"dataset_info_{args.split}.json"), "w"), indent=2)
+    # provenance/integrity manifest so a run can pin/verify which data it consumed (data_manifest.py;
+    # docs/2implementation-details/DATASET_V2.md). Best-effort — never fail the build over it.
+    try:
+        import sys as _sys
+        _sd = os.path.dirname(os.path.abspath(__file__))
+        if _sd not in _sys.path:
+            _sys.path.insert(0, _sd)
+        from data_manifest import build_local_manifest, _git_sha
+        _man = build_local_manifest(args.dst, builder_git_sha=_git_sha(_sd))
+        json.dump(_man, open(os.path.join(args.dst, "DATA_MANIFEST.json"), "w"), indent=2)
+        print(f"DATA_MANIFEST.json digest={_man['digest'][:16]}... "
+              f"({_man['hash_kind']}, {_man['num_files']} files)", flush=True)
+    except Exception as _e:
+        print(f"[warn] DATA_MANIFEST not written: {_e}", flush=True)
     dmax = max(eager_diffs) if eager_diffs else float("nan")
     dmed = float(np.median(eager_diffs)) if eager_diffs else float("nan")
     print(f"AR_WITH_EMBEDS_DONE total={n_total} shards={nsh} grids={len(fwd_cache)} "

@@ -7,7 +7,7 @@
 | 记录 | 内容 |
 |---|---|
 | [`2026-06-16_0overview-and-doc-audit.md`](2026-06-16_0overview-and-doc-audit.md) | 建立 `0overview/` 分层前门（START_HERE / codebase_map / gotchas）+ README 重构；从代码建立 ground truth → 审计 30 文档（108 findings / 32 缺陷）→ 规范数字对账 → 回填修正（56 处）+ 5 处代码注释订正。决策、pipeline、token 成本、改动清单全在内。 |
-| [`2026-06-16_fork-consolidation-and-release-versioning.md`](2026-06-16_fork-consolidation-and-release-versioning.md) | 解决内部交接的版本控制问题：把独立、无 remote 的 `maxtext-dlm-fork` **并入 Fast-dLLM repo**（git bundle 备份历史）；发布脚本 `upload_code_to_gcs.sh` 进 `jax_ddrive/scripts/` 并改为单 repo 打包 + 写 `MANIFEST.json`（git commit SHA + dirty）；更新相关文档路径。含 owner 待办（commit + push）。 |
+| [`2026-06-16_fork-consolidation-and-release-versioning.md`](2026-06-16_fork-consolidation-and-release-versioning.md) | 解决内部交接的版本控制问题：把独立、无 remote 的 `maxtext-dlm-fork` **并入 Fast-dLLM repo**（git bundle 备份历史）；发布脚本 `upload_code_to_gcs.sh` 进 `jax_ddrive/scripts/` 并改为单 repo 打包 + 写 `MANIFEST.json`（git commit SHA + dirty）；更新相关文档路径。**同日补做数据版本化**：`data_manifest.py`（GCS crc32c / 本地 sha256 → `DATA_MANIFEST.json` digest）+ builder hook + `validation_log` 的 `data_provenance`。新增 owner 发布 runbook `6for_internal/00_owner_publish.md`（STEP 0：发代码+数据+manifest）。含 owner 待办（commit + push + 数据 manifest upload）。 |
 
 ## 证据产物（供复核）
 

@@ -1,6 +1,8 @@
 # STEP 1 — 把 Fast-dDrive 代码库搬进内部环境(transfer codebase)
 
-*Last updated: 2026-06-14 — 更新记录见 [`updates-latest-0614.md`](updates-latest-0614.md);`history/` 是归档,agent 无需读。*
+*Last updated: 2026-06-16 — 更新记录见 [`updates-latest-0616.md`](updates-latest-0616.md);`history/` 是归档(含旧 0614),agent 无需读。*
+
+> **PREREQ(owner 侧):** 本 STEP 1 假设代码/数据已在 GCS。owner 先按 [`00_owner_publish.md`](00_owner_publish.md)(**STEP 0**:发代码 + 数据 + manifest)发布,内部侧才有东西可拉。
 
 > **怎么用:** 把这一整篇**直接粘贴给内部 coding agent**(在 Cloudtop 上、能访问 GCS)。它会从 GCS
 > 拉带时间戳的代码包、解到 google3 源码树、并写一个稳定的 env 文件。**跑完这一步,agent 就有了完整
