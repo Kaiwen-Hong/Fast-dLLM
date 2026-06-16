@@ -2,7 +2,7 @@
 jax-mdlm-handoff/code/lora.py. Base kernel/bias demoted to frozen nnx.Variable;
 lora_A/lora_B are the only nnx.Param after freeze_non_lora_params, so
 nnx.Optimizer(model, tx, wrt=nnx.Param) trains adapters only. Lets us fine-tune
-the 3.75B model on a single 5090 sharing GPU memory with other jobs.
+the 3.086B model on a single 5090 sharing GPU memory with other jobs.
 """
 from __future__ import annotations
 

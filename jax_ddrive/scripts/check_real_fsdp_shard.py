@@ -1,4 +1,4 @@
-"""Verify the REAL pretrained 3.75B model's params SHARD correctly across multiple devices under
+"""Verify the REAL pretrained 3.086B model's params SHARD correctly across multiple devices under
 the harness FSDP rule (CPU emulation; build-only, NO forward/backward -> memory-safe). This closes
 the 'real model x multi-device sharding' gap. Forward/backward NUMERICS at multi-device scale are
 the TPU pod's job (proxy verifies the math; the GPU smoke verifies real-model forward+backward on 1

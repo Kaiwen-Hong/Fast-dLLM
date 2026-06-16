@@ -79,6 +79,9 @@ MaxText fork 侧 file-by-file diff / vendor 规则 → fork 内 `maxtext-dlm-for
 ### Frozen —— 历史，**永不编辑**（onboarding 时**不要读**，只在考古时看）
 `1plans/{00_PLAN,02_tpu_plan,03_scaleup_tpu_spec,04_tpu_smallscale_validation,05_review_and_fixes_2026-06-14}.md` · `4collect/{HANDOFF,OVERNIGHT_PROGRESS,OVERNIGHT_TPU_PROGRESS(,-chn),05_maxtext_port_progress,06_dataset_v2_progress,07_from_base_b1_b2_progress}.md`
 
+### 文档维护记录（append-only，非项目里程碑）
+[`8doc_updates/`](../8doc_updates/README.md) —— 对 docs 体系本身的大修/审计记录 + 可复核证据产物（如本 0overview 的建立过程）。
+
 ---
 
 ## 5. context 有限就按这个顺序读

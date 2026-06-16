@@ -1,0 +1,1082 @@
+[
+  {
+    "doc": "../to-host-chn.md",
+    "location": "§6.1 Mesh — \"从 **pure-FSDP `(N,1)`** 开始(最简单;3.75 B 扩展得很好)\" (line 348)",
+    "claim": "The model is 3.75 B parameters.",
+    "code_reality": "The verified param count is 3.086 B (434/434 leaves). save_fast_ddrive_params_ckpt.py:72-73 prints `{n_el/1e9:.3f}B params`; the from-base progress doc records \"434/434 leaves, 3.086 B params\" (docs/4collect/07_from_base_b1_b2_progress.md:33,86). The doc itself uses 3.086B/3.09B elsewhere (to-host-chn.md:31,53,78). Ground truth §RAW NUMBERS: \"parameter count (3.75B is wrong; 3.086B is the leaf-count claim).\"",
+    "verdict": "wrong",
+    "severity": "high",
+    "suggested_fix": "Replace \"3.75 B\" with \"3.09 B\" (or 3.086 B) to match the rest of the doc and the measured leaf count: \"...3.09 B 扩展得很好\".",
+    "is_frozen": false
+  },
+  {
+    "doc": "../to-host-chn.md",
+    "location": "§6.2 Option 1 — \"仅这一项就能在 pod 上跑完整 3.75 B\" (line 364)",
+    "claim": "FSDP-only suffices to run the full 3.75 B model.",
+    "code_reality": "Same as above — measured count is 3.086 B (save_fast_ddrive_params_ckpt.py:72-73; docs/4collect/07_from_base_b1_b2_progress.md:33,86). 3.75B is the stale/wrong figure flagged in ground truth.",
+    "verdict": "wrong",
+    "severity": "high",
+    "suggested_fix": "Replace \"完整 3.75 B\" with \"完整 3.09 B\" for consistency with §0 and the measured count.",
+    "is_frozen": false
+  },
+  {
+    "doc": "../to-host-chn.md",
+    "location": "§6.2 Sharding table + prose — \"FSDP param map —— 已在 `ddrive_jax/sharding.py` 里 map 好\" with rows `q/k/v/o_proj.kernel → P('fsdp','tp')`, `activations [B,L,D] → P('fsdp',None,'tp')` etc. (lines 352-359)",
+    "claim": "ddrive_jax/sharding.py already provides the 2D ('fsdp','tp') PartitionSpec map shown (kernels P('fsdp','tp'), activations P('fsdp',None,'tp')).",
+    "code_reality": "sharding.py only implements 1D FSDP: fsdp_pspec (sharding.py:22-28) shards the single largest axis on 'fsdp' and replicates all others — it never assigns the 'tp' axis to any kernel or activation. param_pspecs (31-48) calls fsdp_pspec per leaf and forces embeddings to P(). make_mesh (17-19) builds the 2D mesh but the spec map is pure-FSDP. The 2D TP column is the Option-2 plan, not what sharding.py emits. Ground truth: \"sharding.py is SPEC-ONLY ... fsdp_pspec shards the SINGLE largest axis only.\"",
+    "verdict": "misleading",
+    "severity": "medium",
+    "suggested_fix": "Clarify that sharding.py implements only the pure-FSDP (largest-axis) column; the `'tp'` specs in the table are the Option-2 target requiring ShardedLinear/ShardedEmbedding. E.g. note \"(`sharding.py` 当前只产 pure-FSDP 列:最大轴放 'fsdp',其余 replicate;带 'tp' 的列要 Option 2 的 ShardedLinear/Embedding)\".",
+    "is_frozen": false
+  },
+  {
+    "doc": "../to-host-chn.md",
+    "location": "§6.4 Checkpointing — \"用 `ddrive_jax/checkpoint.py`(Orbax `StandardCheckpointer`,multi-host safe)\" (line 383)",
+    "claim": "ddrive_jax/checkpoint.py (StandardCheckpointer) is multi-host safe and is the recommended TPU checkpointer.",
+    "code_reality": "checkpoint.py uses a bare StandardCheckpointer with no sharding/abstract-state plumbing (save_state 15-19, restore_into 22-29). Ground truth Subsystem 4 calls it the \"Simple single-host StandardCheckpointer\" and the gotchas section lists it as \"single-host, in-place\"; the multi-host composite is train/checkpoint_mgr.py (CheckpointManager 4-item params/opt/meta/grain). The \"multi-host-ready\" wording is only the file's own docstring claim (checkpoint.py:1). Production TPU path uses MaxText/Orbax, not this file.",
+    "verdict": "misleading",
+    "severity": "medium",
+    "suggested_fix": "Note that checkpoint.py is the simple single-host StandardCheckpointer (its docstring claims multi-host-ready but it carries no sharding plumbing); for true multi-host use train/checkpoint_mgr.py (CheckpointManager) or MaxText's Orbax pipeline. The production path (§6.6) is MaxText fork, not this file.",
+    "is_frozen": false
+  },
+  {
+    "doc": "../to-host-chn.md",
+    "location": "§2.1 component table — ViT row \"arch **4.0e-5**(end-to-end 2.6% 是良性的 cuDNN-Conv3d seed)\" (line 126); also §7.1 \"ViT 匹配(架构) ... **4.0e-5**(end-to-end 2.6% = 良性 cuDNN seed)\" (line 430)",
+    "claim": "ViT architecture parity is 4.0e-5 and the end-to-end discrepancy is 2.6%.",
+    "code_reality": "parity_vit.py does not hardcode 4.0e-5 or 2.6%; it computes pe_rel (\"~6.5e-4 cuDNN-conv seed; >5e-3 ⇒ reshape bug\", line 44), iso (blocks+merger on PyTorch patch-embed, line 52), and a fallback end-to-end relmax (line 62), with gate thresholds iso<1e-3 / pe_rel<5e-3 / fallback<1e-2 (parity_vit.py:59-60). The 4.0e-5 / 2.6% are reported run results, not in-code constants. The structure (arch parity isolated from a benign cuDNN-conv seed) matches the code, so this is a defensible measured number, not a code constant.",
+    "verdict": "ok",
+    "severity": "low",
+    "suggested_fix": "No change required; the numbers are run measurements consistent with parity_vit.py's two-tier gate (iso<1e-3, end-to-end carries the cuDNN-conv seed). Optionally cite them as measured rather than implying they are asserted thresholds.",
+    "is_frozen": false
+  },
+  {
+    "doc": "../to-host-chn.md",
+    "location": "§3 repo layout — `tests/{test_mask_loss,test_lora,test_noising,test_sharding,test_eval_ports}.py` (line 234)",
+    "claim": "The tests directory contains these five test files.",
+    "code_reality": "The tests dir actually contains nine files: the five listed PLUS test_ar_pipeline.py, test_grain_pipeline.py, test_harness_fsdp.py, test_multihost_datafeed.py (verified via ls of /home/kaiwen/Desktop/research/Fast-dLLM/jax_ddrive/tests/). The four omitted tests are the data-pipeline and multihost/FSDP regressions referenced elsewhere in the doc (§2.5, §0).",
+    "verdict": "stale",
+    "severity": "low",
+    "suggested_fix": "Add the missing tests to the layout listing: `tests/{test_mask_loss,test_lora,test_noising,test_sharding,test_eval_ports,test_ar_pipeline,test_grain_pipeline,test_harness_fsdp,test_multihost_datafeed}.py`.",
+    "is_frozen": false
+  },
+  {
+    "doc": "../to-host-chn.md",
+    "location": "§3 repo layout — `scripts/{capture_oracle_*,parity_*,debug_vit,prep_*,verify_sd_mm,run_all_verification.sh,run_overnight.sh}` (lines 232-233)",
+    "claim": "These are the script files in jax_ddrive/scripts/.",
+    "code_reality": "The scripts dir contains many more files than the glob set implies (e.g. parquet_to_ar_with_embeds.py, parquet_to_arrayrecord.py, parquet_file_to_tfexample_ar.py, check_real_fsdp_shard.py, build_full_dataset.sh, convert_full_chunked.py, verify_ar_round2.{py,sh}, make_dataset_website.py, pack_parquet.py, etc.) that are central to the dataset-v2 pipeline described in §0/§2.4. The listed globs are a partial snapshot pre-dating Phase 6/8.",
+    "verdict": "stale",
+    "severity": "low",
+    "suggested_fix": "Note the listing is illustrative, or add the dataset/AR scripts (parquet_to_ar_with_embeds.py, parquet_to_arrayrecord.py, check_real_fsdp_shard.py, build_full_dataset.sh, verify_ar_round2.*) that §0/§2.4 reference.",
+    "is_frozen": false
+  },
+  {
+    "doc": "../to-host-chn.md",
+    "location": "§2.3 / §7.1 — \"Converter prompt 正确 ... 对 `sample.json` byte-compare | **exact**(1896 chars)\" (line 436)",
+    "claim": "The canonical converter prompt is exactly 1896 chars and byte-matches sample.json.",
+    "code_reality": "convert_wod_e2e.py confirms a byte-for-byte canonical prompt prefix reverse-engineered from sample.json (convert_wod_e2e.py:9,53) but does not encode or assert a 1896-char length anywhere; the count is a reported measurement, not a code constant. Cannot be confirmed against a literal in code.",
+    "verdict": "ok",
+    "severity": "low",
+    "suggested_fix": "No change needed; the byte-exact claim is supported by convert_wod_e2e.py:53 (\"byte-for-byte from sample.json\"). The 1896 figure is a measurement; leave as-is unless re-measured.",
+    "is_frozen": false
+  },
+  {
+    "doc": "../to-host-chn.md",
+    "location": "§2.3 prose — \"JAX eval = `prep_jax_eval.py`(CPU prep ...)\" (line 158); and §5 reproduction (b)/(d) uses prep_jax_eval.py at its default --min_pixels/--max_pixels = 200704 (lines 320-322)",
+    "claim": "JAX eval prep is prep_jax_eval.py, used for the 479-rated-val eval that produced ADE 0.839 / RFS 7.929.",
+    "code_reality": "prep_jax_eval.py defaults min_pixels=max_pixels=200704 (prep_jax_eval.py:24-25), the paper-eval (fixed high-res) policy. This differs from the from-base train/deploy prep at 784/50176 (prep_train_jax.py:56-57). Both are legitimate per ground truth (200704 = paper-eval scripts; 784/50176 = from-base deploy). The doc uses prep_jax_eval.py correctly for the eval table, but does not state that this eval resolution (200704) differs from the training-prep resolution (784/50176) used in §5(e)/§2.4.",
+    "verdict": "misleading",
+    "severity": "low",
+    "suggested_fix": "Add a one-line note that the eval prep (prep_jax_eval.py) pins min=max=200704 (paper-eval high-res) while the SASD-training prep (prep_train_jax.py, §5e) uses 784/50176 — two intentionally different resolution policies for different purposes, not an inconsistency.",
+    "is_frozen": false
+  },
+  {
+    "doc": "../to-host-chn.md",
+    "location": "§2.5 / §7.1 — \"10 个 gate ... clean run 下全部通过\" lists the ten gates by name (lines 194-197, 437)",
+    "claim": "run_all_verification.sh runs exactly 10 gates with the named markers.",
+    "code_reality": "Verified correct: run_all_verification.sh defines exactly 10 gate() calls (cpu_mask_loss, cpu_lora, cpu_noise, cpu_sharding, cpu_eval_ports, phase1_text@30, phase2_sasd@33, phase4_vit@37, phase4b_mm_fwd@40, phase3_lora_train@46) with sentinel ALL_VERIFICATION_PASS. Ground truth §6 confirms true count = 10. The doc correctly says 10 (NOT the known '9 gates' drift seen elsewhere).",
+    "verdict": "ok",
+    "severity": "low",
+    "suggested_fix": "No change — the gate count (10) and names are accurate. Noteworthy confirmation given the '9 gates' drift in sibling docs.",
+    "is_frozen": false
+  },
+  {
+    "doc": "../to-host-chn.md",
+    "location": "§2.1 component table — M-RoPE row \"(mrope_section [16,24,24])\" (line 125); §0 A2 \"3.086B\"; image_embeds \"[168,2048]\" (lines 18-19,63)",
+    "claim": "Real mrope_section is [16,24,24]; image_embeds is [168,2048] single-copy.",
+    "code_reality": "All correct. mrope_section default (16,24,24) at qwen2_5_text.py:200 and sasd_waymo.yml:22; 2*(16+24+24)=128=head_dim. image_embeds [168,2048] single-copy matches parquet_to_ar_with_embeds.py (168 = 3 cams × 56 at train res, 2048 = out_hidden_size). The doc avoids the (4,6,6) proxy and the 336 doubled / 720 paper-eval values, so no drift on the trickiest numbers.",
+    "verdict": "ok",
+    "severity": "low",
+    "suggested_fix": "No change — these are the correct real values, not the proxy/doubled variants. Confirmation only.",
+    "is_frozen": false
+  },
+  {
+    "doc": "2implementation-details/ARCHITECTURE.md",
+    "location": "Section 'Training data flow (multimodal SASD)', line 60: `noisy_embeds   = where(vision_mask, original_embeds, embed(noisy_ids))  # vision protected`",
+    "claim": "Vision tokens are protected during noising by a per-step `where(vision_mask, original_embeds, embed(noisy_ids))` select, implying `vision_mask` is consumed at training time to gate which embeddings are noised.",
+    "code_reality": "No training path uses `vision_mask`. The multimodal trainers re-scatter the precomputed (frozen) image embeds over the text embeds each step via `.at[img_pos].set(image_embeds)`: train_overfit_mm.py:60 (`return emb_2L.at[img_pos].set(image_embeds...)`, called at :66) and train_waymo_sasd_jax.py:95,113 (`model.embed_tokens(ifn[r]).at[img_pos].set(image_embeds...)`). `make_batch` only masks response tokens (`& resp`, noise.py:30), so prompt image tokens (labels==-100) are never noised regardless. Grep confirms `vision_mask` appears only in schema/prep/verify scripts (ar_dataset.py:45, prep_to_parquet.py:29, parquet_to_ar_with_embeds.py:53,57, verify_ar_round2.py:307, prep_overfit_data_mm.py:88, prep_train_jax.py:122) and is never read by grain training or any loss_fn. Matches ground_truth.md Drift Suspicion #11 ('vision_mask is a carried-but-unused schema field ... A doc implying it gates vision tokens at train time is wrong').",
+    "verdict": "misleading",
+    "severity": "medium",
+    "suggested_fix": "Replace line 60 with the actual mechanism, e.g.: `fused_embeds = embed(noisy_ids).at[img_pos].set(image_embeds)  # frozen ViT embeds re-scattered each step (image tokens live in the prompt, are never noised; there is NO vision_mask gate at train time)`. Drop `vision_mask` from the flow entirely. Optionally add a note that `vision_mask` is a carried-but-unused schema field.",
+    "is_frozen": false
+  },
+  {
+    "doc": "2implementation-details/ARCHITECTURE.md",
+    "location": "Package layout block, line 9: `rope.py             plain RoPE (rotate-half) + RoPE module`",
+    "claim": "rope.py implements the 'rotate-half' RoPE convention.",
+    "code_reality": "rope.py's `apply_rope` (rope.py:27-32) is the SPLIT-form: `x1, x2 = x[..., :half], x[..., half:]; return concat([x1*cos - x2*sin, x2*cos + x1*sin])`, taking HALF-width sin/cos. Ground_truth.md gotchas explicitly classify this as SPLIT-form and reserve 'rotate-half' for `apply_rope_full` in qwen2_5_text.py:140-146 (which uses `_rotate_half_full` and FULL-width cos/sin). The two are numerically equivalent only under the cat(c,c) cos/sin pattern. Note the rope.py docstring (line 3) itself says 'Standard HF rotate-half convention', so the doc faithfully echoes source naming.",
+    "verdict": "misleading",
+    "severity": "low",
+    "suggested_fix": "Optionally tighten to: `rope.py  plain RoPE (HF split-form, equiv. to rotate-half under cat(c,c) cos/sin) + RoPE module`, to avoid conflating with the distinct FULL-form `apply_rope_full` (rotate-half) used on the M-RoPE path. Low priority since rope.py's own docstring uses 'rotate-half'.",
+    "is_frozen": false
+  },
+  {
+    "doc": "2implementation-details/01_pytorch_reference_algorithm.md",
+    "location": "Section 1, line 14: `mdm_hidden_states = hidden_states[:, :L//2, :]` then `lm_head(...)` — `modeling.py:2712-2715`",
+    "claim": "The noisy half is `hidden_states[:, :L//2, :]`, citing modeling.py:2712-2715.",
+    "code_reality": "Verified: modeling.py:2712 is `mdm_hidden_states = hidden_states[:, :hidden_states.shape[1]//2, :]` and the `lm_head` call is at line 2715 — the citation is exact. The notation `L//2` is consistent only if the doc's `L` denotes the full doubled length (`hidden_states.shape[1]` = 2*single_len); ground_truth.md uses `2L` for the doubled length and `L` for single, where the noisy half would be `[:, :L, :]`. This is a self-consistent verbatim quote of the source, not an error, but the `L` symbol means the doubled length here while elsewhere in the same doc (e.g. M-RoPE `arange(L)`) `L` denotes the single length.",
+    "verdict": "ok",
+    "severity": "low",
+    "suggested_fix": "No change required (verbatim source quote). If clarity is desired, add a one-line note: 'here hidden_states.shape[1] is the doubled length 2L; //2 yields the single response length'. Confirms the noisy-half + tied-lm_head behavior.",
+    "is_frozen": false
+  },
+  {
+    "doc": "2implementation-details/01_pytorch_reference_algorithm.md",
+    "location": "Section 4 (M-RoPE), line 56: `with mrope_section=[16,24,24]`; Section 6: `lm_head (TIED to embed_tokens)`",
+    "claim": "M-RoPE uses mrope_section=[16,24,24]; lm_head is tied to embed_tokens.",
+    "code_reality": "Verified correct (and notably NOT the proxy (4,6,6)): apply_multimodal_rotary_pos_emb at modeling.py:817; mrope used via self.rope_scaling['mrope_section'] at modeling.py:968-969,974. Tied embeds confirmed by `_tied_weights_keys = [\"lm_head.weight\"]` (modeling.py:1865) and conversion regex at modeling.py:1862-1864. All section/line citations in this doc (modeling.py 3120L, section_utils.py 803L, generation_utils.py 1192L; loss 2123-2157 / 2104-2121; complementary 2764-2766; noise 2085-2102; p_mask/scaffold 2273/2275-2279/2281-2283; mask fns 178 & 248; forward mask 2349-2357; text position_ids 1566-1590 = arange(input_ids.shape[1]//2); NULL=151666, MASK≈151665, exp_budget=192=32*6 at section_utils 153/203-237; decoders 58/479/758, threshold 0.9, NULL-strip 451-457) were spot-checked against the live snapshot and all match.",
+    "verdict": "ok",
+    "severity": "low",
+    "suggested_fix": "No change. Noting as a noteworthy confirmation: this PyTorch-reference doc correctly cites the REAL section (16,24,24) and tied embeds, and is the canonical context for `lm_head`/`L//2` usage (which is correct for the PyTorch oracle even though the JAX port has no lm_head and uses attend()).",
+    "is_frozen": false
+  },
+  {
+    "doc": "quick-refresh.md",
+    "location": "Format legend (lines 8-9): \"`Parquet v1` = 13-array source schema incl. `pixel_values`, **no** `image_embeds`\"",
+    "claim": "The v1 Parquet source schema has 13 arrays.",
+    "code_reality": "The SSOT array list `ARRAY_FIELDS` has exactly 12 array fields: input_ids, labels, rbi, turn, scaffold, weight_vec, block_alpha, block_beta, position_ids, vision_mask, pixel_values, image_grid_thw (ddrive_jax/convert/prep_to_parquet.py:26-32). `sample_id` is a string (not an array) and `L`/`n_blocks` are scalars. DATASET.md/DATASET_V2.md themselves consistently say \"12 arrays\".",
+    "verdict": "wrong",
+    "severity": "medium",
+    "suggested_fix": "Change \"13-array source schema\" to \"12-array source schema\" (the 12 SASD arrays per prep_to_parquet.ARRAY_FIELDS; plus the string sample_id and scalars L/n_blocks).",
+    "is_frozen": false
+  },
+  {
+    "doc": "2implementation-details/DATASET_V2.md",
+    "location": "§1 Record schema, \"Embeds provenance\" paragraph (line 32): \"cross-checked against the validated eager path on every shard's first record (assert rel < 2e-4; observed ≤ ~1.3e-5).\"",
+    "claim": "The jitted-vs-eager ViT cross-check asserts rel < 2e-4.",
+    "code_reality": "scripts/parquet_to_ar_with_embeds.py uses a TWO-TIER criterion, neither tier being 2e-4: a per-sample hard cap `assert d < 1e-3` (line 238) plus a rolling-MEDIAN cap `assert med < 1e-4` over >=8 shards (line 241). The cross-check runs on each shard's FIRST record only (`if n_shard == 0`, line 226), not literally \"every shard's first record\" with a 2e-4 gate. The comment at line 231 notes isolated samples observed up to ~2.5e-4 (which 2e-4 would falsely reject).",
+    "verdict": "wrong",
+    "severity": "high",
+    "suggested_fix": "Replace \"(assert rel < 2e-4; observed ≤ ~1.3e-5)\" with \"(two-tier guard on each shard's first record: per-sample max-rel < 1e-3 AND a rolling median < 1e-4 over >=8 shards; observed median ~1.3e-5)\".",
+    "is_frozen": false
+  },
+  {
+    "doc": "2implementation-details/DATASET_V2.md",
+    "location": "§4 Reader, \"Checkpoint/resume\" (line 98): \"and by the on-TPU resume validation (`launch_maxtext_sasd_tpu_v2.sh`).\"",
+    "claim": "A script named `launch_maxtext_sasd_tpu_v2.sh` performs the on-TPU resume validation.",
+    "code_reality": "No file named `launch_maxtext_sasd_tpu_v2.sh` exists anywhere under /home/kaiwen/jax-dlm-baseline or /home/kaiwen/Desktop/research/Fast-dLLM (find returns nothing; the name appears only in docs). The actual SASD TPU/Waymo launch script in the fork is scripts/train_sasd_waymo.sh.",
+    "verdict": "stale",
+    "severity": "medium",
+    "suggested_fix": "Either point to the real launcher (`maxtext-dlm-fork/scripts/train_sasd_waymo.sh`) or, if `launch_maxtext_sasd_tpu_v2.sh` is an internal-TPU-host-only script not committed to either repo, say so explicitly (e.g. \"on-TPU resume validation, run via the internal-host launcher (not committed to this repo)\").",
+    "is_frozen": false
+  },
+  {
+    "doc": "2implementation-details/DATASET.md",
+    "location": "§3 Build chain, Stage 2 (line 86): \"HF processor (chat template; min_pixels=784, max_pixels=784*64 → 16×14 grid)\" plus the inherited \"~64 merged tokens/img\" code comment context",
+    "claim": "Implicitly: max_pixels=784*64 yields the merged-token budget; the related code comment says \"~64 merged tokens/img\".",
+    "code_reality": "The actual measured merged-token count is 56/img, not ~64. Grid (1,16,14) = 224 patches/img; after /4 spatial merge = 56 merged tokens/img (3 imgs => 168). DATASET.md §1 itself correctly states \"56 merged tokens/image (168 total)\". The \"~64\" is an imprecise upper-bound comment carried verbatim from prep_train_jax.py:57; prep_jax_eval_inputs.py:52 also states the real value \"= 56/img\".",
+    "verdict": "misleading",
+    "severity": "low",
+    "suggested_fix": "Stage 2 line is fine as written (it does not quote ~64), but to avoid the latent contradiction, add a parenthetical: \"min_pixels=784, max_pixels=784*64 (=50176) → grid (1,16,14) = 56 merged tokens/img (the code's \"~64\" comment is a loose upper bound; actual is 56)\".",
+    "is_frozen": false
+  },
+  {
+    "doc": "2implementation-details/LABELING.md",
+    "location": "§2 provenance table (line 37): \"derived from GT waypoint speeds (speed up / slow down / come to stop)\"",
+    "claim": "The derived longitudinal label vocabulary is {speed up, slow down, come to stop}.",
+    "code_reality": "fast_ddrive/data/convert_wod_e2e.py:138-144 produces FOUR longitudinal values: \"come to stop\", \"speed up\", \"slow down\", and \"keep speed\" (the default branch, line 144). The doc omits \"keep speed\", which is the most common value for steady cruising.",
+    "verdict": "misleading",
+    "severity": "low",
+    "suggested_fix": "Change to \"(speed up / slow down / come to stop / keep speed)\" to match build_meta_behavior in convert_wod_e2e.py:138-144.",
+    "is_frozen": false
+  },
+  {
+    "doc": "2implementation-details/DATASET.md",
+    "location": "§1 header (line 19): \"## 1. Record schema (13 fields, every sample)\" vs TL;DR \"这 12 个数组\" / §1 table count",
+    "claim": "Record schema has \"13 fields\".",
+    "code_reality": "There are 12 ARRAY fields (prep_to_parquet.py:26-32) plus the string sample_id and the two scalars L/n_blocks. \"13 fields\" is only reachable by counting sample_id + 12 arrays (and excluding the two scalars). The heading is internally inconsistent with the doc's own repeated \"12 arrays\" phrasing and with the table, which lists 14 distinct field names (sample_id, 12 arrays counting block_alpha/block_beta as two, plus the L/n_blocks scalar row).",
+    "verdict": "misleading",
+    "severity": "low",
+    "suggested_fix": "Reword the heading to be unambiguous, e.g. \"## 1. Record schema (sample_id + 12 SASD arrays + 2 scalars)\", so it does not contradict the \"12 arrays\" language used elsewhere in the same doc.",
+    "is_frozen": false
+  },
+  {
+    "doc": "2implementation-details/DATASET.md",
+    "location": "§1 table, `rbi` row (line 31): \"[1184] i32 | response block idx (−1 = prompt; ≤32 value-tokens per block, per section)\"",
+    "claim": "Each response block holds at most 32 value-tokens.",
+    "code_reality": "Confirmed consistent with code: BD = 32 (eval/prep_train_jax.py:20), and blocks are built at bd_size=32 granularity (grain_pipeline.py:242). prompt rbi = -1 (compute_response_block_idx_simple, masks.py:64-82). This is an OK/correct claim.",
+    "verdict": "ok",
+    "severity": "low",
+    "suggested_fix": "No change needed; verified against prep_train_jax.py:20 (BD=32) and grain_pipeline.py:242.",
+    "is_frozen": false
+  },
+  {
+    "doc": "2implementation-details/DATASET_V2.md",
+    "location": "§1 schema table (line 27) and §4 (line 82): image_embeds \"[168, 2048] bfloat16\" single copy, doubled to [336,2048]; \"sasd_num_image_tokens: 336 ... is this doubled count\"",
+    "claim": "image_embeds are stored single-copy [168,2048] and doubled to [336,2048]; config sasd_num_image_tokens=336 is the doubled count.",
+    "code_reality": "Verified: parquet_to_ar_with_embeds.py:6 stores single copy [672/4=168, 2048]; consumer doubles via concat([ie,ie],0) (ar_dataset.py:7); sasd_waymo.yml:26 sasd_num_image_tokens: 336 with comment \"2N=672\" / doubled (sasd_waymo.yml:24). 168 = 3 cams × 56; 336 = 2×168. This is correct and the context (single vs doubled) IS stated.",
+    "verdict": "ok",
+    "severity": "low",
+    "suggested_fix": "No change needed; the doc correctly distinguishes 168 (single, train-res) from 336 (doubled config count).",
+    "is_frozen": false
+  },
+  {
+    "doc": "2implementation-details/LABELING.md",
+    "location": "§5 \"Why distilled datasets are L=1280\" + §4 table tokenize row (line 85) and the pad contract (lines 97-100)",
+    "claim": "Distilled sets are uniform L=1280 (not 1184); pad_npz_uniform.py right-pads with input_ids→MASK 151665, labels→-100, rbi/turn→-1, scaffold→True, weight_vec→0.0; loss-zero invariant holds.",
+    "code_reality": "Verified bit-for-bit: jax_ddrive/scripts/pad_npz_uniform.py:30-39 (MASK_ID=151665; PAD map input_ids→MASK_ID, labels→-100, rbi→-1, turn→-1, scaffold→True, weight_vec→0.0) and its docstring loss-zero invariant (lines 15-17) match the grain _pad_sample contract (grain_pipeline.py:172-194). L=1280/1184 confirmed in the same file and in sasd_waymo.yml:25 (1184 base).",
+    "verdict": "ok",
+    "severity": "low",
+    "suggested_fix": "No change needed; the L=1280 distilled vs L=1184 pseudo distinction is correctly stated with context.",
+    "is_frozen": false
+  },
+  {
+    "doc": "2implementation-details/DATASET.md",
+    "location": "§4 step 6 (line 112) and DATASET_V2 §1 doubling rule (line 34-37): \"normalized by 2 × #response tokens\" / doubled [noisy|clean] sequence 2L=2368",
+    "claim": "Loss is normalized by 2 × #response tokens; sequence is doubled to 2L=2368 (L=1184).",
+    "code_reality": "Verified: num_items = 2*count(labels!=-100) (noise.py:50-51; sasd.py:102); both CE terms divide by the same doubled denominator (sasd_loss.py:11). 2L=2368 with L=1184 matches sasd_waymo.yml:24-25. Correct.",
+    "verdict": "ok",
+    "severity": "low",
+    "suggested_fix": "No change needed; verified against noise.py:50-51 and sasd_waymo.yml:24-25.",
+    "is_frozen": false
+  },
+  {
+    "doc": "2implementation-details/INFERENCE_DEPLOY.md",
+    "location": "§5 Internal-TPU runbook, step 2: \"Launch script: `launch_maxtext_sasd_tpu_frombase.sh`.\" and step 3 \"run `launch_maxtext_sasd_tpu_frombase.sh`\"",
+    "claim": "A launch script named `launch_maxtext_sasd_tpu_frombase.sh` is the deployment launcher.",
+    "code_reality": "No file named `launch_maxtext_sasd_tpu_frombase.sh` exists anywhere under /home/kaiwen/jax-dlm-baseline or /home/kaiwen/Desktop/research/Fast-dLLM (find returned nothing). It is referenced only in other docs (6for_internal/test_training.md:165, 6for_internal/updates-latest-0614.md:34) as a live-host script. The fork's scripts/ dir contains only maxtext_to_hf_export.py, prep_jax_eval_inputs.py, save_fast_ddrive_params_ckpt.py, train_sasd_waymo.sh.",
+    "verdict": "stale",
+    "severity": "low",
+    "suggested_fix": "Clarify that `launch_maxtext_sasd_tpu_frombase.sh` is a deployment-host (GCS/internal) script, not a repo file, and point to `../6for_internal/test_training.md` for its live path (the doc's §5 already says the actionable runbook with live paths is test_training.md). E.g. change to: \"Launch script (lives on the deploy host, see ../6for_internal/test_training.md): launch_maxtext_sasd_tpu_frombase.sh\".",
+    "is_frozen": false
+  },
+  {
+    "doc": "2implementation-details/INFERENCE_DEPLOY.md",
+    "location": "§5 step 2: \"(+ `code/fastddrive-LATEST.txt` pointer; one bundle = fork + jax_ddrive, see `upload_code_to_gcs.sh`).\"",
+    "claim": "`upload_code_to_gcs.sh` is referenced without a path, implying it lives alongside the other fork scripts.",
+    "code_reality": "`upload_code_to_gcs.sh` is not in the fork's scripts/ dir nor anywhere in either repo (find returned nothing). 6for_internal/test_training.md:81 invokes it as `/home/kaiwen/upload_code_to_gcs.sh` (a home-dir host script), and transfer-codebase.md:59 also cites `/home/kaiwen/upload_code_to_gcs.sh`.",
+    "verdict": "stale",
+    "severity": "low",
+    "suggested_fix": "Give the absolute host path to disambiguate: \"see `/home/kaiwen/upload_code_to_gcs.sh` (a deploy-host script, not in-repo)\".",
+    "is_frozen": false
+  },
+  {
+    "doc": "2implementation-details/INFERENCE_DEPLOY.md",
+    "location": "§3 B3, line 114: \"it builds the npz the driver consumes: `x_t0, rbi, position_ids, orig_len, pixel_values, image_grid_thw, target_ids[, image_embeds]`\"",
+    "claim": "Lists the npz keys produced by prep_jax_eval_inputs.py.",
+    "code_reality": "prep_jax_eval_inputs.py:88 also saves `input_ids` (the raw prompt token ids) into the npz, which the field list omits. Actual saved keys (lines 88-93,105): input_ids, x_t0, rbi, position_ids, pixel_values, image_grid_thw, orig_len, [target_ids], [image_embeds].",
+    "verdict": "misleading",
+    "severity": "low",
+    "suggested_fix": "Add `input_ids` to the listed keys, or annotate the list as \"(driver-consumed subset; the npz also carries input_ids)\". This is a non-blocking omission since the driver does not require input_ids.",
+    "is_frozen": false
+  },
+  {
+    "doc": "2implementation-details/EVAL_PIPELINE.md",
+    "location": "§3b JAX eval + body line 83 \"(`ddrive_jax/eval/mm_sampler.py`)\" vs \"Files added\" table row \"`jax_ddrive/ddrive_jax/eval/mm_sampler.py`\" and command line 77 \"`jax_ddrive/eval/prep_jax_eval.py`\"",
+    "claim": "Refers to the sampler as `ddrive_jax/eval/mm_sampler.py` in the body but `jax_ddrive/ddrive_jax/eval/mm_sampler.py` in the Files table; mixes `jax_ddrive/...` and `ddrive_jax/...` prefixes for the same tree.",
+    "code_reality": "The repo layout is `jax_ddrive/` (project root) containing the `ddrive_jax/` Python package plus a sibling `jax_ddrive/eval/` dir. Verified: /home/kaiwen/Desktop/research/Fast-dLLM/jax_ddrive/ddrive_jax/eval/mm_sampler.py and /home/kaiwen/Desktop/research/Fast-dLLM/jax_ddrive/eval/prep_jax_eval.py both exist. The bare `ddrive_jax/eval/mm_sampler.py` (line 83) is a package-relative path; the table's `jax_ddrive/ddrive_jax/eval/mm_sampler.py` is repo-root-relative; both resolve but the inconsistency can confuse a reader about which root the prefix is relative to.",
+    "verdict": "misleading",
+    "severity": "low",
+    "suggested_fix": "Standardize on repo-root-relative paths throughout, e.g. body line 83 -> `jax_ddrive/ddrive_jax/eval/mm_sampler.py`. No factual error; purely a prefix-consistency cleanup.",
+    "is_frozen": false
+  },
+  {
+    "doc": "2implementation-details/EVAL_PIPELINE.md",
+    "location": "§3b JAX eval, command at lines 77-80 (prep_jax_eval.py invoked with no --min_pixels/--max_pixels) and surrounding prose",
+    "claim": "Describes the JAX eval prep without stating the image resolution it runs at.",
+    "code_reality": "prep_jax_eval.py:24-25 defaults --min_pixels=--max_pixels=200704 (the paper-eval resolution), so the doc's command runs the 200704/200704 path. This differs from the deploy/training resolution (784 / 784*64=50176 → 56 merged tokens/img × 3 cams = 168), which is the resolution used by prep_jax_eval_inputs.py:53-54 and prep_train_jax.py:56-57. Both resolutions are legitimate for different purposes (full-val paper eval vs from-base TPU deploy), but the eval doc never names the 200704 value or that it is the paper-eval resolution.",
+    "verdict": "misleading",
+    "severity": "medium",
+    "suggested_fix": "Add a one-line note that this eval path uses the paper-eval resolution (min=max=200704, the prep_jax_eval.py default) and is distinct from the training/deploy resolution 784/50176 used in INFERENCE_DEPLOY.md §3/§6 (which yields 168 image tokens). This prevents readers from conflating the two resolution policies.",
+    "is_frozen": false
+  },
+  {
+    "doc": "2implementation-details/EVAL_PIPELINE.md",
+    "location": "Header note at line 3 \"Built 2026-06-03\" and TL;DR (lines 7-21)",
+    "claim": "Document presents single-box eval + 400-step real-data training as the current state, with a forward pointer to scale-up.",
+    "code_reality": "Accurate but dated: the doc's own callout (lines 23-26) already flags that this was superseded by Phase 6/7 (50,331-frame Parquet, FSDP harness, MaxText TPU port). The eval numbers (ADE_3s 0.814/0.839, ADE_5s 1.990/2.072, RFS 7.914/7.929, 479/479) were verified against /home/kaiwen/data/fast-ddrive/eval/{pt_val_full_ss,jax_val_full_sd}/waymo_eval_results.json and match exactly. The training loss 0.6815->0.6005 and WAYMO_SASD_JAX_TRAIN_PASS sentinel are consistent with train_waymo_sasd_jax.py:152-155.",
+    "verdict": "ok",
+    "severity": "low",
+    "suggested_fix": "No change required; the existing scale-up callout (lines 23-26) already provides the needed temporal context. Noted as a confirmation that the headline numbers are accurate.",
+    "is_frozen": false
+  },
+  {
+    "doc": "2implementation-details/AUDIT.md",
+    "location": "Section 'Confirmed issues and resolutions' tail / line 27-28: \"After fixes, `run_all_verification.sh` runs **9 gates** (cpu_mask_loss, cpu_lora, cpu_noise, cpu_sharding, phase1_text, phase2_sasd, phase4_vit, phase4b_mm_fwd, phase3_lora_train) — all PASS.\"",
+    "claim": "run_all_verification.sh runs 9 gates, enumerated as the 9 names listed (cpu_mask_loss, cpu_lora, cpu_noise, cpu_sharding, phase1_text, phase2_sasd, phase4_vit, phase4b_mm_fwd, phase3_lora_train).",
+    "code_reality": "The script runs 10 gates. The final summary loop iterates exactly 10 keys: `for k in cpu_mask_loss cpu_lora cpu_noise cpu_sharding cpu_eval_ports phase1_text phase2_sasd phase4_vit phase4b_mm_fwd phase3_lora_train` (run_all_verification.sh:51). The omitted 10th gate is `cpu_eval_ports` (`ALL EVAL PORT TESTS PASS`), invoked at run_all_verification.sh:26 against tests/test_eval_ports.py (which exists, dated Jun 3). Ground truth Section 6 confirms 'True count: 10 gates'.",
+    "verdict": "wrong",
+    "severity": "high",
+    "suggested_fix": "Change '9 gates' to '10 gates' and add `cpu_eval_ports` to the enumerated list: 'cpu_mask_loss, cpu_lora, cpu_noise, cpu_sharding, cpu_eval_ports, phase1_text, phase2_sasd, phase4_vit, phase4b_mm_fwd, phase3_lora_train'. (Not frozen; rewrite the sentence directly.)",
+    "is_frozen": false
+  },
+  {
+    "doc": "3summary/FEATURES.md",
+    "location": "Section 'Inference / serving', row 'JAX eval pipeline → official ADE/RFS' (line 44): \"52-frame ADE3s 0.853 / ADE5s 2.196 / RFS 8.10 (vs PyTorch 0.888/2.250/7.913)\"",
+    "claim": "The JAX eval pipeline's verified ADE/RFS result is the 52-frame partial run (0.853/2.196/8.10 vs PyTorch 0.888/2.250/7.913).",
+    "code_reality": "These are preliminary 52-frame numbers. The final full-479-frame rated-val eval (the canonical result) is JAX 0.839/2.072/7.929 vs PyTorch 0.814/1.990/7.914, as recorded in REPORT.md:43 and corroborated by scripts/make_dataset_website.py:340 ('479 帧 val ... ADE@3s 0.839/0.814, RFS 7.93/7.91'). The 52-frame run is a legitimate earlier partial, but FEATURES.md (which carries a 2026-06-08 status-update banner) still shows the partial number while the full 479 result has landed.",
+    "verdict": "misleading",
+    "severity": "medium",
+    "suggested_fix": "Either update the row to the full-479 numbers (JAX 0.839/2.072/7.929 vs PyTorch 0.814/1.990/7.914) or explicitly label the 52-frame figure as a partial preview and cross-reference the final 479-frame result in REPORT.md:43. The key clarification: 52-frame = preliminary partial; 479-frame rated val = final official metric.",
+    "is_frozen": false
+  },
+  {
+    "doc": "3summary/FEATURES.md",
+    "location": "Section 'Inference / serving', row 'JAX eval pipeline' (line 44) evidence cell: \"`eval/{prep_jax_eval,jax_batch_inference}.py`\"",
+    "claim": "The eval prep and inference drivers live under `eval/` (implicitly the ddrive_jax package, consistent with the other rows that cite package-relative paths like `diffusion/sample_sd.py`, `eval/mm_sampler.py`).",
+    "code_reality": "prep_jax_eval.py and jax_batch_inference.py live at the TOP-LEVEL `eval/` directory (jax_ddrive/eval/), NOT inside the ddrive_jax package. ddrive_jax/eval/ contains only mm_sampler.py, rope_index.py, scaffold.py, __init__.py. Verified: `ls ddrive_jax/eval/` lacks prep_jax_eval.py/jax_batch_inference.py; they resolve at jax_ddrive/eval/prep_jax_eval.py and jax_ddrive/eval/jax_batch_inference.py. Within the same FEATURES row, `eval/mm_sampler.py` (line 43) refers to the PACKAGE path (ddrive_jax/eval/mm_sampler.py) while `eval/...` here refers to the TOP-LEVEL path — the same `eval/` prefix denotes two different directories, which is ambiguous.",
+    "verdict": "misleading",
+    "severity": "low",
+    "suggested_fix": "Disambiguate the path roots: write the inference drivers as top-level `jax_ddrive/eval/{prep_jax_eval,jax_batch_inference}.py` to distinguish them from the package-internal `ddrive_jax/eval/mm_sampler.py`. (Ground truth Subsystem 5 also conflates these two `eval/` roots; the code split is real.)",
+    "is_frozen": false
+  },
+  {
+    "doc": "2implementation-details/AUDIT.md",
+    "location": "Third pass (2026-06-08) table rows for 'Real-model pspec rule' and 'Real-model loss-decrease' (lines 52-53), and prose line 58: \"252/252 real 3.09B kernels\", \"real 3.09B + frozen ViT\", \"loading 3.09B under CPU-8 emulation OOMs\"",
+    "claim": "The real model is 3.09B parameters (also echoed in REPORT.md:46 and FEATURES.md:53).",
+    "code_reality": "Confirmed consistent across all three docs (3.09B) and matches the ground-truth leaf-count figure 3.086B (rounded). Config dims back this: 36 layers / d_model 2048 / 16 heads / 2 kv heads / mlp 11008 / vocab 151936 (qwen2_5_text.py:51-55; qwen2.5-3b.yml:3-10). The previously-circulating wrong value '3.75B' does NOT appear in any of these three docs. Recording as an OK confirmation since the param-count was flagged as known-drift-prone.",
+    "verdict": "ok",
+    "severity": "low",
+    "suggested_fix": "No change needed — 3.09B is correct and consistent across REPORT/FEATURES/AUDIT; do NOT 'correct' it to 3.75B (3.75B is the erroneous value). Optionally annotate provenance as leaf-count 3.086B.",
+    "is_frozen": false
+  },
+  {
+    "doc": "3summary/FEATURES.md",
+    "location": "Section 'Model components', row 'Qwen2.5 text decoder' (line 14) and 'Tied LM head' (line 20); 'Diffusion / training' section weights (lines 28-29)",
+    "claim": "Text decoder = 36L/2048d GQA qkv-bias tied-embeds RMSNorm SiLU; Tied LM head verified (tie-check 0); section-weighted CE 1.7e-7, complementary causal 4.2e-7.",
+    "code_reality": "All verified. Dims match qwen2_5_text.py:51-55. Tied head: lm_head is created ONLY in the untied branch (qwen2_5_text.py:192-193); with tie_embeddings=True (the fast_ddrive default) attend uses embed_tokens.attend (qwen2_5_text.py:196-197), so there is no lm_head — matches 'Tied LM head'. Section-weighted/complementary parity sub-terms are computed by parity_sasd.py:51-52 (section_weighted_ce + causal_ce) and printed per-term (parity_sasd.py:58-59); the specific 1.7e-7/4.2e-7 are runtime outputs not literals in code, consistent with the <1e-3 gate.",
+    "verdict": "ok",
+    "severity": "low",
+    "suggested_fix": "No change needed; claims are accurate.",
+    "is_frozen": false
+  },
+  {
+    "doc": "3summary/FEATURES.md",
+    "location": "Section 'Model components', row '3D M-RoPE' (line 16): \"3D M-RoPE (mrope_section [16,24,24])\"",
+    "claim": "M-RoPE section is [16,24,24].",
+    "code_reality": "Correct. Real section = (16,24,24) at qwen2_5_text.py:200 (default arg) and sasd_waymo.yml:5/22 ([16,24,24], '2*(16+24+24)==128==head_dim'). The proxy value [4,6,6] is only the base.yml:390 placeholder for the test harness; it is NOT cited here. Recording as OK since [4,6,6]-vs-[16,24,24] is known drift and this doc gets it right.",
+    "verdict": "ok",
+    "severity": "low",
+    "suggested_fix": "No change needed — [16,24,24] is the real section. Do not substitute the proxy [4,6,6].",
+    "is_frozen": false
+  },
+  {
+    "doc": "3summary/REPORT.md",
+    "location": "Section 'A couple of things worth your eye' (line 131): \"I deviated from the repo's pinned `torch==2.6.0+cu124` to **cu128**\"; also line 17 'torch 2.11+cu128'",
+    "claim": "Repo pins torch==2.6.0+cu124; the build uses cu128 (torch 2.11+cu128 per line 17).",
+    "code_reality": "This is an environment/provenance narrative not verifiable from the JAX/MaxText source in scope (the PyTorch oracle env `ddrive` is external). The torch version numbers (2.6.0+cu124 pinned vs 2.11+cu128 used) cannot be confirmed against any in-repo file; ground truth does not record these. Flagging only as an unverifiable claim, not a demonstrated error.",
+    "verdict": "ok",
+    "severity": "low",
+    "suggested_fix": "No edit required for correctness; if desired, cite the env source (e.g. the conda env spec or HANDOFF.md) so the torch-version claim is traceable.",
+    "is_frozen": false
+  },
+  {
+    "doc": "2implementation-details/AUDIT.md",
+    "location": "Section 'Confirmed issues and resolutions', rows 1, 3, 4 and the 'After fixes' line referencing added gates/tests",
+    "claim": "Resolutions added phase3_lora_train gate, tests/test_noising.py, tests/test_lora.py, and patch_embed conv-as-linear gating (rel-max < 5e-3) in parity_vit.py.",
+    "code_reality": "All verified present. phase3_lora_train gate at run_all_verification.sh:46 (marker PHASE3_PASS, emitted by train_overfit.py:147). tests/test_noising.py and tests/test_lora.py both exist. parity_vit.py:44 prints patch_embed conv-as-linear rel-max with the '~6.5e-4 cuDNN seed; >5e-3 ⇒ reshape bug' note and gates pe_rel<5e-3 at parity_vit.py:58-60. The only inaccuracy in this section is the gate COUNT (separate finding).",
+    "verdict": "ok",
+    "severity": "low",
+    "suggested_fix": "No change needed for these resolution claims; only the '9 gates' count is wrong (see separate finding).",
+    "is_frozen": false
+  },
+  {
+    "doc": "README.md",
+    "location": "Living table, row `../to-host-chn.md`: \"the English `to-host.md` twin was retired 2026-06-12\" (line 10); also Maintenance rule 3 (line 57)",
+    "claim": "The English handoff doc to-host.md was retired/removed on 2026-06-12; only the Chinese to-host-chn.md remains as the living handoff doc.",
+    "code_reality": "Confirmed accurate. No to-host.md exists anywhere in the repo (only /home/kaiwen/Desktop/research/Fast-dLLM/jax_ddrive/to-host-chn.md is present). Git shows to-host.md was deleted in commit 8665ba9 dated 2026-06-12, matching the stated date.",
+    "verdict": "ok",
+    "severity": "low",
+    "suggested_fix": "No change needed; the retirement claim and date are correct.",
+    "is_frozen": false
+  },
+  {
+    "doc": "README.md",
+    "location": "Living table, row `2implementation-details/DATASET_V2.md` (line 11): \"v2 ArrayRecord schema (12 arrays + precomputed `image_embeds`)\"",
+    "claim": "The v2 ArrayRecord schema contains 12 arrays plus a precomputed image_embeds field.",
+    "code_reality": "Confirmed accurate. scripts/parquet_to_ar_with_embeds.py ARRAY_FIELDS lists exactly 12 fields (input_ids, labels, rbi, turn, scaffold, weight_vec, block_alpha, block_beta, position_ids, vision_mask, pixel_values, image_grid_thw); DTYPES adds image_embeds:bfloat16 as the extra precomputed entry. ddrive_jax/data/ar_dataset.py _ar_dtypes mirrors the same 12 + image_embeds (lines 41-50). Matches ground_truth.md ARRAY_FIELDS count = 12.",
+    "verdict": "ok",
+    "severity": "low",
+    "suggested_fix": "No change needed.",
+    "is_frozen": false
+  },
+  {
+    "doc": "README.md",
+    "location": "Stable references table, row `2implementation-details/LABELING.md` (line 32): \"... the 400/800/50k/415k identity map, L=1280\"",
+    "claim": "The LABELING doc covers a 400/800/50k/415k dataset-identity map and an L=1280 sequence length.",
+    "code_reality": "Confirmed accurate against the target doc. LABELING.md has the identity map (400 small, 800 raw-JPEG source, 50,331 'middle', 415,663 'full') at lines 103-112 and explains distilled sets are uniform L=1280 vs the old L=1184 (lines 92-101, 124). This matches ground_truth.md §5 (pseudo L=1184 config vs distilled L=1280 override). The README correctly cites the distilled value (1280) for the LABELING doc's scope; no context-collision since LABELING is the distilled-labels doc.",
+    "verdict": "ok",
+    "severity": "low",
+    "suggested_fix": "No change needed; the 1280 figure is correctly scoped to the distilled-labels doc.",
+    "is_frozen": false
+  },
+  {
+    "doc": "6for_internal/test_training.md",
+    "location": "§7 STAGE 3 status note (2026-06-14): \"the old `token_agreement`-vs-target was a broken (scaffold-vs-flat misaligned) metric and has been removed.\"",
+    "claim": "The token_agreement metric has been removed from the driver entirely.",
+    "code_reality": "token_agreement is NOT fully removed. The driver still lists it in its module docstring as a scalar that leaves the box (driver.py:17 \"...traj_exact (vs target), token_agreement, max trajectory |Δ|...\") and still computes it in the ref_output branch (driver.py:153 `metrics[\"token_agreement\"] = float((gen[:n] == ref[...]).mean())`). It was replaced by co_match/fmb_match/traj_exact ONLY in the target_ids (T2) branch (driver.py:139-148).",
+    "verdict": "misleading",
+    "severity": "medium",
+    "suggested_fix": "Inline-annotate the sentence to scope it to T2: e.g. add \"(removed from the T2/target_ids comparison path and replaced by traj_exact/co_match/fmb_match; token_agreement still exists for the local ref_output parity branch — driver.py:153 and the module docstring driver.py:17)\".",
+    "is_frozen": false
+  },
+  {
+    "doc": "6for_internal/updates-latest-0614.md",
+    "location": "2026-06-14 代码修复 bullet: \"`driver`:删坏指标 `token_agreement`(scaffold vs flat 错位)→ 改 `co_match`/`fmb_match`...\"",
+    "claim": "The broken token_agreement metric was deleted from the driver.",
+    "code_reality": "token_agreement is still present: computed at driver.py:153 (ref_output branch) and still named in the module docstring driver.py:17. Only the T2/target_ids comparison path replaced it with co_match/fmb_match/traj_exact (driver.py:139-148).",
+    "verdict": "misleading",
+    "severity": "low",
+    "suggested_fix": "Annotate: \"token_agreement 仅从 T2/target_ids 比较路径移除并改为 traj_exact/co_match/fmb_match;本地 ref_output 校验分支仍保留 token_agreement(driver.py:153,docstring driver.py:17)\".",
+    "is_frozen": false
+  },
+  {
+    "doc": "6for_internal/test_training.md",
+    "location": "§5 STAGE 1 bullet (~line 165): \"The GCP-provisioning wrapper that does this end-to-end is `launch_maxtext_sasd_tpu_frombase.sh` (used for the free 1-chip rehearsal...)\"",
+    "claim": "launch_maxtext_sasd_tpu_frombase.sh is a script the agent/workflow uses, implicitly available alongside the transferred code bundle.",
+    "code_reality": "The script does NOT exist inside either repo or the code bundle ($FORK). It exists only as an owner-local file at /home/kaiwen/launch_maxtext_sasd_tpu_frombase.sh, and is referenced in PATCHES.md:111 with that absolute owner path. It is NOT packaged in fastddrive-<TS>.tgz (find across both repos returns nothing under scripts/; only PATCHES.md mentions it). An internal agent that pulled the bundle cannot run or even see this script.",
+    "verdict": "stale",
+    "severity": "medium",
+    "suggested_fix": "Annotate to clarify it is owner-local and not in the bundle: e.g. \"...is the owner-local wrapper `/home/kaiwen/launch_maxtext_sasd_tpu_frombase.sh` (NOT shipped in the code bundle; on the internal pod run the python command above directly)\". The doc already says to run the python command directly, so the wrapper reference is purely informational and should be marked as not-in-bundle.",
+    "is_frozen": false
+  },
+  {
+    "doc": "6for_internal/test_training.md",
+    "location": "§10 Gotchas #4: \"The paper-eval resolution (200704 → 720 tokens) garbles the output (mRoPE/structure mismatch).\"",
+    "claim": "Paper-eval resolution 200704 yields 720 image tokens.",
+    "code_reality": "The 720 figure is the paper-res per-grid token count and is plausible but NOT asserted anywhere in code (n_image_tokens is a diagnostic only — driver.py:128 \"expect 168 at train res\", never asserted). Train-res 168 = 3 cameras × 56/img (prep_jax_eval_inputs.py:52 says \"56/img → grid [1,16,14]\"). The config sasd_num_image_tokens:336 is the DOUBLED train count (2×168), and the distilled dataset's image_embeds.shape_single is [168,2048] (dataset_info_train.json:43-46). The doc states the 720-vs-168 context correctly (train res ↔ 168), so 720 is not wrong, just not code-verifiable.",
+    "verdict": "ok",
+    "severity": "low",
+    "suggested_fix": "Optional: footnote that 720 is the paper-res grid-derived count (not a code constant; n_image_tokens is a diagnostic, never asserted — driver.py:128). The 168/720 train-vs-paper framing is correct as written.",
+    "is_frozen": false
+  },
+  {
+    "doc": "6for_internal/test_training.md",
+    "location": "STAGE 1 command (§5): `sasd_seq_len=1280 max_target_length=2576`",
+    "claim": "Training uses sasd_seq_len=1280 and max_target_length=2576.",
+    "code_reality": "These are command-line OVERRIDES specific to the distilled-400 dataset (L=1280), not the config defaults. The config sasd_waymo.yml sets sasd_seq_len:1184 and max_target_length:2376 (sasd_waymo.yml:25,63). The distilled dataset image_embeds.shape_single=[168,2048] (dataset_info_train.json) and the doc explicitly labels the dataset \"distilled-400 base-ViT AR (L=1280)\" in the TL;DR (line 32), so the override is intentional and correctly contextualized.",
+    "verdict": "ok",
+    "severity": "low",
+    "suggested_fix": "No change needed; the 1280/2576 override is correctly distinguished from the 1184/2376 config defaults by the surrounding distilled-400 context. (If desired, add a one-line note: \"1280/2576 override the sasd_waymo.yml defaults 1184/2376 because the distilled-400 set is L=1280.\")",
+    "is_frozen": false
+  },
+  {
+    "doc": "6for_internal/test_training.md",
+    "location": "§10 Gotchas #4 and §7a comment: \"(min_pixels=784, max_pixels=50176 → 168 img tokens)\" / \"defaults already match training: --min_pixels 784 --max_pixels 50176 (-> 168 image tokens)\"",
+    "claim": "min_pixels=784/max_pixels=50176 yields 168 image tokens.",
+    "code_reality": "Confirmed consistent: prep_train_jax.py:56-57 and prep_jax_eval_inputs.py:53-54 default to min=784, max=784*64=50176; the distilled dataset image_embeds.shape_single=[168,2048] (dataset_info_train.json:43-46); driver.py:128 \"expect 168 at train res\". 168 = 3 cameras × 56/img (prep_jax_eval_inputs.py:52). Note: 168 is per-grid actual; the config's sasd_num_image_tokens:336 is the doubled value — the doc does not conflate these.",
+    "verdict": "ok",
+    "severity": "low",
+    "suggested_fix": "No change; numbers verified. (168 is the single/undoubled count the inference scaffold carries; 336 in sasd_waymo.yml:26 is the 2× doubled count used in training — these are not in conflict.)",
+    "is_frozen": false
+  },
+  {
+    "doc": "6for_internal/test_training.md",
+    "location": "§0 TL;DR success block (line 39-42) and §11 row: \"42.7 TFLOP/s\", \"start loss ≈ 4–6\", \"local 12k run reached lows ~0.2\", \"12k gave traj Δ1.12m; 30k regressed to Δ28.8m\"",
+    "claim": "Specific empirical throughput/loss/trajectory-delta numbers from local RTX 5090 runs.",
+    "code_reality": "These are run-log observations, not code constants — not verifiable from source. They are clearly framed as local empirical results (\"validated locally on an RTX 5090, 2026-06-13\"), so they are status reporting, not code claims. No code contradiction found.",
+    "verdict": "ok",
+    "severity": "low",
+    "suggested_fix": "No change; flagged only to note these are empirical run logs, not code-backed constants (unverifiable in this audit).",
+    "is_frozen": false
+  },
+  {
+    "doc": "6for_internal/test_training.md",
+    "location": "§7b output line: \"-> SASD_EVAL_PASS + metrics {valid_json, traj_parseable, L, n_image_tokens, n_mask_remaining, traj_exact, traj_max_abs_delta, co_match, fmb_match}\"",
+    "claim": "The driver emits exactly this metrics set.",
+    "code_reality": "All listed keys exist (driver.py:122-148): valid_json, traj_parseable, L, n_image_tokens, n_mask_remaining, traj_exact, traj_max_abs_delta, co_match, fmb_match. The driver ALSO emits dtype/img_source (driver.py:120-121) and, in the local ref_output branch only, token_agreement (driver.py:153). The doc's set is the T2/target_ids set and is accurate for that path; the omission of token_agreement is consistent with it being a separate non-T2 branch.",
+    "verdict": "ok",
+    "severity": "low",
+    "suggested_fix": "No change required; the listed metrics are correct for the T2 (target_ids) path. Optionally note the driver also emits dtype/img_source and (ref_output branch only) token_agreement.",
+    "is_frozen": false
+  },
+  {
+    "doc": "6for_internal/transfer-codebase.md",
+    "location": "§(项目一句话) line 54-55 and test_training.md §1 line 48-50",
+    "claim": "Fast-dDrive emits a 4-section JSON: critical_objects (12 yes/no), explanation, future_meta_behavior (longitudinal/lateral), trajectory (5 waypoints @1s).",
+    "code_reality": "Confirmed: 4-section structure and section weights match prep_train_jax.py:22 SECTION_W={critical_objects:1.5, explanation:1.0, future_meta_behavior:2.0, trajectory:3.0}; trajectory parsed as up to 5 [x,y] waypoints (driver.py:58 \"Extract up to 5 [x,y] waypoints\", traj_parseable checks shape==(5,2) at driver.py:123). The \"12 yes/no\" critical_objects detail is a dataset/label property not encoded as a code constant — not contradicted.",
+    "verdict": "ok",
+    "severity": "low",
+    "suggested_fix": "No change; section structure, weights, and 5-waypoint trajectory all verified against code.",
+    "is_frozen": false
+  },
+  {
+    "doc": "6for_internal/test_training.md",
+    "location": "§4 self-containment check: \"PYTHONPATH=$FORK/src JAX_PLATFORMS=cpu python -m maxtext.diffusion.tests.eval_sasd_import_test  # -> EVAL_SASD_SELFCONTAINED_PASS\"",
+    "claim": "The self-containment test exists and prints EVAL_SASD_SELFCONTAINED_PASS.",
+    "code_reality": "Confirmed: file exists at src/maxtext/diffusion/tests/eval_sasd_import_test.py and prints \"EVAL_SASD_SELFCONTAINED_PASS\" (line 30).",
+    "verdict": "ok",
+    "severity": "low",
+    "suggested_fix": "No change; verified.",
+    "is_frozen": false
+  },
+  {
+    "doc": "6for_internal/test_training.md",
+    "location": "§4 embedding-parity gate / §8: \"cosine>=0.999\", \"BASE ViT's bf16-matmul cosine is ~0.998\", and §11 \"embedding parity cosine 0.99966\"",
+    "claim": "Embedding parity gates on cosine>=0.999; base ViT bf16 drift ~0.998; release ViT cosine 0.99966.",
+    "code_reality": "Confirmed: embedding_parity.py:19 \"Defaults: cosine >= 0.999, max_rel <= 5e-2\"; embedding_parity.py:16-17 \"the BASE ViT's bf16 drift is ~0.998 cosine, LARGER than the release ViT's 0.99966\"; gate logic at embedding_parity.py:84-88 gates on fp32_vs_reference cosine when reference present. Matches doc exactly.",
+    "verdict": "ok",
+    "severity": "low",
+    "suggested_fix": "No change; thresholds and drift numbers verified against embedding_parity.py:16-19,84-88.",
+    "is_frozen": false
+  },
+  {
+    "doc": "6for_internal/test_training.md",
+    "location": "§6 STAGE 2 / §10 #3: export writes \"434 trained text tensors ... + 390 visual.* copied verbatim ... lm_head omitted (tied)\" and B1 round-trip 824/824",
+    "claim": "B1 export = 434 text + 390 visual = 824 keys, lm_head omitted, base round-trip 824/824 bitwise.",
+    "code_reality": "Confirmed: maxtext_to_hf_export.py:5,11-16 (\"434/434 text leaves\", \"824 keys\", \"434 TEXT tensors\", \"390 visual.* copied VERBATIM\", \"lm_head.weight is NOT written (tie_word_embeddings=True)\"); round-trip gate prints bitwise count (maxtext_to_hf_export.py:277). PATCHES.md:72-75 echoes 434/824.",
+    "verdict": "ok",
+    "severity": "low",
+    "suggested_fix": "No change; all export counts verified.",
+    "is_frozen": false
+  },
+  {
+    "doc": "6for_internal/test_training.md",
+    "location": "§3 Code layout block (lines 88-103)",
+    "claim": "Lists fork files: configs/sasd_waymo.yml, diffusion/sasd.py, load_fast_ddrive_maxtext.py, input_pipeline/sasd_data/, scripts/{save_fast_ddrive_params_ckpt,maxtext_to_hf_export,prep_jax_eval_inputs}.py, diffusion/eval_sasd/{models,hf_to_jax,masks_eval,sampler_sasd,driver,embedding_parity}, tests/eval_sasd_import_test.py, PATCHES.md.",
+    "code_reality": "All paths verified to exist: sasd_waymo.yml, sasd.py (with prepare_sasd_inputs/mrope_cos_sin/compute_fast_ddrive_image_embeds/sasd_loss_from_logits), load_fast_ddrive_maxtext.py, sasd_data/{ar_dataset,grain_pipeline,noise,parquet_dataset,schema}.py, scripts/*, eval_sasd/{driver,embedding_parity,hf_to_jax,masks_eval,sampler_sasd}.py + models/{qwen2_5_text,rope,vision_qwen25vl}.py, tests/eval_sasd_import_test.py, PATCHES.md. No 404s. Note: the doc correctly references eval_sasd/sampler_sasd.py (the real one), NOT the non-existent top-level diffusion/sampler_sasd.py.",
+    "verdict": "ok",
+    "severity": "low",
+    "suggested_fix": "No change; entire §3 layout verified.",
+    "is_frozen": false
+  },
+  {
+    "doc": "6for_internal/test_training.md",
+    "location": "§5 STAGE 1 command and §6/§7 commands: module paths maxtext.trainers.pre_train.train, scripts/maxtext_to_hf_export.py, scripts/prep_jax_eval_inputs.py, maxtext.diffusion.eval_sasd.driver, maxtext.diffusion.eval_sasd.embedding_parity; flags model_name=qwen2.5-3b, hardware=tpu, opt_type=adamw, per_device_batch_size=1, steps/checkpoint_period, load_parameters_path, sasd_data_dir, base_output_directory, run_name",
+    "claim": "These trainer module, scripts, and config flags exist and are valid.",
+    "code_reality": "Confirmed: src/maxtext/trainers/pre_train/train.py exists; scripts exist; driver/embedding_parity are runnable modules. Config keys valid in base.yml/types.py: run_name(21), load_parameters_path(42), checkpoint_period(57), base_output_directory(445), hardware(481), steps(772), opt_type(876), per_device_batch_size(678), sasd_seq_len/sasd_num_image_tokens/sasd_data_dir(395-397); dataset_type=waymo_sasd is a valid enum (types.py:181 WAYMO_SASD).",
+    "verdict": "ok",
+    "severity": "low",
+    "suggested_fix": "No change; all module paths and config flags verified.",
+    "is_frozen": false
+  },
+  {
+    "doc": "6for_internal/test_training.md",
+    "location": "§9 Validation log: \"the data make_batch supports fixed_mask= for a reproducible noise pattern\"",
+    "claim": "make_batch accepts a fixed_mask argument for deterministic eval.",
+    "code_reality": "Confirmed: sasd.py make_batch signature has `fixed_mask: np.ndarray | None = None` (sasd.py:65) with docstring \"fixed_mask: optional [L] bool for deterministic eval\"; ddrive_jax noise.py:14,22-23 same. Used at noise.py:22 to copy the fixed mask.",
+    "verdict": "ok",
+    "severity": "low",
+    "suggested_fix": "No change; verified.",
+    "is_frozen": false
+  },
+  {
+    "doc": "6for_internal/test_training.md",
+    "location": "§7a output list: \"writes x_t0, rbi, position_ids, orig_len, pixel_values, image_grid_thw, target_ids\"",
+    "claim": "prep_jax_eval_inputs.py writes these npz fields.",
+    "code_reality": "Confirmed: prep_jax_eval_inputs.py:88-93 writes input_ids, x_t0, rbi, position_ids, pixel_values, image_grid_thw, orig_len, and target_ids (when GT present); plus image_embeds with --with_embeds (line 105). Doc list matches (doc omits input_ids and image_embeds, both of which the doc mentions elsewhere — §7a notes --with_embeds stores bf16 image_embeds).",
+    "verdict": "ok",
+    "severity": "low",
+    "suggested_fix": "No change; npz fields verified.",
+    "is_frozen": false
+  },
+  {
+    "doc": "6for_internal/test_training.md",
+    "location": "§5 data-path note: \"you'll see `dataset carries precomputed image_embeds — ViT not loaded`\"",
+    "claim": "The log line 'dataset carries precomputed image_embeds — ViT not loaded' is emitted.",
+    "code_reality": "Confirmed verbatim: waymo_sasd_data_processing.py:170 logs \"[waymo_sasd] dataset carries precomputed image_embeds — ViT not loaded\".",
+    "verdict": "ok",
+    "severity": "low",
+    "suggested_fix": "No change; log string verified.",
+    "is_frozen": false
+  },
+  {
+    "doc": "6for_internal/transfer-codebase.md",
+    "location": "§(读这几篇) lines 47-49: ls references to docs/2implementation-details/INFERENCE_DEPLOY.md, docs/5blockers/0612-blocker-v0.md, $FORK/PATCHES.md; and §60 to-host-chn.md §6.6",
+    "claim": "These referenced docs/paths exist.",
+    "code_reality": "Confirmed: 2implementation-details/INFERENCE_DEPLOY.md, 5blockers/0612-blocker-v0.md, 4collect/07_from_base_b1_b2_progress.md, 1plans/05_review_and_fixes_2026-06-14.md, 6for_internal/history/ all exist; PATCHES.md exists in the fork; to-host-chn.md exists at jax_ddrive/to-host-chn.md (the ../../ relative reference from 6for_internal/ resolves correctly).",
+    "verdict": "ok",
+    "severity": "low",
+    "suggested_fix": "No change; all cross-doc references resolve.",
+    "is_frozen": false
+  },
+  {
+    "doc": "6for_internal/test_training.md",
+    "location": "§7b driver command threshold and §10 #4 image-resolution gotcha referencing n_image_tokens diagnostic",
+    "claim": "n_image_tokens is a meaningful gate distinguishing 168 (train) vs 720 (paper).",
+    "code_reality": "n_image_tokens is a DIAGNOSTIC only, never asserted (driver.py:128 comment \"expect 168 at train res\"; SASD_EVAL pass condition is only `valid_json and traj_parseable` — driver.py:193). The doc treats it as a diagnostic correctly (it's used to catch resolution mismatch, not gated). No code contradiction.",
+    "verdict": "ok",
+    "severity": "low",
+    "suggested_fix": "No change; the doc's treatment of n_image_tokens as a diagnostic is accurate. (Note: the value is grid-dependent, computed per-record, not a hard model constant.)",
+    "is_frozen": false
+  },
+  {
+    "doc": "1plans/02_tpu_plan.md",
+    "location": "## Mesh, bullet 1: \"Start pure-FSDP `(N, 1)` (simplest, scales the 3.75B fine).\" (line 10)",
+    "claim": "The model is 3.75B parameters.",
+    "code_reality": "Verified leaf-count is 3.086B (434/434 leaves, measured by save_fast_ddrive_params_ckpt.py:72-73; cited as '3.086 B' in docs/4collect/07_from_base_b1_b2_progress.md:33 and OVERNIGHT_TPU_PROGRESS.md:169, and rounded to '3.09B' everywhere a loss-decrease run is recorded). The config dims that produce this (qwen2_5_text.py:50-56) are 36L/2048/16h/2kv/128hd/11008mlp/151936vocab with tied embeds. The figure 3.75B has no source in any measurement; it only appears in stale code comments (lora.py:5, launch_tpu.sh:11).",
+    "verdict": "wrong",
+    "severity": "medium",
+    "suggested_fix": "Inline annotation: replace/append '3.75B' with '[CORRECTION 2026-06-16: 3.086B (3.09B rounded) per the verified 434-leaf param ckpt; \"3.75B\" is a stale over-estimate]'.",
+    "is_frozen": true
+  },
+  {
+    "doc": "1plans/04_tpu_smallscale_validation.md",
+    "location": "## 3 table, row 1: \"Real driver `train_tpu.py main()` (real 3.75B + ViT + grain + Orbax), real mode\" (line 75)",
+    "claim": "The real model is 3.75B parameters.",
+    "code_reality": "Same model is called '3.09B' in this very document at line 28 ('Why proxy and not the real 3.09B model'), so the doc is internally inconsistent. Verified leaf-count is 3.086B/3.09B (save_fast_ddrive_params_ckpt.py:72-73; OVERNIGHT_TPU_PROGRESS.md:169 '434/434 leaves, 3.086 B'). 3.75B is incorrect.",
+    "verdict": "wrong",
+    "severity": "medium",
+    "suggested_fix": "Inline annotation at line 75: change '3.75B' to '3.09B' (or annotate '[CORRECTION: 3.086B/3.09B, matching line 28]') so it matches the rest of the doc and the verified count.",
+    "is_frozen": true
+  },
+  {
+    "doc": "1plans/03_scaleup_tpu_spec.md",
+    "location": "## 3.1 What to graft, item 1: \"**`diffusion/` module** into MaxText: `masks.py`, `sasd_loss.py`, `noise.py` — copy verbatim.\" (line 76)",
+    "claim": "The plan is to copy masks.py, sasd_loss.py, and noise.py verbatim into the MaxText fork as a diffusion/ module.",
+    "code_reality": "The MaxText fork has NO diffusion/masks.py, diffusion/sasd_loss.py, or diffusion/noise.py. The SASD training math was consolidated into a single src/maxtext/diffusion/sasd.py whose header reads 'SASD ... math — native MaxText port. BIT-EXACT port of the validated Fast-dDrive NNX reference' — i.e. an independent re-derivation, not a verbatim file copy (ground_truth §1.C and §7; sasd.py header lines 1-3). The verbatim-vendored files are only the INFERENCE stack under eval_sasd/, not these three training files.",
+    "verdict": "stale",
+    "severity": "low",
+    "suggested_fix": "This section is already under the '(2026-06-08) superseded' banner (lines 6-10). Add an inline note: '[SUPERSEDED: the SASD training math was re-ported as a single consolidated diffusion/sasd.py (BIT-EXACT re-derivation, not a verbatim copy of masks/sasd_loss/noise); only the eval_sasd/ inference stack is vendored verbatim].'",
+    "is_frozen": true
+  },
+  {
+    "doc": "1plans/02_tpu_plan.md",
+    "location": "## Checkpointing: \"Use `ddrive_jax/checkpoint.py` (Orbax `StandardCheckpointer`) — multi-host safe ...\" (line 35)",
+    "claim": "ddrive_jax/checkpoint.py (StandardCheckpointer) is the multi-host-safe checkpoint path to use on a pod.",
+    "code_reality": "checkpoint.py:1-2 docstring does claim 'TPU/multi-host-ready', and StandardCheckpointer is multi-host-capable, so the claim is defensible. However the ACTUAL production multi-host path used by the FSDP driver is train/checkpoint_mgr.py (Orbax CheckpointManager, 4-item composite params/opt/meta/grain, sharded-abstract restore) — checkpoint.py is the simple single-host in-place StandardCheckpointer that saves only nnx.state with no opt_state/grain (checkpoint.py:15-29; ground_truth §4 'THREE checkpoint systems coexist'). Pointing readers at checkpoint.py for pod use is misleading because it loses optimizer/grain state needed for resume.",
+    "verdict": "misleading",
+    "severity": "low",
+    "suggested_fix": "Inline note: '[UPDATE: the production multi-host path is train/checkpoint_mgr.py (CheckpointManager composite: params+opt+meta+grain, sharded restore); plain checkpoint.py saves only model state (no opt/grain) and is the single-host in-place path].'",
+    "is_frozen": true
+  },
+  {
+    "doc": "1plans/03_scaleup_tpu_spec.md",
+    "location": "## (top) line 10: \"scales the 3.75B fine\" ... wait — actually line 68 vs the Mesh section. Mesh section reuses the 02 pattern but 03 itself uses 3.09B at line 68.",
+    "claim": "03 consistently uses 3.09B (line 68 'real pretrained 3.09B model'); no 3.75B appears in 03.",
+    "code_reality": "Confirmed: 03_scaleup_tpu_spec.md:68 says '3.09B' which matches the verified leaf-count (3.086B). This is the CORRECT figure — flagged here only to note 03 does NOT carry the 3.75B drift that 02 and 04 do.",
+    "verdict": "ok",
+    "severity": "low",
+    "suggested_fix": "No change. Confirms 03's param count is correct; the 3.75B drift is isolated to 02:10 and 04:75.",
+    "is_frozen": true
+  },
+  {
+    "doc": "1plans/03_scaleup_tpu_spec.md",
+    "location": "## 3.2 Re-validation after graft: \"Re-run `jax_ddrive/scripts/run_all_verification.sh` on TPU-CPU (10 gates) before any large run.\" (line 83)",
+    "claim": "run_all_verification.sh has 10 gates.",
+    "code_reality": "Confirmed correct: ground_truth §6 'True count: 10 gates' and run_all_verification.sh final loop iterates exactly 10 keys (cpu_mask_loss, cpu_lora, cpu_noise, cpu_sharding, cpu_eval_ports, phase1_text, phase2_sasd, phase4_vit, phase4b_mm_fwd, phase3_lora_train). This is the correct count (the known '9 gates' drift does NOT appear in this doc).",
+    "verdict": "ok",
+    "severity": "low",
+    "suggested_fix": "No change. Confirms the gate count is right; noted to contrast with the '9 gates' drift elsewhere in the corpus.",
+    "is_frozen": true
+  },
+  {
+    "doc": "1plans/04_tpu_smallscale_validation.md",
+    "location": "## 4 Gaps/risks, item 5: \"Its `_real_image_embeds_fn is a stub` comment is stale (it's implemented).\" (line 114)",
+    "claim": "The launch_tpu.sh comment saying _real_image_embeds_fn is a stub is itself stale because the function is now implemented.",
+    "code_reality": "Confirmed correct. train_tpu.py:348-365 defines a fully-implemented _real_image_embeds_fn (loads the Fast-dDrive ViT, runs it per sample, doubles to [2N,D], stop_gradient). The stale stub comment it refers to is still present at launch_tpu.sh:7-8 ('_real_image_embeds_fn is currently a stub'). So 04's meta-claim is accurate.",
+    "verdict": "ok",
+    "severity": "low",
+    "suggested_fix": "No change to 04. (Optional: the underlying stale comment at launch_tpu.sh:7-8 could be fixed, but that is code, not this doc.)",
+    "is_frozen": true
+  },
+  {
+    "doc": "1plans/00_PLAN.md",
+    "location": "## 6 Proposed repo layout: lists models/fusion.py, diffusion/schedulers.py, data/waymo_json.py, configs/{ddrive_text_tiny,ddrive_text_full,ddrive_vl_full}.yml, train.py, tests/{test_loss_parity,test_scaffold}.py (lines 70-82)",
+    "claim": "Repo layout includes fusion.py, schedulers.py, waymo_json.py, ddrive_*.yml configs, top-level train.py, and several named tests.",
+    "code_reality": "None of these exist: no fusion.py, no diffusion/schedulers.py (ddrive_jax has no schedulers.py), no data/waymo_json.py (data/ has parquet_dataset.py/ar_dataset.py/grain_pipeline.py), no ddrive_*.yml (ground_truth §7.4: 'No YAML/JSON config in ddrive_jax/'; all constants are inline dataclass defaults), no top-level train.py (trainers are train_overfit.py / train_waymo_sasd_jax.py / train/train_tpu.py). The actual diffusion files are sasd_loss.py/masks.py/noise.py/sample_sd.py. HOWEVER the section is explicitly headed 'Proposed repo layout' in a Phase-0 plan, so it is aspirational, not a current-state claim.",
+    "verdict": "stale",
+    "severity": "low",
+    "suggested_fix": "Add a one-line banner at the top of §6: '[NOTE 2026-06-16: this is the ORIGINAL proposed layout; the implemented tree differs — diffusion/{sasd_loss,masks,noise,sample_sd}.py, data/{parquet,ar,grain}_dataset/pipeline.py, trainers train_overfit*.py + train_waymo_sasd_jax.py + train/train_tpu.py, NO yml configs (constants are inline dataclasses), NO fusion.py/schedulers.py/waymo_json.py].'",
+    "is_frozen": true
+  },
+  {
+    "doc": "1plans/03_scaleup_tpu_spec.md",
+    "location": "## (header) status banner lines 6-10: \"Phase 7 (MaxText port) ... is done and proven on real TPU (MaxText SASD on v6e-1, real weights, loss 0.31/0.56).\"",
+    "claim": "MaxText SASD trained on real TPU (v6e-1) with real weights, loss 0.31/0.56.",
+    "code_reality": "Supported. OVERNIGHT_TPU_PROGRESS.md:169 records the real-weight v6e-1 run: 'Real pretrained weights ... 434/434 leaves, 3.086 B, bf16, loaded it, trained -> loss 0.308 / 0.556 at steps 10/11.' The summary line 52 ('random init ... real-weight loss building now') is the earlier/in-progress note; the detailed entry at 169 confirms completion. Claim is accurate.",
+    "verdict": "ok",
+    "severity": "low",
+    "suggested_fix": "No change. Confirms the superseding banner's 0.31/0.56 real-weight TPU claim is backed by OVERNIGHT_TPU_PROGRESS.md:169.",
+    "is_frozen": true
+  },
+  {
+    "doc": "1plans/00_PLAN.md",
+    "location": "## 1 What Fast-dDrive is: \"M-RoPE `[16,24,24]`\" (line 19) and §1 SASD weights {traj 3.0, fmb 2.0, crit 1.5, expl 1.0} (line 23)",
+    "claim": "M-RoPE section is [16,24,24]; per-section loss weights are traj 3.0 / fmb 2.0 / crit 1.5 / expl 1.0.",
+    "code_reality": "Both correct. mrope_section (16,24,24) is the real value: qwen2_5_text.py:200, sasd_waymo.yml:22 '[16, 24, 24] # 2*(16+24+24)==128==head_dim'. Section weights match prep_train_jax.py:22 SECTION_W = {critical_objects:1.5, explanation:1.0, future_meta_behavior:2.0, trajectory:3.0}. Note (not an error): these weights live in the data-prep script, baked into per-sample weight_vec, NOT hardcoded in the diffusion/training modules — but 00_PLAN does not claim otherwise.",
+    "verdict": "ok",
+    "severity": "low",
+    "suggested_fix": "No change. Confirms 00_PLAN uses the real (16,24,24) section (NOT the proxy (4,6,6)) and correct section weights.",
+    "is_frozen": true
+  },
+  {
+    "doc": "1plans/00_PLAN.md",
+    "location": "## 1: \"saved fp32 (16.3 GB, 4 shards)\" (lines 17, 39); §1 vision/text dims (lines 18-20)",
+    "claim": "Checkpoint is fp32, 16.3 GB, 4 shards; text 36L/2048/11008/16h/2kv/tied/151936/theta 1e6/eps 1e-6; vision depth 32/1280/16h/patch14/merge2/window112/fullatt[7,15,23,31]/out2048.",
+    "code_reality": "All dims confirmed against config: text dims qwen2_5_text.py:50-56 (2048/16/2/128/36/11008/151936, tie_embeddings=True, rope_theta 1e6, rms_norm_eps 1e-6); vision dims vision_qwen25vl.py:28-40 (depth 32, hidden 1280, num_heads 16, patch_size 14, spatial_merge_size 2, window_size 112, fullatt (7,15,23,31), out_hidden_size 2048). The 16 GB ckpt size is consistent with run_all_verification.sh:3 ('loads the 16GB' ckpt).",
+    "verdict": "ok",
+    "severity": "low",
+    "suggested_fix": "No change. All architecture numbers in 00_PLAN §1 verified correct.",
+    "is_frozen": true
+  },
+  {
+    "doc": "1plans/05_review_and_fixes_2026-06-14.md",
+    "location": "## Code fixes table + Eval npz set: \"168 image tokens\" / \"168 = 3 cams × 56\" / resolution 784/50176 (lines 14, 31, 56, 64)",
+    "claim": "168 image tokens at train resolution 784/50176; 168 = 3 cameras x 56; this was confirmed correct in review, not changed.",
+    "code_reality": "Consistent with code. driver.py:128 'expect 168 at train res'; prep_jax_eval_inputs.py:52 '~56/img'; eval/prep_train_jax.py:56-57 default min_pixels 784 / max_pixels 784*64=50176. Reconciliation 168 = 3 cams x 56 is the stated (non-code-asserted) hypothesis in ground_truth §7.2. The doc correctly distinguishes 168 (train-res) from 336 (sasd_num_image_tokens config = 2x168 doubled, sasd_waymo.yml:26). No drift; the doc states its context.",
+    "verdict": "ok",
+    "severity": "low",
+    "suggested_fix": "No change. 05 correctly handles the 168 vs 336 distinction with context (168 = 3 cams x 56 at train-res; 336 = doubled config value).",
+    "is_frozen": true
+  },
+  {
+    "doc": "1plans/04_tpu_smallscale_validation.md",
+    "location": "## 8 Key code pointers + §4.2: launch_tpu.sh sizing claim \"it targets `v5litepod-256` (~$300/h) and its teardown is commented out\" (line 113)",
+    "claim": "launch_tpu.sh targets v5litepod-256 and has teardown commented out.",
+    "code_reality": "Confirmed correct. launch_tpu.sh:19 ACCEL default 'v5litepod-256', :23-24 N_FSDP/BATCH default 256, :57-58 teardown line is commented ('# gcloud compute tpus queued-resources delete ...'). 04's description is accurate.",
+    "verdict": "ok",
+    "severity": "low",
+    "suggested_fix": "No change. Confirms 04's characterization of launch_tpu.sh (oversized, teardown commented out) is accurate.",
+    "is_frozen": true
+  },
+  {
+    "doc": "4collect/HANDOFF.md",
+    "location": "Phase 3 (MILESTONE) bullet, line 24: \"makes full-FT of 3.75B fit\"",
+    "claim": "The Fast-dDrive text model is 3.75B parameters.",
+    "code_reality": "The verified leaf-count param total is 3.086B / 434 text leaves, not 3.75B. sasd_waymo.yml:18 model_name qwen2.5-3b (dims 2048/16/2/11008/36, head_dim 128, vocab 151936); load_fast_ddrive_maxtext.py fills 434 MaxText leaves; OVERNIGHT_TPU_PROGRESS itself states \"3.086 B params\". ground_truth.md RAW NUMBERS + GATE log confirm 3.086B is the leaf-count claim and 3.75B is wrong.",
+    "verdict": "wrong",
+    "severity": "medium",
+    "suggested_fix": "Annotate inline: \"3.75B [CORRECTION: the verified param count is ~3.086B (434 text leaves); 3.75B is an early erroneous figure]\".",
+    "is_frozen": true
+  },
+  {
+    "doc": "4collect/HANDOFF.md",
+    "location": "Phase 2 line 18: \"on the real sample.json (L=1120, 11 blocks, 4 sections)\" and \"doubled [noisy|clean] 2L seq\"",
+    "claim": "Phase-2 SASD parity was run at L=1120 with 11 blocks.",
+    "code_reality": "L=1120 is a one-off historical parity-sample length, NOT the canonical production sequence length. The production uniform L is 1184 (grain_pipeline.py:42,267; sasd_waymo.yml:25 sasd_seq_len: 1184), and the distilled from-base path uses L=1280 (launch_maxtext_sasd_tpu_frombase.sh:74 sasd_seq_len=1280). The 1120 here is specific to the captured parity sample only.",
+    "verdict": "misleading",
+    "severity": "low",
+    "suggested_fix": "Add context inline: \"(L=1120 here is the one captured parity sample, not the canonical L; production uniform L=1184, distilled-from-base L=1280)\".",
+    "is_frozen": true
+  },
+  {
+    "doc": "4collect/HANDOFF.md",
+    "location": "Phase 4b multimodal TRAINING, line 28: \"Image downscaled to ~90 tokens so the doubled seq fits the shared 5090\"",
+    "claim": "The multimodal overfit image was downscaled to ~90 tokens.",
+    "code_reality": "train_overfit_mm.py:42,48 shows the single image produces 1365 tokens (image_embeds [1365, D]), doubled to 2*1365=2730 (line 48). There is no ~90-token path in the committed train_overfit_mm.py. ground_truth.md RAW NUMBERS: \"train_overfit_mm single-image tokens 1365 (x2 = 2730)\".",
+    "verdict": "stale",
+    "severity": "medium",
+    "suggested_fix": "Annotate inline: \"~90 tokens [STALE: the committed train_overfit_mm.py uses the full 1365 image tokens/sample (x2=2730); the ~90-token downscale was an earlier run]\".",
+    "is_frozen": true
+  },
+  {
+    "doc": "4collect/OVERNIGHT_PROGRESS.md",
+    "location": "FINAL SUMMARY table row, line 28: \"REAL 3.75B model trains via harness\"; also lines 89, 134, 135 (\"pretrained 3.75B text model\")",
+    "claim": "The real model is 3.75B parameters.",
+    "code_reality": "Verified param count is 3.086B / 434 text leaves (sasd_waymo.yml:18; load_fast_ddrive_maxtext.py 434 leaves; OVERNIGHT_TPU_PROGRESS.md states \"3.086 B params\"). This same doc at line 98-99 says \"the REAL 3.09B param tree\" and \"252/252 kernels\" (36 layers x 7 kernels = 252, consistent with a 3.086B 36-layer model), contradicting its own \"3.75B\".",
+    "verdict": "wrong",
+    "severity": "medium",
+    "suggested_fix": "Annotate the four 3.75B mentions (lines 28, 89, 134, 135) inline: \"3.75B [CORRECTION: ~3.086B; the 3.09B figure at line 98 is the correct one]\".",
+    "is_frozen": true
+  },
+  {
+    "doc": "4collect/OVERNIGHT_PROGRESS.md",
+    "location": "Verified-evidence Phase-2 / Phase-4.5: \"14 kernels sharded on `fsdp`\" (lines 27, 84) vs \"252/252 kernels sharded\" (line 99)",
+    "claim": "14 kernels are sharded on fsdp (FSDP gate); 252/252 kernels for the real model.",
+    "code_reality": "Both are correct but context-dependent and unlabeled. test_harness_fsdp.py:231 asserts only `len(sharded) >= 4` on a 2-LAYER PROXY model (HarnessConfig layers=2, train_tpu.py:64) -> 14 = 2 layers x 7 kernels. check_real_fsdp_shard.py:42 prints len(sharded)/len(kernels) on the REAL 36-layer model -> 252 = 36 x 7. Reader may think both refer to the same model.",
+    "verdict": "misleading",
+    "severity": "low",
+    "suggested_fix": "Clarify inline: \"14 kernels (2-layer FSDP proxy harness)\" vs \"252/252 kernels (real 36-layer model, 36x7)\".",
+    "is_frozen": true
+  },
+  {
+    "doc": "4collect/OVERNIGHT_PROGRESS.md",
+    "location": "T-system-froze note, line 133: \"[8,2,1184,151936] logits ≈ 35 GB\"",
+    "claim": "Logits tensor for the proxy harness at full vocab was [8,2,1184,151936].",
+    "code_reality": "Plausible and consistent: global batch 8 (train_tpu.py CPU emulation 8 devices), doubled axis 2, L=1184 (grain_pipeline.py:42), vocab 151936 (qwen2_5_text.py:37). 8*2*1184*151936*4 bytes ≈ 11.5 GB fwd, ~35 GB with backward is a reasonable estimate. No drift; noting as confirmation of L=1184 and vocab usage.",
+    "verdict": "ok",
+    "severity": "low",
+    "suggested_fix": "No change needed; figures are consistent with code (L=1184, vocab 151936).",
+    "is_frozen": true
+  },
+  {
+    "doc": "4collect/OVERNIGHT_TPU_PROGRESS.md",
+    "location": "TL;DR table + bottom line: \"3.086 B params\", \"frozen ViT (390 tensors)\", \"434/434 leaves\", \"65 TFLOP/s/device\", \"loss 0.308 / 0.556\"",
+    "claim": "Real-TPU run: 3.086B params, 390 ViT tensors, 434/434 leaves, loss 0.308/0.556.",
+    "code_reality": "All consistent with code: param count 3.086B (the correct figure, not 3.75B); ViT tensor count 390 = 1+12*32+5 (parquet_to_ar_with_embeds.py:126); 434 text leaves (load_fast_ddrive_maxtext.py); export key counts 824 = 434 text + 390 visual (maxtext_to_hf_export.py). This doc uses the CORRECT param count, unlike HANDOFF/OVERNIGHT_PROGRESS.",
+    "verdict": "ok",
+    "severity": "low",
+    "suggested_fix": "No change. This doc is the canonical-correct source for the param count (3.086B / 434 leaves / 390 ViT tensors).",
+    "is_frozen": true
+  },
+  {
+    "doc": "4collect/OVERNIGHT_TPU_PROGRESS.md",
+    "location": "Key facts: \"Launch scripts ... launch_maxtext_sasd_tpu.sh (`ACCEL=v5litepod-8|v5litepod-16`)\" (line 91)",
+    "claim": "launch_maxtext_sasd_tpu.sh uses ACCEL=v5litepod-8|v5litepod-16.",
+    "code_reality": "The same doc's Update log (lines 118, 128, 132, 144) states all scripts were SWITCHED to v6e / us-east5-a / runtime v2-alpha-tpuv6e, and the canonical launch command throughout is `ACCEL=v6e-16`. The v5litepod-8|16 in the Key-facts block is the pre-switch value; internally superseded.",
+    "verdict": "stale",
+    "severity": "low",
+    "suggested_fix": "Annotate inline: \"v5litepod-8|v5litepod-16 [SUPERSEDED later same night: switched to v6e / us-east5-a; canonical is ACCEL=v6e-16]\".",
+    "is_frozen": true
+  },
+  {
+    "doc": "4collect/OVERNIGHT_TPU_PROGRESS.md",
+    "location": "Cost log table (lines 96-100): slices v5litepod-1 / v5litepod-8 / v5litepod-16; and Key-facts \"zone us-east5-a\" with \"v5e quota\"",
+    "claim": "Cost log keyed to v5litepod slices.",
+    "code_reality": "Same doc later documents the switch to v6e (us-east5-a permitted for v6e; v5e @ us-east5-a returned PERMISSION_DENIED, line 111-115). The actual probes/runs that night were v6e-1/v6e-8/v6e-16 (lines 130, 136). The v5litepod cost-log rows are stale placeholders.",
+    "verdict": "stale",
+    "severity": "low",
+    "suggested_fix": "Annotate the cost-log table inline: \"[v5litepod rows are pre-switch placeholders; actual runs were v6e-1/-8/-16 in us-east5-a]\".",
+    "is_frozen": true
+  },
+  {
+    "doc": "4collect/OVERNIGHT_TPU_PROGRESS-chn.md",
+    "location": "Mirror of the EN doc: Launch 脚本 block (\"v5litepod-8|v5litepod-16\") + Cost log v5litepod rows + zone/quota \"v5e\"",
+    "claim": "Chinese mirror carries the same v5litepod launch/cost references.",
+    "code_reality": "Identical staleness as the EN OVERNIGHT_TPU_PROGRESS.md: scripts were switched to v6e/us-east5-a (lines 116, 132 of the -chn doc), canonical launch is ACCEL=v6e-16. The 3.086B / 390-tensor / 434-leaf / 0.308-0.556 figures match code and are correct.",
+    "verdict": "stale",
+    "severity": "low",
+    "suggested_fix": "Same inline annotation as the EN doc on the v5litepod launch-script line and cost-log rows: \"[后改为 v6e/us-east5-a；规范 ACCEL=v6e-16]\".",
+    "is_frozen": true
+  },
+  {
+    "doc": "4collect/05_maxtext_port_progress.md",
+    "location": "7.4 row (line 44): \"full-VLA forward/loss parity vs NNX harness ... 336 img-tok\" and 7.4 turn log (line 63): \"336 img-tokens/sample, positions bit-equal\"",
+    "claim": "The multimodal parity sample has 336 image tokens.",
+    "code_reality": "Correct but context-needed: 336 = 2*168 (the DOUBLED count). sasd_num_image_tokens: 336 (sasd_waymo.yml:26); single-copy image_embeds is [168,2048] (parquet_to_ar_with_embeds.py:6) doubled via concat to 336. The doc states 336 without noting it is the doubled (2N) count; ground_truth.md flags 168=single / 336=doubled / 720=paper-eval as the three legitimate values.",
+    "verdict": "misleading",
+    "severity": "low",
+    "suggested_fix": "Add context inline: \"336 img-tok (= 2N, the doubled count; single-copy is 168 = 3 cams x 56 at train-res 784/50176)\".",
+    "is_frozen": true
+  },
+  {
+    "doc": "4collect/05_maxtext_port_progress.md",
+    "location": "Foundations, line 22: \"MaxText fork ... (v0.2.1) imports in the jax venv\"",
+    "claim": "The MaxText fork is version v0.2.1.",
+    "code_reality": "Confirmed: src/maxtext/__init__.py:22 __version__ = \"0.2.1\". No drift.",
+    "verdict": "ok",
+    "severity": "low",
+    "suggested_fix": "No change; v0.2.1 matches src/maxtext/__init__.py:22.",
+    "is_frozen": true
+  },
+  {
+    "doc": "4collect/05_maxtext_port_progress.md",
+    "location": "7.4 turn log, line 63: \"ViT injection in `decoders.py _apply_embedding` (scatter at image-token positions)\"",
+    "claim": "SASD ViT image-embed injection is an at[img_pos].set scatter in decoders.py _apply_embedding.",
+    "code_reality": "Confirmed: decoders.py:648-652 SASD branch does y.at[bidx, sasd_pos, :].set(sasd_ie...) (overwrite scatter), explicitly mirroring NNX's embed_tokens(ids).at[img_pos].set(image_embeds) (comment lines 642-647). Distinct from the generic VLA additive path at decoders.py:293. No drift.",
+    "verdict": "ok",
+    "severity": "low",
+    "suggested_fix": "No change; matches decoders.py:648-652 (overwrite .set scatter, not the additive merge_mm path).",
+    "is_frozen": true
+  },
+  {
+    "doc": "4collect/05_maxtext_port_progress.md",
+    "location": "Key integration fact (7.1b), lines 37-40: M-RoPE \"interleaved [T,H,T,W,…]\" vs \"contiguous chunks [TTTT|HHHHHH|WWWWWW]\" with mrope_section implied",
+    "claim": "Fast-dDrive M-RoPE uses contiguous chunks; MaxText native uses interleaved; cos/sin injected manually.",
+    "code_reality": "Confirmed correct: use_mrope: false (sasd_waymo.yml:38); sasd_mrope_section [16,24,24] (sasd_waymo.yml:22) -> 2*(16+24+24)=128=head_dim; contiguous-chunk M-RoPE in qwen2_5_text.py:157-161 / sasd.py:138-164. Note: the doc does NOT cite the bogus proxy (4,6,6) here, which is good. base.yml:390 default [4,6,6] is the placeholder, overridden by sasd_waymo.yml:22.",
+    "verdict": "ok",
+    "severity": "low",
+    "suggested_fix": "No change; the contiguous-vs-interleaved description and the injected-cos/sin solution match code. (Real section is [16,24,24]; the [4,6,6] in base.yml:390 is only a placeholder.)",
+    "is_frozen": true
+  },
+  {
+    "doc": "4collect/06_dataset_v2_progress.md",
+    "location": "Decisions, line 11: \"image_embeds (frozen-ViT, fp32-computed/bf16-stored, single copy [168,2048])\"; Timeline line 24 \"emb (168,2048)\"",
+    "claim": "image_embeds is a single copy of shape [168,2048].",
+    "code_reality": "Confirmed: parquet_to_ar_with_embeds.py:6 \"SINGLE copy [N_img_tokens=672/4=168, 2048]\"; embeds D=2048 (line 206); training loader doubles via concat([ie,ie],0). 168 = 672/4 (spatial-merge by 4). No drift; this doc states the single-copy 168 context correctly (unlike configs that show the doubled 336).",
+    "verdict": "ok",
+    "severity": "low",
+    "suggested_fix": "No change; [168,2048] single-copy matches parquet_to_ar_with_embeds.py:6,206.",
+    "is_frozen": true
+  },
+  {
+    "doc": "4collect/06_dataset_v2_progress.md",
+    "location": "Results, line 76: \"10-gate re-run: 9/10 PASS\" (phase3_lora_train flake)",
+    "claim": "The verification suite has 10 gates; this run got 9/10 with phase3_lora_train flaking.",
+    "code_reality": "Correct on both counts. run_all_verification.sh iterates exactly 10 keys (cpu_mask_loss, cpu_lora, cpu_noise, cpu_sharding, cpu_eval_ports, phase1_text, phase2_sasd, phase4_vit, phase4b_mm_fwd, phase3_lora_train) at line 51; phase3_lora_train is the documented thin-margin flake (lines 42-46). The doc correctly says 10 gates (not the legacy \"9 gates\" drift). Noting as a positive confirmation.",
+    "verdict": "ok",
+    "severity": "low",
+    "suggested_fix": "No change; \"10-gate\" and \"9/10 PASS (phase3_lora flake)\" match run_all_verification.sh:51 and the in-script flake note.",
+    "is_frozen": true
+  },
+  {
+    "doc": "4collect/06_dataset_v2_progress.md",
+    "location": "TPU re-validation, line 58: \"83.4 TFLOP/s/device vs 65 on the old ViT-in-loop path (+28%)\"",
+    "claim": "v2 precomputed-embeds path hits 83.4 TFLOP/s vs 65 for the ViT-in-loop path.",
+    "code_reality": "Cannot be re-derived from static code (runtime perf numbers); 65 TFLOP/s matches the OVERNIGHT_TPU_PROGRESS v6e-1 ViT-in-loop figure, so the comparison is internally consistent. Not a code-checkable assertion; no drift evidence.",
+    "verdict": "ok",
+    "severity": "low",
+    "suggested_fix": "No change; runtime perf claim, consistent with the 65 TFLOP/s baseline reported in OVERNIGHT_TPU_PROGRESS.",
+    "is_frozen": true
+  },
+  {
+    "doc": "4collect/07_from_base_b1_b2_progress.md",
+    "location": "T2 prep gotcha, line 75-76: \"min_pixels/max_pixels MUST match TRAINING resolution (prep_train_jax.py: 784 / 784·64 → grid [1,16,14] = 168 img tokens)\" and \"paper-eval resolution (720 tokens)\"",
+    "claim": "Train-res 784/50176 gives 168 img tokens; paper-eval gives 720 tokens.",
+    "code_reality": "Confirmed and context-correct. prep_train_jax.py:56-57 / prep_jax_eval_inputs.py:53-54 default min=784 max=784*64=50176; prep_jax_eval_inputs.py:52 comment \"56/img\" (x3 cams=168); driver.py:128 \"expect 168 at train res\". Paper-eval prep pins 200704/200704 (prep_jax_eval.py:24-25, eval/prep_jax_eval.py:24-25) producing the larger 720-token count. Both values legitimate; the doc correctly states the train-vs-eval context.",
+    "verdict": "ok",
+    "severity": "low",
+    "suggested_fix": "No change; 168 (train-res 784/50176) and 720 (paper-eval 200704) are both correct and the doc states the context. (720 is a derived count, not a code literal.)",
+    "is_frozen": true
+  },
+  {
+    "doc": "4collect/07_from_base_b1_b2_progress.md",
+    "location": "A4/A5 + Key numbers, lines 41, 86: \"L=1280\" / \"max_target_length=2576\" (A5 from-base overfit)",
+    "claim": "From-base distilled training uses L=1280 (doubled 2560, max_target_length 2576).",
+    "code_reality": "Confirmed: launch_maxtext_sasd_tpu_frombase.sh:74 sets sasd_seq_len=1280 max_target_length=2576 (override of the sasd_waymo.yml defaults sasd_seq_len:1184 / max_target_length:2376). The 1280/2576 are the distilled-from-base overrides; 1184/2376 are the WOD-E2E-pseudo defaults. Doc is correct in its from-base context.",
+    "verdict": "ok",
+    "severity": "low",
+    "suggested_fix": "No change; L=1280 / max_target_length=2576 match launch_maxtext_sasd_tpu_frombase.sh:74 (distilled-from-base override of the config defaults 1184/2376).",
+    "is_frozen": true
+  },
+  {
+    "doc": "4collect/07_from_base_b1_b2_progress.md",
+    "location": "A2 / Key numbers, lines 33, 86: \"434/434 leaves, 3.086 B params\"; B1 line 50: \"824/824 bitwise (434 text + 390 vision)\"",
+    "claim": "Base MaxText param ckpt = 434/434 leaves / 3.086B; round-trip 824/824 bitwise.",
+    "code_reality": "Confirmed: 434 text leaves (load_fast_ddrive_maxtext.py); export 824 = 434 text + 390 visual, lm_head omitted (maxtext_to_hf_export.py:5,11,12,14; PATCHES.md:73-76); round-trip gate bitwise 824/824 (maxtext_to_hf_export.py:281). This doc uses the CORRECT 3.086B, contrasting HANDOFF/OVERNIGHT_PROGRESS's 3.75B.",
+    "verdict": "ok",
+    "severity": "low",
+    "suggested_fix": "No change; 434/434, 3.086B, 824/824 all match code. This doc is a correct anchor for the param/export counts.",
+    "is_frozen": true
+  },
+  {
+    "doc": "4collect/07_from_base_b1_b2_progress.md",
+    "location": "B2 vendoring, line 53: \"vendored from jax_ddrive @ 4b0f4f2 (... sampler_sasd)\"; line 97 \"src/maxtext/diffusion/eval_sasd/\"",
+    "claim": "The SASD sampler lives in the vendored eval_sasd package as sampler_sasd.",
+    "code_reality": "Confirmed: src/maxtext/diffusion/eval_sasd/sampler_sasd.py exists; vendor pin eval_sasd @ 4b0f4f2 (PATCHES.md:10-16). Note: there is NO diffusion/sampler_sasd.py at top level (top-level has diffusion/sampler.py, a generic sampler) — the doc correctly scopes sampler_sasd to eval_sasd/. ground_truth.md drift #1 only flags the top-level path; this doc does not commit that error.",
+    "verdict": "ok",
+    "severity": "low",
+    "suggested_fix": "No change; eval_sasd/sampler_sasd.py path is correct (the 404 risk is only the top-level diffusion/sampler_sasd.py, which this doc does not reference).",
+    "is_frozen": true
+  },
+  {
+    "doc": "5blockers/0613-diffusiongemma-insights-v0.md",
+    "location": "§2 修正1 (line 66-69) and §7 row C6 (line 149): \"MASK=151665/NULL=151666 是现有 151936 词表的**已有行**(`sasd.py:23,84`)\"",
+    "claim": "Both MASK_ID (151665) and NULL_ID (151666) are existing-vocabulary rows defined in maxtext fork sasd.py at lines 23 and 84.",
+    "code_reality": "Only MASK_ID is in sasd.py: `MASK_ID, IM_END, EPS = 151665, 151645, 1e-3` at sasd.py:23. NULL_ID (151666) is NOT defined anywhere in sasd.py (grep for 151666/NULL in sasd.py returns nothing). NULL_ID lives in load_fast_ddrive_maxtext.py:18 (comment), eval_sasd/driver.py:42 (`NULL_ID, MASK_ID, IMAGE_ID = 151666, 151665, 151655`), and eval_sasd/sampler_sasd.py:27 (`NULL_ID = 151666`). sasd.py:84 is `noisy = ids.copy(); noisy[mask_indices] = MASK_ID` — unrelated to constant definitions.",
+    "verdict": "wrong",
+    "severity": "low",
+    "suggested_fix": "Annotate inline: cite MASK_ID at sasd.py:23 only; for NULL_ID (151666) cite load_fast_ddrive_maxtext.py:18 (and/or eval_sasd/sampler_sasd.py:27 / driver.py:42). Drop the `,84` line number (it points to the noisy-assignment line, not a constant def). E.g. change `(sasd.py:23,84)` to `(MASK_ID sasd.py:23; NULL_ID load_fast_ddrive_maxtext.py:18 / sampler_sasd.py:27)`.",
+    "is_frozen": false
+  },
+  {
+    "doc": "5blockers/0613-diffusiongemma-insights-v0.md",
+    "location": "§2 修正1 (line 69) and §7 C6 (line 149): \"434/434 前向映射完整(`load_fast_ddrive_maxtext.py:162-164` 强制无未填 leaf)\"",
+    "claim": "The forced no-unfilled-leaf assertion is at load_fast_ddrive_maxtext.py:162-164.",
+    "code_reality": "The unfilled-leaf guard is actually at load_fast_ddrive_maxtext.py:186-188 (`missing = [...]; if missing: raise ValueError(f\"{len(missing)} MaxText leaves left unfilled...\")`). Lines 162-164 are the `_StreamingTextGetter` indexing/print block (`getter = _StreamingTextGetter(...); if verbose: print(...indexed ... text tensors...)`). The 434/434 count itself is reported at line 193 (`filled {n_loaded}/{len(mt_dict)} MaxText leaves`).",
+    "verdict": "stale",
+    "severity": "low",
+    "suggested_fix": "Annotate inline: change the line cite from `load_fast_ddrive_maxtext.py:162-164` to `load_fast_ddrive_maxtext.py:186-188` (the `if missing: raise ValueError` guard), optionally noting the count is printed at :193.",
+    "is_frozen": false
+  },
+  {
+    "doc": "5blockers/0613-diffusiongemma-insights-v0.md",
+    "location": "§2 修正1 (line 70-71) and §6 B1 row: \"param_mapping.py:736,748-749 已有反向分支\"",
+    "claim": "param_mapping.py:736 and :748-749 contain the existing reverse (MaxText->HF) conversion branch.",
+    "code_reality": "param_mapping.py:736 is the def line `def QWEN_MAXTEXT_TO_HF_PARAM_HOOK_FN(config, maxtext_config, scan_layers=False, saving_to_hf=False):` and :748-749 are the docstring lines describing `saving_to_hf ... True for MaxText to Hugging Face, False for the reverse`. The actual reverse-direction code branches (`if saving_to_hf:` ... `reshape_kernel` with `x.T.reshape`) are at lines 200+/233+/238-243+ within Gemma3 hooks and the analogous Qwen hook body below 736 — the docstring at 748-749 is correct as evidence that the bidirectional hook exists, but it is documentation, not the branch logic. Citation is defensible (the function signature/docstring proves bidirectionality) but imprecise.",
+    "verdict": "misleading",
+    "severity": "low",
+    "suggested_fix": "Annotate inline: keep :736 (function with `saving_to_hf` direction param), and note the actual reverse-branch logic (`if saving_to_hf: ... x.T.reshape`) lives in the hook body (param_mapping.py:238-243 reshape_kernel pattern; per-hook `if saving_to_hf` guards), rather than at 748-749 which is the docstring.",
+    "is_frozen": false
+  },
+  {
+    "doc": "5blockers/0612-blocker-v0.md",
+    "location": "§3 B1 row (line 77): \"HF→MaxText 的映射已有(`save_fast_ddrive_params_ckpt.py`,434/434 leaves)\"",
+    "claim": "save_fast_ddrive_params_ckpt.py reports/produces the 434/434 leaf count.",
+    "code_reality": "save_fast_ddrive_params_ckpt.py does NOT print 434/434; it prints `[save-ckpt] cast to {weight_dtype}: {n_el/1e9:.3f}B params` (element count, ~3.086B) and sentinel `SASD_PARAM_CKPT_SAVED` (save_fast_ddrive_params_ckpt.py:72,80). The `434/434 ... leaves` message is emitted by the loader it calls, load_fast_ddrive_maxtext.py:193 (`filled {n_loaded}/{len(mt_dict)} MaxText leaves`). The 434 count is independently confirmed correct (export comment maxtext_to_hf_export.py:5,12 says 434 text leaves; 12 mappings/layer x 36 + 2 = 434).",
+    "verdict": "misleading",
+    "severity": "low",
+    "suggested_fix": "Annotate inline: the 434/434 leaf report comes from the called loader build_maxtext_params_from_fast_ddrive (load_fast_ddrive_maxtext.py:193), invoked by save_fast_ddrive_params_ckpt.py; the save script itself reports ~3.086B params / SASD_PARAM_CKPT_SAVED. Count is correct.",
+    "is_frozen": false
+  },
+  {
+    "doc": "5blockers/0612-blocker-v0.md",
+    "location": "§3 B1 row (line 77): \"**反向工具不存在** ... 写 `maxtext_to_hf_export.py`\" and §10 tool coordinates; §9 D1; §8 A6",
+    "claim": "The reverse bridge MaxText->HF (maxtext_to_hf_export.py) does not exist yet and must be written (~0.5 day of planned work).",
+    "code_reality": "maxtext_to_hf_export.py NOW EXISTS at maxtext-dlm-fork/scripts/maxtext_to_hf_export.py (12722 bytes, mtime Jun 14 — created after this 2026-06-12 doc). It implements the full reverse export (824 keys = 434 text inverse-mapped + 390 visual verbatim; round-trip gate at :281). Confirmed by ground_truth §2 Subsystem 8 and 4collect/07_from_base_b1_b2_progress.md A6.",
+    "verdict": "stale",
+    "severity": "medium",
+    "suggested_fix": "This is a dated (2026-06-12) blocker snapshot; do NOT rewrite. Add an inline status note at the B1 row / §9: \"[RESOLVED post-0612: scripts/maxtext_to_hf_export.py built and round-trip-verified — see 4collect/07_from_base_b1_b2_progress.md A6.]\"",
+    "is_frozen": false
+  },
+  {
+    "doc": "5blockers/0612-blocker-v0.md",
+    "location": "§10 附录 (line 217-218): \"distilled-400:L=1280 parquet v1 ... v2 AR **未做**(本计划 A3)\"; also §1.1 line 40, §8 A3 line 183",
+    "claim": "distilled-400 v2 AR (ArrayRecord + precomputed image_embeds) has not been built yet.",
+    "code_reality": "distilled-400 v2 AR with base ViT HAS since been built: 4collect/07_from_base_b1_b2_progress.md:30 records \"A3 — distilled-400 -> v2 AR with base ViT: 400 / 7 shards / all verified\"; the from-base training command uses `sasd_data_dir=...wod_e2e_sasd_distilled_0613-400_baseViT_v2_ar` (6for_internal/test_training.md:154). Builder is scripts/parquet_to_ar_with_embeds.py.",
+    "verdict": "stale",
+    "severity": "medium",
+    "suggested_fix": "Dated snapshot; do NOT rewrite. Inline note: \"[RESOLVED post-0612: distilled-400 base-ViT v2 AR built (400/7 shards, verified) — 4collect/07_from_base_b1_b2_progress.md A3; dir wod_e2e_sasd_distilled_0613-400_baseViT_v2_ar.]\"",
+    "is_frozen": false
+  },
+  {
+    "doc": "5blockers/0612-blocker-v0.md",
+    "location": "§4 备选 D / §3 B2 line 78 / §10 line 220-221: tool coordinates \"采样器进 MaxText 留给 serving\" ; \"采样器 vendor 进 fork\" + sampler at `jax_ddrive/ddrive_jax/eval/mm_sampler.py` + `diffusion/sample_sd.py`",
+    "claim": "The NNX sampler still lives only in jax_ddrive and must be vendored into the fork (B2 not yet done at 2026-06-12).",
+    "code_reality": "The vendored inference stack now exists in the fork: maxtext-dlm-fork/src/maxtext/diffusion/eval_sasd/{sampler_sasd.py, driver.py, hf_to_jax.py, masks_eval.py, models/...} (ground_truth §2 Subsystem 7/8; vendor pin eval_sasd @ 4b0f4f2 in PATCHES.md). The source-of-truth sampler paths cited (jax_ddrive/ddrive_jax/eval/mm_sampler.py and diffusion/sample_sd.py) are correct and both exist.",
+    "verdict": "stale",
+    "severity": "low",
+    "suggested_fix": "Dated snapshot; do NOT rewrite. Inline note at B2: \"[RESOLVED post-0612: sampler vendored to fork src/maxtext/diffusion/eval_sasd/ (pin 4b0f4f2); driver.py + sampler_sasd.py present.]\" The cited NNX source paths remain accurate.",
+    "is_frozen": false
+  },
+  {
+    "doc": "5blockers/0612-blocker-v0.md",
+    "location": "§3 B3 (line 79): \"(a) 离线 prep、ship npz(demo/固定评测集天然适配;479 帧 prep npz 已存在)\"",
+    "claim": "A 479-frame eval-prep npz set already exists.",
+    "code_reality": "Could not confirm a 479-frame npz set on disk. /home/kaiwen/data/fast-ddrive/eval_inputs/ contains 40 npz (train_s00..train_s19 + val_s00..val_s19 = a 20+20 demo subset, matching the T2/T2' 20-sample plan), not 479. The eval prep script eval/prep_jax_eval.py exists and pins min=max=200704 (lines 24-25); a full-479 npz may live elsewhere (e.g. an overnight-run dir) but was not located. Possible overstatement of available asset.",
+    "verdict": "misleading",
+    "severity": "low",
+    "suggested_fix": "Dated snapshot; do NOT rewrite. Inline note: \"the offline-prep MECHANISM (eval/prep_jax_eval.py, 200704 fixed-res, deterministic) exists; the present on-disk eval_inputs/ holds the 20+20 T2/T2' demo subset — regenerate the full-479 npz on demand.\"",
+    "is_frozen": false
+  },
+  {
+    "doc": "5blockers/0612-blocker-v0.md",
+    "location": "§5 V1 (line 114) and §1.1 (line 35): \"dataset v2 的 `image_embeds` ... bf16 [168,2048]\"",
+    "claim": "Precomputed image_embeds are stored bf16 with shape [168,2048].",
+    "code_reality": "CONFIRMED. parquet_to_ar_with_embeds.py:5-6 docstring: image_embeds stored bfloat16, SINGLE copy `[N_img_tokens=672/4=168, 2048]`; embeds_fp32 returns `[N//4, 2048]` (line 206). 168 is the per-record train-res value (3 cameras x 56); it is grid-derived (computed per record from grid_thw, line 179), not a hard model constant — but the doc's [168,2048] for the distilled-400 train-res dataset is correct in context.",
+    "verdict": "ok",
+    "severity": "low",
+    "suggested_fix": "No change needed. (Note for cross-doc consistency: 168 = train-res 3cams x 56; the config sasd_num_image_tokens=336 is the DOUBLED [noisy|clean] count, and 720 would be paper-eval res — these are different contexts, all legitimate.)",
+    "is_frozen": false
+  },
+  {
+    "doc": "5blockers/0612-blocker-v0.md",
+    "location": "§5 V3 (line 116) and §10 (line 223): \"MASK=151665、NULL=151666(base 中未训练,V3)\" / \"`|<MASK>|`(151665)/`<|NULL|>`(151666)\"",
+    "claim": "Special tokens are MASK=151665 and NULL=151666, untrained embedding rows in the base snapshot.",
+    "code_reality": "CONFIRMED token IDs: MASK_ID=151665, IM_END=151645 (noise.py:11); NULL_ID=151666 (sampler_sasd.py:27, driver.py:42). The 'untrained in base, trained in release' framing matches load_fast_ddrive_maxtext.py:17-18 (MASK/NULL are real rows in the 151936 table) and hf_to_jax.py:9 comment. IDs and the V3 from-base risk are accurate.",
+    "verdict": "ok",
+    "severity": "low",
+    "suggested_fix": "No change needed; token IDs and untrained-row risk verified.",
+    "is_frozen": false
+  },
+  {
+    "doc": "5blockers/0612-blocker-v0.md",
+    "location": "§1.1 (line 32-33): parity numbers \"text logits rel-max 3.2e-5、ViT 4.0e-5、MM 7.7e-5、SASD loss 7.9e-8、mask 逐位一致\" and \"PyTorch ADE@3s 0.814 / JAX 0.839\"",
+    "claim": "Verified parity: text 3.2e-5, ViT 4.0e-5, MM 7.7e-5, SASD loss 7.9e-8; eval ADE@3s PyTorch 0.814 / JAX 0.839.",
+    "code_reality": "Parity numbers are docstring CLAIMS, not measured in any committed file: 3.2e-5 (sample_sd.py:79, mm_sampler.py:12), 7.7e-5 (mm_sampler.py:13), 7.9e-8 (scaffold.py:6). ViT 4.0e-5 appears as a claim (FEATURES uses 4.0e-5-class numbers). ADE/RFS 0.814/0.839 and 7.914/7.929 ARE corroborated in committed docs: EVAL_PIPELINE.md:11-16 (full 479 frames, PyTorch 0.814 / JAX 0.839, RFS 7.914/7.929). So eval scores are well-supported; the micro-parity figures are unmeasured source comments.",
+    "verdict": "misleading",
+    "severity": "low",
+    "suggested_fix": "No rewrite. Optional inline note: \"parity rel-max figures (3.2e-5/4.0e-5/7.7e-5/7.9e-8) are source-comment claims (sample_sd.py:79, mm_sampler.py:12-13, scaffold.py:6), not re-measured here; the 479-frame ADE/RFS (0.814/0.839, 7.914/7.929) are corroborated in EVAL_PIPELINE.md:11-16.\"",
+    "is_frozen": false
+  },
+  {
+    "doc": "5blockers/0612-blocker-v0.md",
+    "location": "§1.2 C3 (line 47) / §10 (line 217): \"distilled-400(L=1280)\" and overfit override sasd_seq_len=1280",
+    "claim": "distilled-400 uses uniform L=1280 (vs the default config L=1184).",
+    "code_reality": "CONFIRMED and context-correct. The production config sasd_waymo.yml:25 sets sasd_seq_len=1184 (pseudo-label data), max_target_length=2376 (>=2L=2368). The distilled-400 path OVERRIDES to sasd_seq_len=1280 max_target_length=2576 (test_training.md:155; 2L=2560, 2576>=2560). quick-refresh.md:11,17 confirm distilled answers are longer -> L=1280. Both values legitimate in their contexts; the doc correctly uses 1280 for distilled.",
+    "verdict": "ok",
+    "severity": "low",
+    "suggested_fix": "No change needed. Context note: L=1280 is the distilled-400 override; the canonical config default is L=1184/2L=2368/max_target_length=2376 — distinct datasets, not a contradiction.",
+    "is_frozen": false
+  },
+  {
+    "doc": "5blockers/0613-diffusiongemma-insights-v0.md",
+    "location": "Throughout (DiffusionGemma file:line index, §附 lines 188-203; C3/C4 rows; §3-§4 tables)",
+    "claim": "Numerous DiffusionGemma citations: _sampler.py:320 DiffusionSampler, :486 while_loop, :490-543 jit block step, :62-76 random init, :56 multinomial docstring, :174-182 renoise, :603-648 append_to_cache, :588-594 self-cond; _transformer.py:53-78 SelfConditioning; _paths.py:23-25 diffusion ckpt; _early_stopping.py:114-121 NaN-safe entropy; _chat_sampler.py:74-106 _initialize_sampler_loop; hd adapter files.",
+    "code_reality": "ALL spot-checked citations verified accurate: _sampler.py:320 `class DiffusionSampler(_sampler_loop.SamplerLoop)`; :486 `jax.lax.while_loop`; :490 jitted step; :62-76 `get_initial_sample` with `jax.random.randint`; :56 docstring 'multinomial diffusion'; :174-182 renoise (`random_tokens = jax.random.randint(...)`); :603 `def append_tokens_to_cache`; _transformer.py:53 `class SelfConditioning(nn.Module)`; _paths.py:23-25 `DIFFUSIONGEMMA_26B_A4B_IT = 'gs://gemma-data/checkpoints/diffusiongemma-26B-A4B-it'`; _early_stopping.py:114-121 NaN-safe entropy (`log_probs = jnp.where(probs==0, 0.0, log_probs)`); _chat_sampler.py:74 `_initialize_sampler_loop` -> returns `_sampler.DiffusionSampler`. discreteGemma tree present at /home/kaiwen/Desktop/research/Fast-dLLM/discreteGemma/gemma/gemma/.",
+    "verdict": "ok",
+    "severity": "low",
+    "suggested_fix": "No change needed; the external DiffusionGemma reference citations are accurate and current.",
+    "is_frozen": false
+  }
+]

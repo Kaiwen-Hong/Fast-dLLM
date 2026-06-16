@@ -8,7 +8,7 @@
 #      currently a stub; mirror train_waymo_sasd_jax.static_tensors -> ie = vit(pv,grid); doubled).
 #   2. point --parquet_dir at the dataset on GCS (gsutil rsync the HF/local Parquet to gs://).
 #
-# Mesh: pure-FSDP (n_fsdp = total chips, n_tp = 1) scales the 3.75B model fine; add TP later.
+# Mesh: pure-FSDP (n_fsdp = total chips, n_tp = 1) scales the 3.086B model fine; add TP later.
 # jax.distributed.initialize() is auto-called on the pod via dist.init_distributed() (TPU_WORKER_ID).
 set -euo pipefail
 

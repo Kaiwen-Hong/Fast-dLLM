@@ -1,5 +1,5 @@
 """Phase 4.5 — REAL Fast-dDrive model loss-decrease on the GPU, via the FSDP harness (single
-device). Overfits ONE real batch to prove the *real* pretrained 3.75B text model + frozen ViT +
+device). Overfits ONE real batch to prove the *real* pretrained 3.086B text model + frozen ViT +
 real Parquet data actually train through the harness and the loss decreases (grads flow,
 optimizer steps, no NaN). This is the real-model counterpart to the proxy gate (B).
 
@@ -27,7 +27,7 @@ def main():
     # NOTE: pretrained model starts near-optimal (~0.98), so we overfit ONE batch at a clear lr
     # to prove the harness reduces loss on the REAL model. (Real multi-sample fine-tune = the pod.)
     dist.init_distributed()
-    print("building REAL harness (loads pretrained 3.75B text + frozen ViT)...", flush=True)
+    print("building REAL harness (loads pretrained 3.086B text + frozen ViT)...", flush=True)
     h = T.build_harness(cfg)
     loader = gp.make_sasd_loader(DATA, "train", per_host_batch=1, seed=0)
     batch = next(iter(loader))

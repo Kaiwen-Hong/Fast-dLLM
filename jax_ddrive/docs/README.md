@@ -9,6 +9,7 @@
 - **Living（必须随现实更新）**：`../to-host-chn.md`、`2implementation-details/DATASET_V2.md`、`quick-refresh.md`、`5blockers/*`、`6for_internal/*`。
 - **Stable references（组件变了才更新）**：`0overview/*`、`2implementation-details/{ARCHITECTURE,01_pytorch_reference_algorithm,EVAL_PIPELINE,INFERENCE_DEPLOY,DATASET,LABELING,AUDIT}.md`、`3summary/*`。
 - **Frozen（历史，永不编辑，append-only）**：`1plans/*`、`4collect/*`。
+- **文档维护记录（append-only）**：`8doc_updates/` —— 对 docs 体系本身的大修/审计记录 + 证据产物（不是项目里程碑，那在 `4collect/`）。
 
 MaxText fork 侧的逐文件 diff / vendor 规则在 fork 内 `maxtext-dlm-fork/PATCHES.md`。
 
