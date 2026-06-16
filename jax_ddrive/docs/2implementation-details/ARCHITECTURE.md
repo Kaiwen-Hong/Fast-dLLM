@@ -42,7 +42,7 @@ train/                (Phase 6) self-contained multi-host FSDP harness:
 
 **Two scale-out paths** (Phase 6/7): **Path A** = the self-contained NNX FSDP harness above
 (`train/train_tpu.py`), kept as the algorithm source of truth. **Path B (production)** = the SASD
-algorithm grafted into a **MaxText fork** (`/home/kaiwen/jax-dlm-baseline/maxtext-dlm-fork/`), which
+algorithm grafted into a **MaxText fork** (`maxtext-dlm-fork/`, since 2026-06-16 a sub-tree of the Fast-dLLM repo alongside `jax_ddrive/`), which
 reuses this package's `data/` loader + `diffusion/` + ViT and **trains on real TPU** (v6e, real
 weights). See `docs/4collect/OVERNIGHT_TPU_PROGRESS.md`.
 

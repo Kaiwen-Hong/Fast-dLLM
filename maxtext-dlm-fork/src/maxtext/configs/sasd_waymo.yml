@@ -1,0 +1,78 @@
+# SASD (Fast-dDrive Section-Aware Stochastic Diffusion) training config.
+#
+# The DEPLOYABLE entry that runs the verified MaxText SASD pieces through MaxText's STANDARD
+# train loop (so multi-host mesh / FSDP / Orbax-to-GCS come for free on TPU). Everything
+# upstream is verified: the objective=="sasd" forward+loss (train.py), the 100%-top-1 weight
+# loader, the frozen-ViT injection, prepare_sasd_inputs / sasd_loss_from_logits, and the
+# per-host grain SASD loader. This config + the waymo_sasd data path + the load_parameters_path
+# checkpoint wire them into trainers/pre_train/train.py.
+#
+# Launch: see scripts/train_sasd_waymo.sh (GPU smoke + the TPU-reuse command).
+#
+# REQUIRED for SASD (base.yml documents this): attention=dot_product, attention_type=full,
+# use_mrope=false, scan_layers=false. The per-layer loop carries the cos/sin/mask/image
+# metadata via attention_metadata.
+
+base_config: "base.yml"
+
+model_name: "qwen2.5-3b"   # dims (2048/16/2/11008/36, head_dim 128, vocab 151936) match the verified loader
+
+# ── objective ───────────────────────────────────────────────────────────────
+objective: "sasd"
+sasd_mrope_section: [16, 24, 24]   # 2*(16+24+24) == 128 == head_dim (Fast-dDrive 3B)
+sasd_rope_theta: 1000000.0
+# SASD data-path shapes (WOD-E2E subset is uniform). 2L=2368, 2N=672.
+sasd_seq_len: 1184
+sasd_num_image_tokens: 336
+
+# ── data ────────────────────────────────────────────────────────────────────
+dataset_type: "waymo_sasd"
+sasd_data_dir: "/home/kaiwen/data/fast-ddrive/hf/wod_e2e_sasd"
+# Frozen Fast-dDrive ViT snapshot (on-the-fly image embeds in the iterator). Override on TPU.
+sasd_vit_snapshot: "/home/kaiwen/data/huggingface/hub/models--Efficient-Large-Model--Fast-dDrive/snapshots/0fda81009f4efa58a2debbb48c0c09818e45341f"
+eval_interval: 0           # no eval split wired for SASD v1
+
+# ── SASD-required attention / rope wiring ─────────────────────────────────────
+attention: "dot_product"
+attention_type: "full"     # disable MaxText's built-in causal mask (hybrid 4D mask handles it)
+use_mrope: false           # inject contiguous-chunk cos/sin ourselves
+scan_layers: false         # per-layer loop carries attention_metadata
+remat_policy: "full"       # per-layer full activation checkpointing (MEMORY)
+
+# ── qwen2.5 numerics (mirror the verified lossdecrease test exactly) ──────────
+logits_via_embedding: true
+logits_dot_in_fp32: true
+cast_logits_to_fp32: true
+float32_logits: true
+float32_qk_product: true
+matmul_precision: "default"
+normalize_embedding_logits: false
+use_qk_norm: false
+attention_bias: true
+normalization_layer_epsilon: 1.0e-6
+rope_max_timescale: 1000000.0
+enable_dropout: false
+
+# ── dtype (bf16 compute+params; loss/softmax stay fp32 inside sasd.py) ────────
+dtype: "bfloat16"
+weight_dtype: "bfloat16"
+grad_dtype: "bfloat16"
+
+# ── batch / length ────────────────────────────────────────────────────────────
+per_device_batch_size: 1.0
+max_target_length: 2376    # >= 2L (2368); the actual batch is exactly 2L
+
+# ── optimizer (adafactor: fits a single GPU; on a TPU pod opt_type=adamw is fine — FSDP
+#    shards the fp32 moments. Override at launch). ──────────────────────────────
+opt_type: "adafactor"
+learning_rate: 1.0e-4
+gradient_clipping_threshold: 1.0
+warmup_steps_fraction: 0.1
+learning_rate_final_fraction: 0.1
+
+# ── checkpointing (full state: params+opt+step) ──────────────────────────────
+enable_checkpointing: true
+async_checkpointing: false  # GPU smoke: synchronous so the ckpt is on disk before resume
+
+# init weights: param-only Orbax ckpt produced by scripts/save_fast_ddrive_params_ckpt.py.
+# Set at launch (load_parameters_path=...). Optimizer state is freshly initialized.

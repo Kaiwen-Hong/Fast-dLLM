@@ -411,11 +411,12 @@ GCS 是中转桶 `gs://project-8a53f5ab-2ea2-4892-a78-ddrive-sasd`。
 
 **代码发布(自动化,带时间戳):**
 ```bash
-bash /home/kaiwen/upload_code_to_gcs.sh
-# 打包 maxtext-dlm-fork + jax_ddrive(排除 .git/__pycache__/visualizations),
-# 上传 gs://…/code/fastddrive-<YYYYMMDD_HHMMSS>.tgz(不可变快照,时间戳即身份),
-# 并刷新 gs://…/code/fastddrive-LATEST.txt 指向最新。代码每次变更后重跑即可。
-# 解包后结构:fastddrive-<TS>/{maxtext-dlm-fork, jax_ddrive}
+bash jax_ddrive/scripts/upload_code_to_gcs.sh   # repo 内、版本化(旧 /home/kaiwen/upload_code_to_gcs.sh 已转 stub)
+# 2026-06-16 起:maxtext-dlm-fork 已并入 Fast-dLLM repo → 打包同一个 repo 的两个子目录
+#   maxtext-dlm-fork + jax_ddrive(排除 .git/__pycache__/visualizations),一个 git commit 描述整包。
+# 上传 gs://…/code/fastddrive-<TS>-<sha7>[-dirty].tgz + 同名 .MANIFEST.json(记 git commit SHA + dirty),
+# 刷新 gs://…/code/fastddrive-LATEST.txt(指向最新 .tgz)与 fastddrive-LATEST-MANIFEST.json(给出最新 commit)。
+# 解包后结构:fastddrive-<TS>-<sha7>/{maxtext-dlm-fork, jax_ddrive, MANIFEST.json}
 ```
 内部侧把它下载并解到 google3 源码树:
 `/google/src/cloud/kaiwenh/fastdllm/google3/experimental/waymo/users/xqin/third_party/fastddrive-<TS>`

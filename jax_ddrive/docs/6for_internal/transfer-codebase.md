@@ -56,8 +56,9 @@ ls $FORK/PATCHES.md                                          # MaxText fork 逐�
   过拟合一个小数据集,验证训练+推理管线**全程在内部 TPU 内**完成(只有标量验证日志带出)。
 
 ## 代码怎么更新(owner 侧)
-owner 改了代码就 `bash /home/kaiwen/upload_code_to_gcs.sh` 重发一个新的 `fastddrive-<TS>.tgz` +
-刷新 `fastddrive-LATEST.txt`;agent 重跑上面的"拉最新代码包"即可拿到新版本(时间戳即版本身份)。
+owner 改了代码就 `bash jax_ddrive/scripts/upload_code_to_gcs.sh`(repo 内、版本化;旧 `/home/kaiwen/upload_code_to_gcs.sh` 已转成转发 stub,仍可用)重发一个新的 `fastddrive-<TS>-<sha7>.tgz` + 刷新
+`fastddrive-LATEST.txt` + 写一份 `MANIFEST.json`(记 git commit SHA + dirty)。agent 重跑上面的"拉最新代码包"即可拿到新版本;
+要确认/钉某个 commit,先看 `code/fastddrive-LATEST-MANIFEST.json`(给出 `git_commit` / `dirty`)。
 
 ---
 **→ 接 STEP 2:`$DDRIVE/docs/6for_internal/test_training.md`**

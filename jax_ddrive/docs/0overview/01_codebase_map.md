@@ -20,7 +20,9 @@
 |---|---|---|
 | **PyTorch oracle** | HF snapshot `0fda81009f4efa58a2debbb48c0c09818e45341f`（`modeling.py` / `generation_utils.py` / `section_utils.py`），**不在任一 JAX repo 内** | 上游参考、**数值真值**。每个 JAX 文件用 `file:line` 注明自己 port 的是它的哪段。跑在 conda env `ddrive`，用来**捕获 oracle tensor** 供 gate 对比 |
 | **`ddrive_jax/`** | `/home/kaiwen/Desktop/research/Fast-dLLM/jax_ddrive/` | 手写 Flax-**NNX** 全栈 port + **parity gate harness**。**算法在这里定义并 bit-exact 验证**。单 GPU/CPU 优先 |
-| **`maxtext-dlm-fork/`** | `/home/kaiwen/jax-dlm-baseline/maxtext-dlm-fork/` | Google MaxText fork（root `35dce93`）+ SASD graft。**生产/TPU** 路径 |
+| **`maxtext-dlm-fork/`** | `Fast-dLLM/maxtext-dlm-fork/`（**2026-06-16 起并入 Fast-dLLM repo**，与 `jax_ddrive/` 同 repo） | Google MaxText fork（root `35dce93`）+ SASD graft。**生产/TPU** 路径 |
+
+> **仓库结构（2026-06-16 起）**：`ddrive_jax/`（子目录）与 `maxtext-dlm-fork/`（2026-06-16 并入的兄弟子目录）同属 **Fast-dLLM 一个 git repo** → 一个 `git rev-parse HEAD` 即描述整套代码（发布脚本据此写 `MANIFEST.json`）；PyTorch oracle 是外部 HF snapshot。原独立 fork repo @ `da8c92b` 的历史备份在 `/home/kaiwen/data/fast-ddrive/maxtext-dlm-fork-history-2026-06-16.bundle`。
 
 关键流向：
 - **算法 A→B→C**：`ddrive_jax` 是可执行规格，MaxText-fork 是规模化部署，PyTorch 是不动的数值锚。

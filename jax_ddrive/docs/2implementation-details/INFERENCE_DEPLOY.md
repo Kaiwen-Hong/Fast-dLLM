@@ -151,7 +151,7 @@ PYTHONPATH=src python -m maxtext.diffusion.eval_sasd.embedding_parity \
 2. **Upload to GCS** — ✅ **done 2026-06-13**. Live objects in `gs://<project>-ddrive-sasd/`:
    `maxtext_sasd_params_base/fast_ddrive_qwen25_3b_BASE_params/` (base init weights),
    `wod_e2e_sasd_distilled_0613-400_baseViT_v2_ar/` (dataset, 7 shards), `code/fastddrive-<TS>.tgz`
-   (+ `code/fastddrive-LATEST.txt` pointer; one bundle = fork + jax_ddrive, see `/home/kaiwen/upload_code_to_gcs.sh` — a deploy-host script, not in-repo).
+   (+ `code/fastddrive-LATEST.txt` pointer + a per-bundle `MANIFEST.json` recording the git commit; one bundle = fork + jax_ddrive, published by the in-repo, version-controlled `jax_ddrive/scripts/upload_code_to_gcs.sh`).
    Launch script (a deploy-host script, not in-repo; see `../6for_internal/test_training.md`):
    `launch_maxtext_sasd_tpu_frombase.sh` (lives at `/home/kaiwen/launch_maxtext_sasd_tpu_frombase.sh`).
 3. **Free single TPU smoke** — run `launch_maxtext_sasd_tpu_frombase.sh` (12-step train + resume

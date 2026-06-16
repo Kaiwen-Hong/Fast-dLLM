@@ -78,8 +78,9 @@ Source bucket (transfer to CNS as needed): `gs://project-8a53f5ab-2ea2-4892-a78-
 | `code/fastddrive-<TS>.tgz` | **timestamped code bundle** = `maxtext-dlm-fork` (training + B1 export + B2 inference) **+** `jax_ddrive` (offline prep); `code/fastddrive-LATEST.txt` names the newest | ~38 MB |
 | `base_qwen25vl_3b_snapshot/` | **base HF snapshot** (needed for B1 export ref + tokenizer/decode) | 7.0 GB |
 
-Code is published with `bash /home/kaiwen/upload_code_to_gcs.sh` (re-run on every code change → a new
-immutable `fastddrive-<TS>.tgz` + bumped `LATEST` pointer). See `../../to-host-chn.md` §6.6.
+Code is published with `bash jax_ddrive/scripts/upload_code_to_gcs.sh` (in-repo, version-controlled; re-run on
+every code change → a new immutable `fastddrive-<TS>-<sha7>.tgz` + a `MANIFEST.json` recording the git commit,
+bumped `LATEST` pointers). See `../../to-host-chn.md` §6.6.
 
 ---
 
@@ -134,8 +135,9 @@ uv pip install -q safetensors pyarrow transformers ml_dtypes flax       # flax/n
 PYTHONPATH=$FORK/src JAX_PLATFORMS=cpu python -m maxtext.diffusion.tests.eval_sasd_import_test
   # -> EVAL_SASD_SELFCONTAINED_PASS
 ```
-The owner re-publishes code with `bash upload_code_to_gcs.sh` (packs the fork + jax_ddrive, uploads
-`code/fastddrive-<TS>.tgz`, bumps `fastddrive-LATEST.txt`) — see `../../to-host-chn.md` §6.6 (代码与数据发布).
+The owner re-publishes code with `bash jax_ddrive/scripts/upload_code_to_gcs.sh` (packs the fork + jax_ddrive from
+the single Fast-dLLM repo, uploads `code/fastddrive-<TS>-<sha7>.tgz` + `MANIFEST.json`, bumps `fastddrive-LATEST.txt`)
+— see `../../to-host-chn.md` §6.6 (代码与数据发布).
 `$FORK` / `$DATA_ROOT` are used in every command below.
 
 ---
