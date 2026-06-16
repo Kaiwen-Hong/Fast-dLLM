@@ -73,7 +73,7 @@ Verified gates (all re-run 2026-06-06):
 **Template**: `jax-mdlm-handoff` repo — LLaDA grafted into MaxText. The same 5 steps apply.
 
 ### 3.1 What to graft
-1. **`diffusion/` module** into MaxText: `masks.py`, `sasd_loss.py`, `noise.py` — copy verbatim.
+1. **`diffusion/` module** into MaxText: `masks.py`, `sasd_loss.py`, `noise.py` — copy verbatim. [SUPERSEDED 2026-06-16: the SASD training math was re-ported as a single consolidated `src/maxtext/diffusion/sasd.py` (BIT-EXACT re-derivation, not a verbatim copy of masks/sasd_loss/noise); only the `eval_sasd/` inference stack is vendored verbatim.]
 2. **`loss_fn` diff** (~5 lines): replace MaxText's standard CE with `sasd_total_loss` (section-weighted CE on noisy half + causal CE on clean half; global-token denom via `psum`).
 3. **Bidirectional attention patch**: MaxText uses causal mask by default; patch to use `hybrid_block_causal_mask_dense(rbi, turn, L)` for the SASD doubled-sequence forward.
 4. **Waymo grain data source**: wire `ddrive_jax/data/grain_pipeline.make_sasd_loader` as MaxText's data input (the Parquet format is already MaxText `hf`-path compatible).

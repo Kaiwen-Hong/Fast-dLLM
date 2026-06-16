@@ -29,7 +29,7 @@ Arrays (each a `tf.io.serialize_tensor` bytes feature; decode with
 **Embeds provenance:** frozen Fast-dDrive ViT (release snapshot), fp32 forward with
 `jax_default_matmul_precision=highest` (TF32 off), per-sample K=1 calls, cast to bf16.
 The jitted forward is a mirror of `VisionTransformer.__call__` cross-checked against the
-validated eager path on every shard's first record (assert rel < 2e-4; observed ≤ ~1.3e-5).
+validated eager path under a two-tier guard (per-sample max-rel < 1e-3 AND a rolling median < 1e-4 over ≥8 shards; observed median ~1.3e-5).
 
 **Doubling rule:** the model consumes the doubled `[noisy | clean]` sequence, so the
 consumer must `concat([ie, ie], axis=0)` (per sample) → `[336, 2048]` — exactly what
@@ -94,8 +94,9 @@ back to the on-host frozen-ViT path (lazy ddrive_jax import).
 family — the loader's grain `DatasetIterator` state (`{"next_index": N}`) is saved in every
 checkpoint under `iter/process_<i>-of-<n>.json` and restored on resume, so the data stream
 *continues* instead of replaying. Validated by a `GrainCheckpointHandler` save/restore
-round-trip (bit-identical continuation) and by the on-TPU resume validation
-(`launch_maxtext_sasd_tpu_v2.sh`).
+round-trip (bit-identical continuation) and by the on-TPU resume validation (run via an
+internal-host launcher not committed to either repo; the in-repo SASD launcher is the
+MaxText fork's `scripts/train_sasd_waymo.sh`).
 
 ## 5. Tests
 

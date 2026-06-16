@@ -112,7 +112,7 @@ PYTHONPATH=src python -m maxtext.diffusion.eval_sasd.driver \
 
 `maxtext-dlm-fork/scripts/prep_jax_eval_inputs.py` (runs **offline**, imports ddrive_jax). For each
 eval sample it builds the npz the driver consumes:
-`x_t0, rbi, position_ids, orig_len, pixel_values, image_grid_thw, target_ids[, image_embeds]`,
+`input_ids, x_t0, rbi, position_ids, orig_len, pixel_values, image_grid_thw, target_ids[, image_embeds]`,
 using the parity-validated `build_scaffold` / `get_rope_index_numpy` + the HF processor. With
 `--with_embeds` it runs the frozen ViT once (fp32→bf16) so the **internal TPU never loads the ViT**
 — it only needs an `AutoTokenizer` to decode the output. **This precomputed-embeds path is the
@@ -151,8 +151,9 @@ PYTHONPATH=src python -m maxtext.diffusion.eval_sasd.embedding_parity \
 2. **Upload to GCS** — ✅ **done 2026-06-13**. Live objects in `gs://<project>-ddrive-sasd/`:
    `maxtext_sasd_params_base/fast_ddrive_qwen25_3b_BASE_params/` (base init weights),
    `wod_e2e_sasd_distilled_0613-400_baseViT_v2_ar/` (dataset, 7 shards), `code/fastddrive-<TS>.tgz`
-   (+ `code/fastddrive-LATEST.txt` pointer; one bundle = fork + jax_ddrive, see `upload_code_to_gcs.sh`).
-   Launch script: `launch_maxtext_sasd_tpu_frombase.sh`.
+   (+ `code/fastddrive-LATEST.txt` pointer; one bundle = fork + jax_ddrive, see `/home/kaiwen/upload_code_to_gcs.sh` — a deploy-host script, not in-repo).
+   Launch script (a deploy-host script, not in-repo; see `../6for_internal/test_training.md`):
+   `launch_maxtext_sasd_tpu_frombase.sh` (lives at `/home/kaiwen/launch_maxtext_sasd_tpu_frombase.sh`).
 3. **Free single TPU smoke** — run `launch_maxtext_sasd_tpu_frombase.sh` (12-step train + resume
    validation), then `maxtext_to_hf_export.py` (expect 824/824), `run_eval` fp32 **then** bf16,
    `run_parity`. B4 numeric rehearsal + the reference the internal run reconciles against.

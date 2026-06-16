@@ -57,7 +57,7 @@ response_block_idx, turn_idx, scaffold_mask, weight_vec, block α/β, 3D positio
    ▼  (JAX, per step)
 image_embeds = ViT(pixel_values, grid)            # frozen, computed once
 original_embeds = scatter(image_embeds, embed_tokens(input_ids))   # fusion
-noisy_embeds   = where(vision_mask, original_embeds, embed(noisy_ids))  # vision protected
+noisy_embeds   = embed(noisy_ids).at[img_pos].set(image_embeds)    # frozen ViT embeds re-scattered each step; image tokens live in the prompt (labels==-100) and are never noised — there is NO vision_mask gate at train time (vision_mask is a carried-but-unused schema field)
 doubled = stack([ [noisy|clean], [comp_noisy|clean] ])             # [2, 2L, D]
 cos,sin = mrope_cos_sin(tiled 3D positions)                        # [2L, 128]
 mask4d  = hybrid_block_causal_mask_dense(rbi, turn, L)             # [2L, 2L]

@@ -3,7 +3,7 @@
 给在 Waymo TPU 基础设施上跑这个项目的人的自包含交接文档。覆盖:做了什么、验证了什么(带数字)、
 怎么复现、怎么在 TPU 上部署、以及验收标准。分支 `jax-ddrive-port`,未推到 GitHub。
 
-> **最后更新:2026-06-13**(from-base overfit 管线 + B1 导出 + B2 自包含推理)。文档导航与维护规则见
+> **最后更新:2026-06-13**(from-base overfit 管线 + B1 导出 + B2 自包含推理)。**想读懂代码而非部署？→ `docs/0overview/00_START_HERE.md`(文档总入口 + 代码阅读指南)**。文档维护规则见
 > `docs/README.md`;数据格式权威规格见 `docs/2implementation-details/DATASET_V2.md`(v1 细节与
 > Round-2 语义验证见 `DATASET.md`);**内部 TPU 推理部署权威规格见
 > `docs/2implementation-details/INFERENCE_DEPLOY.md`**。
@@ -158,6 +158,9 @@ WOD-E2E tfrecords ──convert_wod_e2e.py──▶ val_rated.json (479) + front
 - **JAX eval** = `prep_jax_eval.py`(CPU prep:HF processor + deep-scaffold + numpy `get_rope_index`,
   全部对 PyTorch 内部做了 bit-exact 验证)→ `jax_batch_inference.py`(JAX ViT fuse + block-wise
   `section_diffusion` 去噪,经 `ddrive_jax/eval/mm_sampler.py`,~16 s/sample,无 KV-cache)。
+  *(注:eval prep `prep_jax_eval.py` 默认 `min=max=200704`(paper-eval 高分辨率);而 §5(e) 的
+  SASD-训练 prep `prep_train_jax.py` 用 `784/50176`(→ 168 image tokens)—— 两套是按用途有意区分的
+  分辨率策略,不是不一致。)*
 - **Metric** = `fast_ddrive/eval/evaluate_waymo_metrics.py`(autovla env)。它先把 5×1 s waypoints
   JMT-interpolate 到 20×4 Hz 再算 ADE,并在 ≤3 条 rater trajectories 上算官方的 trust-region **RFS**。
   真实 flags:`--pred_json --gt <tfrecord-glob|.pkl> --output_dir`。
@@ -230,8 +233,11 @@ jax_ddrive/
     train_overfit.py  train_overfit_mm.py  train_waymo_sasd_jax.py   # 最后一个是 NEW(real data)
   eval/{prep_jax_eval,jax_batch_inference,prep_train_jax}.py          # NEW: JAX eval/train drivers
   scripts/{capture_oracle_*,parity_*,debug_vit,prep_*,verify_sd_mm,run_all_verification.sh,
-           run_overnight.sh}
-  tests/{test_mask_loss,test_lora,test_noising,test_sharding,test_eval_ports}.py
+           run_overnight.sh, ...}        # 列举式;Phase 6/8 的数据/AR 脚本也在此(如
+  #          parquet_to_ar_with_embeds.py, parquet_to_arrayrecord.py, check_real_fsdp_shard.py,
+  #          build_full_dataset.sh, verify_ar_round2.{py,sh} —— §0/§2.4 引用)
+  tests/{test_mask_loss,test_lora,test_noising,test_sharding,test_eval_ports,
+         test_ar_pipeline,test_grain_pipeline,test_harness_fsdp,test_multihost_datafeed}.py
 ```
 
 **大 artifacts(不在 git —— 在 `/home/kaiwen/data/fast-ddrive/` 下):**
@@ -345,7 +351,7 @@ bash jax_ddrive/scripts/run_overnight.sh
 
 ### 6.1 Mesh
 2D mesh `('fsdp','tp')`,经 `jax.make_mesh((n_fsdp, n_tp), ('fsdp','tp'))`。从 **pure-FSDP
-`(N,1)`** 开始(最简单;3.75 B 扩展得很好)。v5e-256 → 例如 `(64,4)`;v6e → 按 chips 调。把所有
+`(N,1)`** 开始(最简单;3.09 B 扩展得很好)。v5e-256 → 例如 `(64,4)`;v6e → 按 chips 调。把所有
 jits 包在 `with jax.sharding.use_mesh(mesh):` 里(用 `use_mesh`/`set_mesh`,**不要**用裸的
 `PartitionSpec` 而无 mesh context,否则 JAX 0.10 会 raise)。
 
@@ -358,10 +364,14 @@ jits 包在 `with jax.sharding.use_mesh(mesh):` 里(用 `use_mesh`/`set_mesh`,**
 | norms / biases | `P('tp')` 或 replicated |
 | activations [B,L,D] | `P('fsdp', None, 'tp')`,经 `with_sharding_constraint` |
 
+> 注:`ddrive_jax/sharding.py` 当前只产 **pure-FSDP 列**(`fsdp_pspec` 把单个最大轴放 `'fsdp'`、
+> 其余 replicate,embeddings 强制 `P()`);带 `'tp'` 的列是 Option 2 的目标,需要
+> `ShardedLinear`/`ShardedEmbedding`(见 `models/sharded.py`),`sharding.py` 本身不发出 `'tp'` spec。
+
 **Option 1 —— 仅 FSDP,无模型改动(最快):** 把 `nnx.state(model, nnx.Param)` `device_put`
 到 `NamedSharding(mesh, pspec)`(最大轴放 `'fsdp'`);jit train step,配匹配的
 `in/out_shardings`。`ddrive_jax/sharding.py` 正是这么做,且**在 mesh=1 时验证为 no-op**
-(5090 路径不变)。仅这一项就能在 pod 上跑完整 3.75 B。
+(5090 路径不变)。仅这一项就能在 pod 上跑完整 3.09 B。
 
 **Option 2 —— 显式 TP(吞吐):** 在 decoder 上把 `Linear→ShardedLinear`、`Embed→ShardedEmbedding`
 替换(~80 LOC;primitives 在 `ddrive_jax/models/sharded.py`,JAX-0.10 `out_sharding=` plumbing,
@@ -380,9 +390,11 @@ vision_mask)是框架中立的 numpy → 经 grain 加载。ViT image embeds 可
 (frozen)并缓存,或 inline 计算。
 
 ### 6.4 Checkpointing
-用 `ddrive_jax/checkpoint.py`(Orbax `StandardCheckpointer`,multi-host safe)。指向一个 `gs://`
-路径;Orbax 处理跨 pod 的 sharded save/restore。本地跑已经产出
-`StandardCheckpointer` checkpoints(`train/ckpt_jax/step_*`),所以 restore 是同一个调用。
+`ddrive_jax/checkpoint.py` 是简单的**单机 in-place `StandardCheckpointer`**(只存 `nnx.state`,
+无 sharding/abstract-state plumbing、无 opt_state/grain;其 docstring 自称 multi-host-ready,但实际
+不带分片管线)。本地跑已用它产出 checkpoints(`train/ckpt_jax/step_*`),restore 是同一个调用。
+**真正的多节点路径走生产线(§6.6 的 MaxText fork + Orbax),或 `train/checkpoint_mgr.py` 的
+`CheckpointManager`(params+opt+meta+grain 四件套、sharded restore)** —— 不是这个文件。
 
 ### 6.5 TPU 上的数值
 - loss / log-softmax 保持 **fp32**(`sasd_loss.py` 已 upcast);bf16 params/activations OK。

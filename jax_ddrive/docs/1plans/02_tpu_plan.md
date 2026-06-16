@@ -7,7 +7,7 @@ Phase-4 ViT), so it slots into MaxText's mesh/sharding the same way `jax-mdlm-ha
 
 ## Mesh
 - 2D mesh `('fsdp', 'tp')` via `jax.make_mesh((n_fsdp, n_tp), ('fsdp','tp'))`.
-  - v5e-256 → e.g. `(64, 4)`; v6e → size to chips. Start pure-FSDP `(N, 1)` (simplest, scales the 3.75B fine).
+  - v5e-256 → e.g. `(64, 4)`; v6e → size to chips. Start pure-FSDP `(N, 1)` (simplest, scales the 3.75B [订正 2026-06-16: 3.086B (3.09B rounded) per the verified 434-leaf param ckpt; "3.75B" is a stale over-estimate — 见 docs/0overview/02_gotchas.md#规范数字框-canonical-numbers] fine).
 - Wrap all jits in `with jax.sharding.use_mesh(mesh):` (nnx) — the reference learned to use
   `set_mesh`/`use_mesh`, NOT bare `PartitionSpec` without a mesh context (JaxRuntimeError otherwise).
 
@@ -32,7 +32,7 @@ Implementation options (increasing fidelity):
    patch; wire Waymo data via grain. Checkpoints via MaxText's Orbax pipeline.
 
 ## Checkpointing
-- Use `ddrive_jax/checkpoint.py` (Orbax `StandardCheckpointer`) — multi-host safe (the reference's
+- Use `ddrive_jax/checkpoint.py` (Orbax `StandardCheckpointer`) — multi-host safe [订正 2026-06-16: checkpoint.py is the simple single-host in-place StandardCheckpointer (saves only model state, NO opt_state/grain); the production multi-host path is train/checkpoint_mgr.py (CheckpointManager composite: params+opt+meta+grain, sharded abstract restore)] (the reference's
   pickle is single-host only). On a pod, point it at a GCS path; Orbax handles sharded save/restore.
 
 ## Memory at scale

@@ -80,8 +80,13 @@ XLA_PYTHON_CLIENT_PREALLOCATE=false \
 $JX jax_ddrive/eval/jax_batch_inference.py --prep_dir .../prep_val_full --out_dir .../jax_val_full_sd
 ```
 JAX runs the ViT once, scatters image embeds into the text stream, then iteratively denoises
-the deep-JSON scaffold block-by-block (`ddrive_jax/eval/mm_sampler.py`). bf16, ~17 s/sample
+the deep-JSON scaffold block-by-block (`jax_ddrive/ddrive_jax/eval/mm_sampler.py`). bf16, ~17 s/sample
 (no KV-cache). Writes the SAME `predictions.json` schema → SAME metric.
+
+> 📌 Resolution: `prep_jax_eval.py` defaults `--min_pixels=--max_pixels=200704` (the **paper-eval**
+> high-res policy), so the command above runs at 200704. This is intentionally distinct from the
+> from-base **train/deploy** prep resolution `784 / 784*64=50176` (→ 56 merged tokens/img × 3 cams =
+> 168 image tokens; see `INFERENCE_DEPLOY.md` §3/§6). Two purposeful policies, not an inconsistency.
 
 ### 4. Official metric (both stacks)
 ```bash

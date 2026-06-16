@@ -5,7 +5,7 @@ One-glance tracker for the **teacher-distilled label datasets**: where they live
 docs. Concept + pipeline → [`2implementation-details/LABELING.md`](2implementation-details/LABELING.md);
 format schemas → `DATASET.md` (v1 Parquet) / `DATASET_V2.md` (v2 AR + `image_embeds`).
 
-> **Format legend.** `Parquet v1` = 13-array source schema incl. `pixel_values`, **no**
+> **Format legend.** `Parquet v1` = 12-array source schema incl. `pixel_values`, **no**
 > `image_embeds` → **NOT ArrayRecord, NOT v2**. `v2 AR` = ArrayRecord + precomputed
 > frozen-ViT `image_embeds` bf16 (the production loader format). Distilled sets are
 > currently **Parquet v1 only, at uniform L=1280** (distilled answers are longer than

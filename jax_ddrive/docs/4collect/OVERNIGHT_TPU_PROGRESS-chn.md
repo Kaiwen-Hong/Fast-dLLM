@@ -84,11 +84,13 @@ multi-node 跑。或者容量空出时你自己跑:
   grain glob 本地路径)、`vit_snap.tgz`(ViT HF snapshot,deref'd → 每个 worker 本地用于即时算 image
   embeds)、`code/{maxtext_fork,jax_ddrive}.tgz`。
 - **Launch 脚本**(在 `/home/kaiwen/`):`tpu_install_probe.sh`(v5e-1 make-or-break)、
-  `launch_maxtext_sasd_tpu.sh`(`ACCEL=v5litepod-8|v5litepod-16`)、`tpu_reaper.sh`(cron 安全网)。
-- **账户:** robosuite1998@gmail.com,project `project-8a53f5ab-2ea2-4892-a78`,v5e quota 16/zone,
+  `launch_maxtext_sasd_tpu.sh`(`ACCEL=v5litepod-8|v5litepod-16`) [STALE: 本夜稍后改为 v6e/us-east5-a;规范 ACCEL=v6e-16,见下方更新日志 line 116]、`tpu_reaper.sh`(cron 安全网)。
+- **账户:** robosuite1998@gmail.com,project `project-8a53f5ab-2ea2-4892-a78`,v5e quota 16/zone [STALE: v5e @ us-east5-a 实际 PERMISSION_DENIED;本夜改用 v6e @ us-east5-a,见 line 111-116],
   zone `us-east5-a`。
 
 ## 花费记录
+
+> [STALE: 下表的 v5litepod-1/-8/-16 切片是切换前的占位行;实际跑的是 v6e-1/-8/-16 @ us-east5-a,见更新日志 line 116/132-136。]
 
 | 跑次 | 切片 | 用途 | 花费(估) |
 |---|---|---|---|

@@ -88,11 +88,12 @@ the TPU execution (this job).
   grain globs local paths), `vit_snap.tgz` (ViT HF snapshot, deref'd → each worker local for on-the-fly
   image embeds), `code/{maxtext_fork,jax_ddrive}.tgz`.
 - **Launch scripts** (in `/home/kaiwen/`): `tpu_install_probe.sh` (v5e-1 make-or-break),
-  `launch_maxtext_sasd_tpu.sh` (`ACCEL=v5litepod-8|v5litepod-16`), `tpu_reaper.sh` (cron safety net).
+  `launch_maxtext_sasd_tpu.sh` (`ACCEL=v5litepod-8|v5litepod-16` [SUPERSEDED later same night: switched to v6e / us-east5-a / runtime v2-alpha-tpuv6e — see Update log lines 111-118; canonical is `ACCEL=v6e-16`]), `tpu_reaper.sh` (cron safety net).
 - **Account:** robosuite1998@gmail.com, project `project-8a53f5ab-2ea2-4892-a78`, v5e quota 16/zone,
   zone `us-east5-a`.
 
 ## Cost log
+<!-- [SUPERSEDED: the v5litepod rows below are pre-switch placeholders; the actual probes/runs that night were v6e-1 / v6e-8 / v6e-16 in us-east5-a — see Update log lines 111-118, 130, 136. v5e @ us-east5-a was PERMISSION_DENIED; v6e was the permitted queue.] -->
 | Run | Slice | Purpose | Cost (est.) |
 |---|---|---|---|
 | (pending) | v5litepod-1 | install/import probe | ~$0.5 |

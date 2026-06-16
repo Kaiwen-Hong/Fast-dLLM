@@ -24,8 +24,8 @@ layer verified on CPU 8-device emulation + the GPU.
 | grain multi-host input pipeline | 3 adversarial agents | determinism+resume, disjoint shards, noising bit-exact |
 | FSDP == single-device (math correct) | mesh (2,1) vs (1,1), 1 step | **\|diff\| = 9.5e-7** |
 | Checkpoint save→restore→resume | fresh harness restore | **loss diff 0.0**; step+grain restored |
-| Params actually sharded | inspect `.sharding` | 14 kernels on `fsdp`, embedding replicated |
-| **REAL 3.75B model trains via harness** | GPU overfit one real batch | **loss 0.985 → 0.598** (monotonic, no NaN) |
+| Params actually sharded | inspect `.sharding` | 14 kernels [订正 2026-06-16: 这是 2-layer FSDP 代理 harness(2×7=14);真实 36-layer 模型为 252/252,见 line 99] on `fsdp`, embedding replicated |
+| **REAL 3.75B [订正 2026-06-16: ~3.086B/3.09B per the verified 434-leaf param ckpt — 见 docs/0overview/02_gotchas.md#规范数字框-canonical-numbers] model trains via harness** | GPU overfit one real batch | **loss 0.985 → 0.598** (monotonic, no NaN) |
 
 **NOT verified (honest):** real multi-host **TPU** run (no TPU here — `ddrive_jax/train/launch_tpu.sh` is a
 template); the **full 420k** conversion (did 50k; full = one command); **pseudo text labels**
@@ -81,12 +81,12 @@ CPU parity gates on TPU-CPU first. Details: `docs/03_scaleup_tpu_spec.md` §6.
   optimizer state; Orbax `CheckpointManager` (async, interval, max_to_keep) saving model+opt+step+grain_state.
 - `tests/test_harness_fsdp.py` — 4 gates, all PASS (re-run by me): **(A) FSDP(2,1)-vs-(1,1) single-step
   loss parity |diff|=9.5e-7**; (B) loss-decrease 9.06→3.35; **(C) ckpt save→fresh-restore→continuation
-  |diff|=0.0** (step+grain_state restored); (D) 14 kernels sharded on `fsdp`, embedding replicated, q_proj
+  |diff|=0.0** (step+grain_state restored); (D) 14 kernels [订正 2026-06-16: 2-layer FSDP 代理 harness(2×7=14);真实 36-layer 模型为 252/252,见 line 99] sharded on `fsdp`, embedding replicated, q_proj
   split across devices. Verified with a vocab-remap trick (real tokens→4096) to keep CPU-emulation logits
   ~150 MB (peak RSS 4.8 GB); real full-vocab forward is the GPU phase (4.5).
 
 **Phase 4.5 — REAL-model loss-decrease on the GPU (DONE):**
-- Wired the harness real path: `build_harness` loads the pretrained **3.75B** text model
+- Wired the harness real path: `build_harness` loads the pretrained **3.75B** [订正 2026-06-16: ~3.086B/3.09B — 见 docs/0overview/02_gotchas.md#规范数字框-canonical-numbers] text model
   (`load_fast_ddrive_text`) + `_real_image_embeds_fn` runs the frozen ViT per sample (doubled
   to [2N,D]). `scripts/gpu_real_smoke.py` overfits ONE real Parquet batch via the FSDP harness
   (single device, adafactor, bf16, remat).
@@ -96,7 +96,7 @@ CPU parity gates on TPU-CPU first. Details: `docs/03_scaleup_tpu_spec.md` §6.
   fine-tune at scale = the TPU pod.)
 - **Real model × multi-device FSDP — gap decomposed (3/4 verified):** (i) FSDP *math/parity* ✅
   proxy gate A (9.5e-7); (ii) the FSDP *rule* applied to the REAL 3.09B param tree ✅
-  `scripts/check_real_fsdp_shard.py` abstract trace → **252/252 kernels sharded on `fsdp`, embedding
+  `scripts/check_real_fsdp_shard.py` abstract trace → **252/252 kernels [订正 2026-06-16: 真实 36-layer 模型,36×7=252;line 27/84 的 14 是 2-layer 代理 harness] sharded on `fsdp`, embedding
   replicated** (`REAL_PSPEC_RULE_OK`, memory-free); (iii) real-model fwd+bwd+optimizer ✅ on 1 GPU;
   (iv) real weights *physically* loaded+sharded+stepped across >1 device — **NOT verifiable here**:
   loading the real model on CPU emulation hit **28.4 GB → watchdog-killed** (no freeze; the 30 GB
@@ -131,7 +131,7 @@ cd /home/kaiwen/Desktop/research/Fast-dLLM && export PYTHONPATH=$PWD/jax_ddrive
 - T2 (2026-06-05): W1 returned — grain pipeline built + 3/3 adversarial PASS + my re-run green. Phase 1.3 done. Launched W2 (distributed harness).
 - T3 (2026-06-05): While W2 builds — (a) fixed jax-env GPU (cuSPARSE LD_LIBRARY_PATH); added `scripts/jax_gpu_env.sh`; verified `CudaDevice(id=0)` (unblocks Phase 4.5). (b) Wrote `scripts/build_full_dataset.sh` (the 3-stage "full = one command" chain).
 - **[SYSTEM FROZE — user rebooted]** Root cause: W2's harness test used proxy **full vocab (151936)** with global batch 8; on CPU 8-device emulation ALL device memory is in the single **30 GB host (no swap)**, so `[8,2,1184,151936]` logits ≈ 35 GB w/ backward → froze the box. **Not a disk issue** (data correctly on `/home/kaiwen/data` SSD; nothing leaked to Desktop). W2 was killed mid-build (files written, never verified).
-- T7 (2026-06-05): **Phase 4.5 GPU real-model PASS** (real 3.75B + ViT, loss 0.985→0.598 monotonic). All phases ✅ except a real TPU run (no hardware here). Wrote FINAL SUMMARY; updated memory. Overnight scale-up complete.
-- T6 (2026-06-05): **50k dataset built + verified + uploaded** (50,331 frames, 787 shards, 22 GB, private HF). Wrote `ddrive_jax/train/launch_tpu.sh` (TPU template). Wired the harness **real-model path** (load pretrained 3.75B text via `load_fast_ddrive_text` + real frozen ViT image embeds; proxy regression re-confirmed PASS). Launched GPU real-model loss-decrease smoke (Phase 4.5, background+watchdog).
+- T7 (2026-06-05): **Phase 4.5 GPU real-model PASS** (real 3.75B [订正 2026-06-16: ~3.086B/3.09B — 见 docs/0overview/02_gotchas.md#规范数字框-canonical-numbers] + ViT, loss 0.985→0.598 monotonic). All phases ✅ except a real TPU run (no hardware here). Wrote FINAL SUMMARY; updated memory. Overnight scale-up complete.
+- T6 (2026-06-05): **50k dataset built + verified + uploaded** (50,331 frames, 787 shards, 22 GB, private HF). Wrote `ddrive_jax/train/launch_tpu.sh` (TPU template). Wired the harness **real-model path** (load pretrained 3.75B [订正 2026-06-16: ~3.086B/3.09B — 见 docs/0overview/02_gotchas.md#规范数字框-canonical-numbers] text via `load_fast_ddrive_text` + real frozen ViT image embeds; proxy regression re-confirmed PASS). Launched GPU real-model loss-decrease smoke (Phase 4.5, background+watchdog).
 - T5 (2026-06-05): **Phase 2 harness VERIFIED** — fixed 3 verification bugs (donation, ckpt re-iter, proxy-embeds seed) + the memory (vocab remap); all 4 FSDP gates PASS (parity diff 9.5e-7, ckpt diff 0.0). Launched 50k conversion (background, 10 workers, watchdog). Next: verify+upload 50k, GPU real-model loss-decrease (4.5), launch scripts (3), report (5).
 - T4 (2026-06-05): Decided dataset scope with user = **~50k-frame subset** (measured ETA: ~32 ms/frame → ~26 min 1-core / ~2–4 min parallel; ~22 GB Parquet). Wrote memory-safe parallel converter `scripts/convert_subset_parallel.py` (bounded workers + per-shard JPEG cleanup). Harness W2 files reviewed — code is sound (correct `shard_map`+`psum` FSDP); fixed its verification: (1) **donation bug** (test read params after `donate_argnums` deleted them → snapshot-before/reassign), (2) **memory** (remap real tokens → tiny vocab 4096 so logits ~150 MB; mechanics are vocab-agnostic; real full-vocab forward → GPU). Re-running harness test under a RAM watchdog (kills at <3 GB-avail so it can't freeze the box again).

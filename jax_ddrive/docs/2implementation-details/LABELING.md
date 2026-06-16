@@ -34,7 +34,7 @@ text labels** (no critical-object flags, no explanation prose). So our converter
 | Section | Source in our converter | Quality |
 |---|---|---|
 | `trajectory` | **real GT** (5 wp @1 s, indices 3/7/11/15/19 of the 4 Hz future) | ✅ genuine supervised signal |
-| `future_meta_behavior.longitudinal` | derived from GT waypoint speeds (speed up / slow down / come to stop) | ⚠️ weak but grounded in the real trajectory |
+| `future_meta_behavior.longitudinal` | derived from GT waypoint speeds (speed up / slow down / come to stop / keep speed) | ⚠️ weak but grounded in the real trajectory |
 | `future_meta_behavior.lateral` | from `EgoIntent` (go straight / turn left / turn right only) | ⚠️ coarse; misses lane-follow / lane-change / yield |
 | `critical_objects` | all `"no"` | ❌ pseudo (no perception labels in raw WOD-E2E) |
 | `explanation` | fixed template | ❌ pseudo |

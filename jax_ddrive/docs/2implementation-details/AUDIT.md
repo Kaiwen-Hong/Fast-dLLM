@@ -24,8 +24,8 @@ the reference, not the port; and a wrong "complementary mask = bitwise inverse" 
 Direct element-wise weight-conversion check; `mrope_cos_sin` isolation test; Orbax round-trip
 regression gate; `remat=True/False` equivalence test; the non-deep `compute_response_block_idx_simple`.
 
-After fixes, `run_all_verification.sh` runs **9 gates** (cpu_mask_loss, cpu_lora, cpu_noise,
-cpu_sharding, phase1_text, phase2_sasd, phase4_vit, phase4b_mm_fwd, phase3_lora_train) — all PASS.
+After fixes, `run_all_verification.sh` runs **10 gates** (cpu_mask_loss, cpu_lora, cpu_noise,
+cpu_sharding, cpu_eval_ports, phase1_text, phase2_sasd, phase4_vit, phase4b_mm_fwd, phase3_lora_train) — all PASS.
 
 ## Second audit (2026-06-03) — eval + training code (11 agents, review→verify)
 Reviewed `convert_wod_e2e.py`, `eval/{mm_sampler,scaffold,rope_index}.py`,

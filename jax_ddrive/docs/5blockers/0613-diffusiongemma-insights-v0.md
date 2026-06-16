@@ -65,9 +65,9 @@ gemma v4.1.0,2026-06-11 发布(`CHANGELOG.md`)。是一个 **"block-diffusion ov
 **净结论**:DiffusionGemma**不能**用来论证"AR 权重 = 扩散权重"。
 **但我们自己的"B1 网络侧零改"结论仍独立成立——靠的是 C6(我们自己的代码证据),与 DiffusionGemma 无关**:
 SASD 不新增任何网络参数,MASK=151665/NULL=151666 是现有 151936 词表的**已有行**
-(`sasd.py:23,84`),冻结 ViT 在图外(预计算 embeds),434/434 前向映射完整
-(`load_fast_ddrive_maxtext.py:162-164` 强制无未填 leaf)。
-**B1 的真实工作 = 写反向导出工具(layout/reshape 取逆,`param_mapping.py:736,748-749` 已有反向分支)
+(MASK_ID 见 `sasd.py:23`;NULL_ID=151666 见 `load_fast_ddrive_maxtext.py:18` / `eval_sasd/sampler_sasd.py:27` / `eval_sasd/driver.py:42`——`sasd.py:84` 是 noisy 赋值行,非常量定义),冻结 ViT 在图外(预计算 embeds),434/434 前向映射完整
+(`load_fast_ddrive_maxtext.py:186-188` 的 `if missing: raise ValueError` 强制无未填 leaf;计数在 `:193` 打印)。
+**B1 的真实工作 = 写反向导出工具(layout/reshape 取逆,`param_mapping.py:736` 的 `QWEN_MAXTEXT_TO_HF_PARAM_HOOK_FN` 带 `saving_to_hf` 方向参数;真正反向分支逻辑 `if saving_to_hf: ... x.T.reshape` 在 hook 体内 `:766+`/`:775`,`:748-749` 只是 docstring)
 + 把循环搬进 harness;不是重导参数映射。**(与 `0612-blocker-v0.md` B1 行一致。)
 
 ### 修正 2 — 跨块"冻结前缀"的机制说错了(C2 PARTIAL)
@@ -146,7 +146,7 @@ SASD 不新增任何网络参数,MASK=151665/NULL=151666 是现有 151936 词表
 | C3 | uniform/multinomial 扩散(随机 init + 重噪 rejects) | **SUPPORTED** | `_sampler.py:56,62-76,174-182`;全树无 absorbing-MASK |
 | C4 | 内层是 jitted `while_loop`,carry={step,canvas,sc,rng,done},且是发布版推理路径 | **SUPPORTED** | `_sampler.py:206-214,486`;`__init__`→`Sampler`→`DiffusionSampler` |
 | C5 | SFT loss 是无权 masked CE、无 t-reweight | **PARTIAL**(段维度✅/t-权重不可证) | 真正 loss 数学在未 vendor 的 `hackable_diffusion` 库 |
-| C6 | 我们 434/434 前向映射完整,仅缺反向导出工具,SASD 零新参 | **SUPPORTED** | `load_fast_ddrive_maxtext.py:162-164`;`param_mapping.py:736,748-749`;`sasd.py:23,84` |
+| C6 | 我们 434/434 前向映射完整,仅缺反向导出工具,SASD 零新参 | **SUPPORTED** | `load_fast_ddrive_maxtext.py:186-188`(unfilled-leaf guard,计数 `:193`);`param_mapping.py:736`(`saving_to_hf` 方向参,反向逻辑在 `:766+`);MASK_ID `sasd.py:23`、NULL_ID `load_fast_ddrive_maxtext.py:18`/`sampler_sasd.py:27` |
 
 ---
 
@@ -199,8 +199,8 @@ SASD 不新增任何网络参数,MASK=151665/NULL=151666 是现有 151936 词表
 `ddrive_jax/diffusion/sample_sd.py:52,60-65`;`ddrive_jax/eval/mm_sampler.py:79`;
 `ddrive_jax/diffusion/noise.py:25-30`;`ddrive_jax/diffusion/sasd_loss.py:30-41`;
 `ddrive_jax/diffusion/masks.py`(eval_hybrid_block_causal_mask_dense);
-`...sasd.py:23,84`(MASK_ID/NULL);`load_fast_ddrive_maxtext.py:162-164`;
-`param_mapping.py:590-733,736,748-749`。
+`...sasd.py:23`(MASK_ID);NULL_ID `load_fast_ddrive_maxtext.py:18`/`eval_sasd/sampler_sasd.py:27`/`eval_sasd/driver.py:42`;`load_fast_ddrive_maxtext.py:186-188`(unfilled-leaf guard,计数 `:193`);
+`param_mapping.py:590-733`;`:736`(`QWEN_MAXTEXT_TO_HF_PARAM_HOOK_FN`,`saving_to_hf` 方向参);反向分支 `if saving_to_hf: ... x.T.reshape` 在 `:766+`/`:775`(`:748-749` 仅 docstring)。
 
 ---
 

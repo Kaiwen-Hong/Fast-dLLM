@@ -67,6 +67,8 @@ SASD loss extensions, Waymo JSON data loader, Orbax+sharding wiring.
 
 ## 6. Proposed repo layout (`Fast-dLLM/jax_ddrive/`)
 
+[STALE 2026-06-16: this is the ORIGINAL *proposed* layout; the implemented tree differs — diffusion/{sasd_loss,masks,noise,sample_sd}.py (no schedulers.py), data/{parquet_dataset,ar_dataset,grain_pipeline}.py (no waymo_json.py), models/ has no fusion.py, NO ddrive_*.yml configs (constants are inline dataclass defaults), NO top-level train.py (trainers are train_overfit{,_mm}.py + train_waymo_sasd_jax.py + train/train_tpu.py), tests are test_{mask_loss,lora,noising,sharding,...}.py (no test_loss_parity/test_scaffold). — see docs/0overview/02_gotchas.md]
+
 ```
 jax_ddrive/
 ├── docs/            00_PLAN.md, 01_pytorch_reference_algorithm.md, HANDOFF.md (living)

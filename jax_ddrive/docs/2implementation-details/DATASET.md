@@ -16,7 +16,7 @@
 
 ---
 
-## 1. Record schema (13 fields, every sample)
+## 1. Record schema (sample_id + 12 SASD arrays + 2 scalars, every sample)
 
 ArrayRecord records are serialized `tf.train.Example`; each array field is a
 `tf.io.serialize_tensor` bytes feature (decode: `tf.io.parse_tensor(bytes, dtype)`).
@@ -83,7 +83,7 @@ Stage 1  fast_ddrive/data/convert_wod_e2e.py --with_target          [autovla env
          → 3 front cams as JPEG + canonical prompt (nav + 7-pt ego history,
            byte-verified vs sample.json) + target JSON (GT traj + derived fmb + pseudo text)
 Stage 2  jax_ddrive/eval/prep_train_jax.py                          [ddrive env]
-         → HF processor (chat template; min_pixels=784, max_pixels=784*64 → 16×14 grid),
+         → HF processor (chat template; min_pixels=784, max_pixels=784*64 (=50176) → grid (1,16,14) = 56 merged tokens/img — the code's "~64" comment is a loose upper bound, actual is 56),
            process_gpt normalization (NULL pads, ±06.2f traj), labels, deep-scaffold
            detection (rbi/turn/scaffold/b2s), weights, Beta(α,β), 3D M-RoPE position_ids,
            MASK-pad to %32 → one npz per frame

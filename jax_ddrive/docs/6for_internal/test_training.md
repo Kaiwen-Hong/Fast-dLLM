@@ -161,9 +161,9 @@ python -m maxtext.trainers.pre_train.train src/maxtext/configs/sasd_waymo.yml \
   `dataset carries precomputed image_embeds — ViT not loaded`).
 - **Smoke first** (cheap, validates the path + iterator resume): set `steps=12 checkpoint_period=6`,
   run twice (2nd run with `steps=18`) — the 2nd must **restore + continue** (not restart from 0).
-  The GCP-provisioning wrapper that does this end-to-end is
-  `launch_maxtext_sasd_tpu_frombase.sh` (used for the free 1-chip rehearsal; on the internal pod you
-  run the python command above directly).
+  The GCP-provisioning wrapper that does this end-to-end is the owner-local
+  `/home/kaiwen/launch_maxtext_sasd_tpu_frombase.sh` (NOT shipped in the code bundle — used for the
+  free 1-chip rehearsal; on the internal pod you run the python command above directly).
 - **Resume** is automatic: re-run the same command (same `base_output_directory`/`run_name`) and it
   restores the latest checkpoint + grain iterator and continues.
 - **Per-step loss bounces** (fresh random noise each step) — it is NOT the success metric. Judge by
@@ -233,7 +233,9 @@ A correctly-overfit model reproduces the sample's GT trajectory (traj_exact True
 > gave traj Δ1.12m; **30k regressed** to Δ28.8m (a training-recipe issue: the cosine LR schedule is
 > recomputed on resume, perturbing memorised digits — NOT a pipeline bug). The driver now emits
 > `traj_exact` / `traj_max_abs_delta` / `co_match` / `fmb_match`; the old `token_agreement`-vs-target
-> was a broken (scaffold-vs-flat misaligned) metric and has been removed.
+> was a broken (scaffold-vs-flat misaligned) metric and was removed from the T2/target_ids
+> comparison path (replaced by `traj_exact`/`co_match`/`fmb_match`); `token_agreement` still
+> exists for the local `ref_output` parity branch (driver.py:153 + the module docstring driver.py:17).
 
 ---
 

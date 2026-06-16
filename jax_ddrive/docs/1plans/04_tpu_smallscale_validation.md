@@ -72,7 +72,7 @@ TPU run is only about *multi-host + multi-chip*.
 
 | Check | How | Result |
 |---|---|---|
-| Real driver `train_tpu.py main()` (real 3.75B + ViT + grain + Orbax), real mode | 5090, `--n_fsdp 1 --batch 1 --opt adafactor --bf16` | 6 steps 0.985→0.638, no NaN, ~15 s/step |
+| Real driver `train_tpu.py main()` (real 3.75B [订正 2026-06-16: 3.086B/3.09B per verified 434-leaf param ckpt, matching line 28 — 见 docs/0overview/02_gotchas.md#规范数字框-canonical-numbers] + ViT + grain + Orbax), real mode | 5090, `--n_fsdp 1 --batch 1 --opt adafactor --bf16` | 6 steps 0.985→0.638, no NaN, ~15 s/step |
 | Checkpoint **save → restore → resume** on the REAL model | 5090, 2nd invocation | `restored step=6` → ran 7–10, clean |
 | grain multi-batch loop on real model | 5090 | ✅ (distinct samples each step) |
 | FSDP math `(2,1)` vs `(1,1)` | CPU-8 emulation, `tests/test_harness_fsdp.py` | `GRAIN/HARNESS_FSDP_TESTS_PASS`, parity **9.5e-7**, ckpt-resume **0.0** |

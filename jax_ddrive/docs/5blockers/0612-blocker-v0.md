@@ -30,7 +30,7 @@ release 微调权重)训练出一个**过拟合模型**,以端到端证明训练
 
 ### 1.1 已验证的资产(证据见 `4collect/06_dataset_v2_progress.md`)
 - **模型移植**:JAX/Flax-NNX 全模型 parity(text logits rel-max 3.2e-5、ViT 4.0e-5、MM 7.7e-5、
-  SASD loss 7.9e-8、mask 逐位一致);完整 479 帧 eval 两栈持平(PyTorch ADE@3s 0.814 / JAX 0.839)。
+  SASD loss 7.9e-8、mask 逐位一致 [订正 2026-06-16: 这些 rel-max 微观数字是源码注释里的声明(`sample_sd.py:79`、`mm_sampler.py:12-13`、`scaffold.py:6`),非本文重测;下行 479 帧 ADE/RFS 则有 `EVAL_PIPELINE.md:11-16` 佐证]);完整 479 帧 eval 两栈持平(PyTorch ADE@3s 0.814 / JAX 0.839)。
 - **生产数据**:dataset v2(ArrayRecord;12 数组含 `pixel_values` + 预计算 `image_embeds`
   bf16 [168,2048]);train 415,663/50k/400 + val 479 已构建、逐字节审计、上传 GCS。
 - **生产训练**:MaxText fork(`a645b25`)在真实 v6e-1 上验证 `V2_TPU_VALIDATION_PASS`:
@@ -74,9 +74,9 @@ block-causal mask + 3D M-RoPE + embeds scatter),取 masked 位置 logits,按 sch
 
 | # | Blocker | 本质 | 不解决的后果 | 解法(推荐) | 工作量 | 残余风险 | 验证方式 |
 |---|---|---|---|---|---|---|---|
-| **B1** | **权重格式断层**:MaxText ckpt(Orbax/MaxText param 树)两套采样器都读不了 | HF→MaxText 的映射已有(`save_fast_ddrive_params_ckpt.py`,434/434 leaves);**反向工具不存在** | 训出的模型永远取不出来做推理;只能拿 loss 曲线交差 | 写 `maxtext_to_hf_export.py`:现有映射表取逆(转置/重塑回写 safetensors) | ~0.5 天 | 低 | **round-trip 恒等**:HF→MaxText→HF 逐位一致(434/434),先过此关再碰真 ckpt |
-| **B2** | **采样器代码不在内部交付物里**:NNX 采样器住在 `jax_ddrive` 仓,内部侧基线只拿 MaxText fork | 代码打包/依赖问题,非算法问题 | 内部环境无推理代码可跑 | **vendor 进 fork**(复制 `input_pipeline/sasd_data/` 的成功模式):`maxtext/diffusion/eval_sasd/` = NNX 模型定义 + 采样器 + 推理 driver;带来源 commit 头 | ~0.5 天 | 低 | fork 单仓自包含测试(PYTHONPATH 只含 fork/src,跑通 1 样本) |
-| **B3** | **前处理依赖**:scaffold/prompt 构建用 HF processor(传递依赖 torch);TPU host 默认无 torch | 环境依赖,非算法 | 推理输入没法在 TPU host 上现做 | 三选一:(a) **离线 prep、ship npz**(demo/固定评测集天然适配;479 帧 prep npz 已存在);(b) host 装 torch-CPU(无害);(c) 远期做 torch-free prep。**本里程碑用 (a)** | (a) 0 天 | 低 | npz 与本地参考逐位一致(prep 本就是确定性的) |
+| **B1** | **权重格式断层**:MaxText ckpt(Orbax/MaxText param 树)两套采样器都读不了 | HF→MaxText 的映射已有(`save_fast_ddrive_params_ckpt.py`,434/434 leaves [订正 2026-06-16: 434/434 leaves 由其调用的 loader `load_fast_ddrive_maxtext.py:193` 打印;save 脚本本身只报 ~3.086B params / `SASD_PARAM_CKPT_SAVED`;leaf 数无误]);**反向工具不存在** [已解决 post-0612: `maxtext-dlm-fork/scripts/maxtext_to_hf_export.py` 已写好并 round-trip 验证(824/824 bitwise=434 text+390 vision)— 见 `4collect/07_from_base_b1_b2_progress.md` A6/B1] | 训出的模型永远取不出来做推理;只能拿 loss 曲线交差 | 写 `maxtext_to_hf_export.py`:现有映射表取逆(转置/重塑回写 safetensors) | ~0.5 天 | 低 | **round-trip 恒等**:HF→MaxText→HF 逐位一致(434/434),先过此关再碰真 ckpt |
+| **B2** | **采样器代码不在内部交付物里**:NNX 采样器住在 `jax_ddrive` 仓,内部侧基线只拿 MaxText fork | 代码打包/依赖问题,非算法问题 | 内部环境无推理代码可跑 | **vendor 进 fork**(复制 `input_pipeline/sasd_data/` 的成功模式):`maxtext/diffusion/eval_sasd/` = NNX 模型定义 + 采样器 + 推理 driver;带来源 commit 头 [已解决 post-0612: 已 vendor 到 `src/maxtext/diffusion/eval_sasd/`(pin `4b0f4f2`,见 PATCHES.md);含 `sampler_sasd.py`+`driver.py`+`hf_to_jax.py`+`masks_eval.py`+`models/`] | ~0.5 天 | 低 | fork 单仓自包含测试(PYTHONPATH 只含 fork/src,跑通 1 样本) |
+| **B3** | **前处理依赖**:scaffold/prompt 构建用 HF processor(传递依赖 torch);TPU host 默认无 torch | 环境依赖,非算法 | 推理输入没法在 TPU host 上现做 | 三选一:(a) **离线 prep、ship npz**(demo/固定评测集天然适配;479 帧 prep npz 已存在 [订正 2026-06-16: prep 机制(`eval/prep_jax_eval.py`,200704 定分辨率、确定性)已就绪,但当前 `eval_inputs/` 磁盘上只有 20+20 的 T2/T2' demo 子集(40 个 npz);完整 479 帧 npz 需按需重生成]);(b) host 装 torch-CPU(无害);(c) 远期做 torch-free prep。**本里程碑用 (a)** | (a) 0 天 | 低 | npz 与本地参考逐位一致(prep 本就是确定性的) |
 | **B4** | **TPU 上的生成数值从未验证**:0.01 m 轨迹一致性是在 GPU/fp32 下验的;TPU 的 matmul 默认精度不同(bf16 倾向) | 数值风险 | 内部第一次跑就当小白鼠;若漂移无基线可比 | TPU 彩排:同一导出权重,TPU 跑 N≥10 样本 vs 本地 GPU 参考输出比对(轨迹 ≤0.1 m、结构化字段相等);保守起步用 **fp32** 跑 demo(慢无所谓),bf16 另测一组留档 | 含在彩排里 | 中→低 | §7 验证日志 S6 段 |
 | **B5** | **吞吐(非本里程碑 blocker)**:无 KV-cache,~16 s/样本 | 工程优化项 | serving 不可用(但 demo/离线 eval 完全够) | 本里程碑**明确不做**;serving 阶段再评估"采样器移植进 MaxText + block KV-cache"(即 §4 Option B) | — | — | — |
 
@@ -214,7 +214,7 @@ Phase B TPU 彩排(trial v6e-1 当内部替身,~$2–3)
   两栈 eval ADE@3s 0.814/0.839、RFS 7.914/7.929;JAX 采样器 vs PyTorch 轨迹 0.01 m。
 - from-base 先例:text overfit 3.84→1.47;MM overfit 0.999→0.701(均从 base Qwen2.5-VL)。
 - distilled-400:L=1280 parquet v1(`train/distill_400/parquet_L1280`),GCS 已传;
-  v2 AR **未做**(本计划 A3);标签 provenance = release 模型 teacher(Route A,hybrid fmb;
+  v2 AR **未做**(本计划 A3)[已解决 post-0612: distilled-400 base-ViT v2 AR 已构建(400/7 shards,全部审计通过)— 见 `4collect/07_from_base_b1_b2_progress.md` A3;目录 `wod_e2e_sasd_distilled_0613-400_baseViT_v2_ar`];标签 provenance = release 模型 teacher(Route A,hybrid fmb;
   teacher longitudinal 与 GT 一致率仅 4/10 → longitudinal 用 GT 派生)。
 - 工具坐标:HF→MaxText = `maxtext-dlm-fork/scripts/save_fast_ddrive_params_ckpt.py`;
   v2 AR 构建 = `jax_ddrive/scripts/parquet_to_ar_with_embeds.py`;采样器 =

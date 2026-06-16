@@ -16,7 +16,7 @@ fork commit `da8c92b` · Fast-dLLM commit `88bce4c`。内部拉 LATEST 即得全
 - 修(HIGH):`ml_dtypes.bfloat16` 过不了 `np.savez`(重载成 `|V2` void)→ `driver`/`embedding_parity`
   读 `image_embeds` 崩。现 `.view(ml_dtypes.bfloat16)` 再转。这是"TPU 跳过 ViT"的预算嵌入路。
 - 修(HIGH):`ddrive_jax.load_fast_ddrive_vit`(`_load_all_tensors`)现 bf16-safe(base 快照可用)。
-- `driver`:删坏指标 `token_agreement`(scaffold vs flat 错位)→ 改 `co_match`/`fmb_match` + 标量诊断
+- `driver`:坏指标 `token_agreement`(scaffold vs flat 错位)仅从 **T2/target_ids 比较路径**移除 → 改 `co_match`/`fmb_match`/`traj_exact`(本地 `ref_output` 校验分支仍保留 `token_agreement`,见 `driver.py:153` 与 docstring `driver.py:17`)+ 标量诊断
   `L`/`n_image_tokens`(应 168)/`n_mask_remaining`(应 0);`--show_text` 默认**关**(只出标量)。
 - `embedding_parity`:verdict 改 gate 在 `fp32_vs_reference`(预算嵌入复现 fp32 ViT,**PASS 1.00000**);
   `fp32_vs_bf16` 降级为诊断(base ViT bf16 漂移 ~0.998,正是不跑 bf16 ViT 的理由)。

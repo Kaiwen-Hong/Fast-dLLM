@@ -41,7 +41,7 @@ parity gate or a loss-decrease run exists (see `REPORT.md` for commands/numbers)
 | JAX **forward** (full model) | ✅ verified | the basis for all generation |
 | JAX **section-diffusion sampler** (text) | ✅ generates valid JSON | `diffusion/sample_sd.py` |
 | JAX **multimodal** section-diffusion sampler (ViT fuse + denoise) | ✅ **verified** | `eval/mm_sampler.py`; trajectory matches PyTorch to **0.01 m** (`scripts/verify_sd_mm.py`) |
-| JAX **eval pipeline** → official ADE/RFS | ✅ **verified** | `eval/{prep_jax_eval,jax_batch_inference}.py`; 52-frame ADE3s 0.853 / ADE5s 2.196 / RFS 8.10 (vs PyTorch 0.888/2.250/7.913) |
+| JAX **eval pipeline** → official ADE/RFS | ✅ **verified** | top-level `jax_ddrive/eval/{prep_jax_eval,jax_batch_inference}.py`; full-479 rated-val ADE3s 0.839 / ADE5s 2.072 / RFS 7.929 (vs PyTorch 0.814/1.990/7.914) — see `REPORT.md`. (52-frame ADE3s 0.853 / ADE5s 2.196 / RFS 8.10 was the earlier partial preview.) |
 | JAX scaffold-spec / multi-traj decoders | ⬜ not ported | speed features (need KV-cache); section_diffusion is the working JAX decoder |
 | KV-cache (block-wise + fork) | ⬜ not ported | would speed JAX decode (~17 s/sample now) |
 
