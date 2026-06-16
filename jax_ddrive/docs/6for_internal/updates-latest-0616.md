@@ -8,6 +8,16 @@
 
 ---
 
+## 2026-06-16 (后续) — test_training 全量生产训练变体
+
+- `test_training.md` 加 **§12「全量生产训练(变体)」**:换 `sasd_data_dir=…/wod_e2e_sasd_full_v2_ar`
+  (415,663 帧 / 130 shards / ~369G,pseudo 标签,**L=1184** → 用 `sasd_waymo.yml` 默认配置、**不加** distilled 的
+  1280 覆盖);overfit 的 T1/T2 逐字标准不适用,改判固定噪声 eval loss 下降 + held-out(val 479)不发散。
+  **代码/数据已就绪,无需改代码**;按 §4 先把全量 ingest 到 CNS。
+- `00_owner_publish.md` §4/§5 的 manifest 循环加入 `wod_e2e_sasd_full_v2_ar`。
+
+---
+
 ## 2026-06-16 — 代码/数据版本化 + owner 发布 runbook
 
 **发布管线版本化(fork 并入 + git-SHA manifest)**

@@ -310,3 +310,34 @@ training + T1 events yourself (schema in `../5blockers/0612-blocker-v0.md` §7).
 
 If T2 isn't met after 30k, extend training (≤50k authorized) and re-export/re-eval; the
 trajectory digits + the long `explanation` section are the last to memorise.
+
+---
+
+## 12. 全量生产训练(变体 —— 与上面的 overfit 验证不同)
+
+§5–§11 是 **from-base overfit 验证**(distilled-400、L=1280、逐字 T1/T2)。要在内部机器上跑**全量生产训练**
+(dummy/pseudo 标签 OK),代码 + 数据**已就绪、无需改代码**,只改三处:
+
+1. **数据**:`sasd_data_dir=$DATA_ROOT/wod_e2e_sasd_full_v2_ar`(**415,663 帧 / 130 shards / ~369G**,v2 AR
+   + 预算 embeds,pseudo 标签,**L=1184**)。先按 §4 把它 ingest 到 CNS(§4 的 `for A in …` 里换/加成
+   `wod_e2e_sasd_full_v2_ar`;369G,比 distilled 大得多,留足磁盘/时间)。
+2. **序列长用默认值**:**不要**加 distilled 的 `sasd_seq_len=1280 max_target_length=2576` 覆盖 —— 全量是
+   L=1184,`sasd_waymo.yml` 默认(`sasd_seq_len=1184 / max_target_length=2376`)正好匹配。
+3. **规模 + 成功标准**:设 production `steps` / `checkpoint_period`(按算力/预算);**overfit 的 T1/T2 逐字标准
+   不适用**(那是过拟合单批的判据)。改判:固定噪声 eval loss 持续下降 + 在 held-out(`wod_e2e_sasd_val_v2_ar`,
+   479)上 loss/ADE 不发散。
+
+```bash
+source ~/.fastddrive_env && source ~/venv/bin/activate && export PYTHONPATH=$FORK/src && cd $FORK
+RUNOUT=$DATA_ROOT/run_full_base
+python -m maxtext.trainers.pre_train.train src/maxtext/configs/sasd_waymo.yml \
+  model_name=qwen2.5-3b hardware=tpu \
+  load_parameters_path=$DATA_ROOT/maxtext_sasd_params_base/fast_ddrive_qwen25_3b_BASE_params \
+  sasd_data_dir=$DATA_ROOT/wod_e2e_sasd_full_v2_ar \
+  base_output_directory=$RUNOUT run_name=full-base \
+  opt_type=adamw per_device_batch_size=1 steps=<prod> checkpoint_period=<N>
+  # 不加 sasd_seq_len/max_target_length —— 用默认 L=1184
+```
+B1 导出(§6)/ B2 推理(§7)/ 验证日志(§9)同上;推理输入仍按训练分辨率 784/50176 → 168 tokens。
+> 注:全量是 **pseudo 标签**(`explanation` 等是伪标签,trajectory 真 GT)。这适合验证**全量训练能跑通 + 轨迹学习**;
+> "推理是否真帮驾驶"需要 grounded 推理标签 + 消融,属另一阶段。
