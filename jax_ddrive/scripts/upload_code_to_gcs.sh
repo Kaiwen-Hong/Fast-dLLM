@@ -69,7 +69,9 @@ EOF
 # --transform prefixes every member with fastddrive-<TS>-<sha7>/ so extraction is self-naming.
 tar czf "$TGZ" \
   --exclude='.git' --exclude='__pycache__' --exclude='*.pyc' --exclude='*.egg-info' \
-  --exclude='.pytest_cache' --exclude='.claude' --exclude='jax_ddrive/visualizations' \
+  --exclude='.pytest_cache' --exclude='.claude' --exclude='*.log' \
+  --exclude='jax_ddrive/visualizations' --exclude='jax_ddrive/scripts/temp' \
+  --exclude='maxtext-dlm-fork/tests/assets' --exclude='maxtext-dlm-fork/docs' \
   --transform "s,^,${NAME}/," \
   -C "$REPO" "${PACK_DIRS[@]}" \
   -C "$TMPD" MANIFEST.json

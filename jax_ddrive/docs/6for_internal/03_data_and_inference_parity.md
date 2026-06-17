@@ -138,10 +138,11 @@ done
 - 100% parse(479/479)。
 - 若 **bf16 都对不上 0.839** → 几乎一定是 §0 的分辨率/快照配错(回顶部常量框排查),**不要**当成"内部 TPU 不行"。
 
-> **(更强但可选)真 TPU 位等盖章:** 部署采样器 `eval_sasd`(168 tokens,fp32)在 20 个 val 样本上的
-> denoised token 应与我们 ship 的 GPU-fp32 golden **逐 token 位等**。这条把"真 TPU 从没跑过"的缺口补上。
-> 走法见 `$DDRIVE/docs/2implementation-details/INFERENCE_DEPLOY.md` §B4(eval_sasd 自包含推理 +
-> `parity_eval.py`)。属于深度信任检查,item 4 的验收不强制要它。
+> **(更强但可选)真 TPU fp32 位等:** 用 fork 自包含部署采样器 `$FORK/src/maxtext/diffusion/eval_sasd/driver.py`
+> (168 tokens,fp32)在几个 val 样本上跑,验证 TPU-fp32 的确定性(重跑逐 token 一致)。理论依据见
+> `$DDRIVE/docs/2implementation-details/INFERENCE_DEPLOY.md` §B4(本地已证 GPU==CPU fp32 在 20 样本逐 token
+> 一致 → TPU-fp32 预期 bit-for-bit 匹配)。**注**:本地那份 GPU-fp32 token golden 在 owner 的 `scripts/temp/`,
+> **默认不随 bundle 发**;若要做真 TPU↔GPU 的逐 token 对照,需 owner 另发那个 golden。深度信任检查,item 4 不强制。
 
 ---
 

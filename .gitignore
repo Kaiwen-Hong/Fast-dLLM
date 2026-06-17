@@ -28,3 +28,12 @@ fast_dvlm/data/ALLaVA-4V/
 
 # Claude Code local cache/state (sessions, runtime state, session log) — not for version control
 .claude/
+
+# Fast-dDrive: scripts/temp is a throwaway working area (parity-rehearsal dumps, obsolete-TPU
+# automation, scratch logs) — fully ignored and excluded from the code bundle. Kept tooling lives
+# in scripts/ proper (e.g. the publish wrapper 0616-v1.sh was moved out of temp/ to scripts/).
+jax_ddrive/scripts/temp/
+
+# Upstream MaxText test fixtures: golden logits for OTHER models (deepseek/gemma3/llama...) + test
+# image/video. ~50M, never used by the Fast-dDrive SASD path; excluded from the bundle too.
+maxtext-dlm-fork/tests/assets/

@@ -8,8 +8,8 @@
 # plan and uploads NOTHING. Pass --go to actually build + upload. Artifacts already on disk are
 # reused (idempotent), so re-running is cheap.
 #
-#   bash jax_ddrive/scripts/temp/0616-v1.sh         # dry run — show the plan, touch nothing
-#   bash jax_ddrive/scripts/temp/0616-v1.sh --go    # really build (if missing) + upload to GCS
+#   bash jax_ddrive/scripts/0616-v1.sh         # dry run — show the plan, touch nothing
+#   bash jax_ddrive/scripts/0616-v1.sh --go    # really build (if missing) + upload to GCS
 set -euo pipefail
 
 GO=0; [ "${1:-}" = "--go" ] && GO=1
