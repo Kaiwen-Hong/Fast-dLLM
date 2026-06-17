@@ -106,6 +106,29 @@ PYTHONPATH=src python -m maxtext.diffusion.eval_sasd.driver \
 # -> SASD_EVAL_PASS  (valid JSON + 5-waypoint trajectory; + traj_exact / traj_max_abs_delta / co_match / fmb_match vs target)
 ```
 
+### B4 — GPU↔TPU generation numerics (rehearsal, 2026-06-16) 🧪
+Question: does the sampler produce the **same** output on TPU as on GPU (so TPU inference can be
+trusted)? Ran the release Fast-dDrive model over 20 val samples (production precomputed-embeds path,
+fp32 + bf16), dumping the full denoised token sequence per sample, and compared backends.
+- **Deterministic:** GPU fp32 re-run = bit-identical tokens (agree 1.000000) → differences below are real.
+- **fp32 is backend-portable:** **GPU-fp32 == CPU-fp32 bit-identical** (token-level) on **all 20 val
+  samples** (0 divergent tokens), *including the 3 worst-case* samples whose bf16 cascade is largest
+  (block-0 first-divergence).
+  CPU is a 3rd XLA backend, so this is a TPU proxy; fp32 + `matmul_precision=highest` is true fp32 on
+  CUDA/CPU/TPU alike, and backend fp32 diffs (~1e-6) are far below the 0.9 confidence-unmask threshold
+  → they never flip a decision. **TPU-fp32 generation is therefore expected to match GPU bit-for-bit;
+  no TPU code change is needed for fp32 parity.** (Real v6e confirmation pending GCP trial capacity —
+  armed via `jax_ddrive/scripts/temp/tpu_{up,run,down}.sh` + `parity_eval.py`.)
+- **bf16 diverges by design:** same-GPU fp32-vs-bf16 differs on ~1.5% of tokens (mean agree 0.985, min
+  0.945) via the confidence-cascade — an EARLY-block unmask flip propagates, a LATE one barely does,
+  2/20 samples identical. This is inherent to the absorbing-MASK section-diffusion sampler, NOT a
+  backend bug → for trustworthy TPU inference use **fp32** (or precomputed fp32→bf16 embeds + an fp32
+  sampler), consistent with the §4 embedding-parity policy.
+
+Memory note (5090, 32 GB RAM): the rehearsal harness runs ONE sample per process — looping many in one
+process leaks XLA per-shape compiled-program buffers (varying L) and OOMs; a fresh process per sample
+reclaims all VRAM. Full method/results: `jax_ddrive/scripts/temp/PARITY_FINDINGS.md`.
+
 ---
 
 ## 3. B3 — torch-free inputs (offline prep) 📦
@@ -178,6 +201,7 @@ Single-chip inference is fine (3B fits one chip); training uses FSDP across the 
 | Offline prep on the eval set | ✅ runs (`build_scaffold`). **GOTCHA: `--min_pixels`/`--max_pixels` MUST match the TRAINING resolution (784 / 784·64 → 56 merged tokens/img × 3 cams = 168), or token count / mRoPE won't line up.** |
 | from-base overfit → T2 (real milestone) | 🔄 **pipeline works end-to-end** (overfit model → correct scaffold → coherent 4-section JSON; critical_objects matched), but **NOT yet verbatim**. 12k: traj Δ1.12m; 30k did **not** improve and **regressed** (traj Δ28.8m) → a training-recipe issue (LR schedule recomputed on resume), not the pipeline. NOTE: the old `token_agreement`-vs-target was a broken metric (denoised-scaffold vs flat-GT misalignment); replaced by `co_match`/`fmb_match` + trajectory Δ. |
 | Free-1-TPU + internal-8-TPU smoke | ⏳ not started |
+| **B4 GPU↔TPU generation numerics** (2026-06-16) | 🧪 **fp32 backend-parity bit-exact** via CPU proxy (GPU fp32 deterministic; GPU==CPU fp32 on 20 val incl. 3 worst-case → **TPU-fp32 expected to match, no fix needed**). Real v6e **pending GCP trial capacity** (cross-zone retry, none available). bf16 diverges by design (confidence-cascade, mean token-agree 0.985). See B4 §2 + `scripts/temp/PARITY_FINDINGS.md`. |
 
 ---
 

@@ -1,0 +1,35 @@
+[
+  {
+    "sample": "val_s13",
+    "dtype": "fp32",
+    "n_tokens": 1154,
+    "n_mask_remaining": 0,
+    "n_image_tokens": 168,
+    "valid_json": true,
+    "traj_parseable": true,
+    "traj": [
+      [
+        0.04,
+        0.0
+      ],
+      [
+        0.79,
+        -0.02
+      ],
+      [
+        2.77,
+        -0.25
+      ],
+      [
+        5.5,
+        -1.22
+      ],
+      [
+        8.28,
+        -3.42
+      ]
+    ],
+    "gen_text": "{\"critical_objects\": {\"nearby_vehicle\": \"yes\", \"pedestrian\": \"no\", \"cyclist\": \"no\", \"construction\": \"no\", \"traffic_element\": \"yes\", \"weather_condition\": \"no\", \"road_hazard\": \"no\", \"emergency_vehicle\": \"no\", \"animal\": \"no\", \"special_vehicle\": \"no\", \"conflicting_vehicle\": \"yes\", \"door_opening_vehicle\": \"no\"}, \"explanation\": \"There is a nearby vehicle visible in the front camera, positioned ahead and slightly to the right, which may influence the ego vehicle's speed and lateral position. A stop sign is present on the right side of the road, requiring the ego vehicle to stop or yield before proceeding. This stop sign creates a conflicting traffic.\", \"future_meta_behavior\": {\"longitudinal\": \"slow down\", \"lateral\": \"right turn\"}, \"trajectory\": \"[[ +000.04, +000.00], [ +000.79, -000.02], [ +002.77, -000.25], [ +005.50, -001.22], [ +008.28, -003.42]]\"}",
+    "sec_s": 586.8
+  }
+]

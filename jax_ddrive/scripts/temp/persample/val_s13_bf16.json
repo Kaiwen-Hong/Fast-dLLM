@@ -1,0 +1,35 @@
+[
+  {
+    "sample": "val_s13",
+    "dtype": "bf16",
+    "n_tokens": 1154,
+    "n_mask_remaining": 0,
+    "n_image_tokens": 168,
+    "valid_json": false,
+    "traj_parseable": true,
+    "traj": [
+      [
+        0.02,
+        0.0
+      ],
+      [
+        0.75,
+        -0.02
+      ],
+      [
+        2.77,
+        -0.25
+      ],
+      [
+        5.5,
+        -1.21
+      ],
+      [
+        8.06,
+        -3.37
+      ]
+    ],
+    "gen_text": "{\"critical_objects\": {\"nearby_vehicle\": \"no\", \"pedestrian\": \"no\", \"cyclist\": \"no\", \"construction\": \"no\", \"traffic_element\": \"yes\", \"weather_condition\": \"no\", \"road_hazard\": \"no\", \"emergency_vehicle\": \"no\", \"animal\": \"no\", \"special_vehicle\": \"no\", \"conflicting_vehicle\": \"no\", \"door_opening_vehicle\": \"no\"}, \"explanation\": \"There is a stop sign visible on the right side of the road ahead, which is a critical traffic element requiring the ego vehicle to prepare to stop or yield. No nearby vehicles, pedestrians, cyclists, or other hazards are present that would influence immediate lateral or longitudinal behavior. The stop sign necessitates slowing or stopping.\", \"future_meta_behavior\": {\"longitudinal\": \"slow down\", \"lateral\": \"right turn \"trajectory\": \"[[ +000.02, +000.00], [ +000.75, -000.02], [ +002.77, -000.25], [ +005.50, -001.21], [ +008.06, -003.37]]\"}",
+    "sec_s": 18.7
+  }
+]

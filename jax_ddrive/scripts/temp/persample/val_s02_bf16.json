@@ -1,0 +1,35 @@
+[
+  {
+    "sample": "val_s02",
+    "dtype": "bf16",
+    "n_tokens": 1156,
+    "n_mask_remaining": 0,
+    "n_image_tokens": 168,
+    "valid_json": false,
+    "traj_parseable": true,
+    "traj": [
+      [
+        0.62,
+        -0.01
+      ],
+      [
+        0.61,
+        -0.01
+      ],
+      [
+        0.61,
+        -0.01
+      ],
+      [
+        0.61,
+        -0.01
+      ],
+      [
+        0.61,
+        -0.01
+      ]
+    ],
+    "gen_text": "{\"critical_objects\": {\"nearby_vehicle\": \"no\", \"pedestrian\": \"no\", \"cyclist\": \"no\", \"construction\": \"no\", \"traffic_element\": \"yes\", \"weather_condition\": \"no\", \"road_hazard\": \"no\", \"emergency_vehicle\": \"no\", \"animal\": \"no\", \"special_vehicle\": \"no\", \"conflicting_vehicle\": \"no\", \"door_opening_vehicle\": \"no\"}, \"explanation\": \"There is a stop sign visible on the right side of the road, which is a critical traffic element that will influence the ego vehicle's behavior. The ego vehicle is expected to slow down and prepare to stop or yield according to the stop sign requirement. No nearby vehicles, pedestrians, or other hazards are detected currently.\", \"future_meta_behavior\": {\"longitudinal\": \"slow down\", \"lateral\": \"go straight \"trajectory\": \"[[ +000.62, -000.01], [ +000.61, -000.01], [ +000.61, -000.01], [ +000.61, -000.01], [ +000.61, -000.01]]\"}",
+    "sec_s": 17.5
+  }
+]

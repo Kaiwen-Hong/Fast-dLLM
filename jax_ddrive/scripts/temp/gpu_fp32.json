@@ -1,0 +1,662 @@
+[
+  {
+    "sample": "val_s00",
+    "dtype": "fp32",
+    "n_tokens": 1154,
+    "n_mask_remaining": 0,
+    "n_image_tokens": 168,
+    "valid_json": false,
+    "traj_parseable": true,
+    "traj": [
+      [
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0
+      ]
+    ],
+    "gen_text": "{\"critical_objects\": {\"nearby_vehicle\": \"no\", \"pedestrian\": \"no\", \"cyclist\": \"no\", \"construction\": \"no\", \"traffic_element\": \"yes\", \"weather_condition\": \"no\", \"road_hazard\": \"no\", \"emergency_vehicle\": \"no\", \"animal\": \"no\", \"special_vehicle\": \"no\", \"conflicting_vehicle\": \"no\", \"door_opening_vehicle\": \"no\"}, \"explanation\": \"The traffic light ahead is red, indicating that the ego vehicle must stop. There are no nearby vehicles, pedestrians, or other obstacles in the immediate path. The red traffic signal requires the ego vehicle to decelerate and stop before proceeding, influencing the longitudinal behavior to stop and lateral behavior to remain in its lane.\", \"future_meta_behavior\": {\"longitudinal\": \"come to stop\", \"lateral\": \"go straight \"trajectory\": \"[[ +000.00, +000.00], [ +000.00, +000.00], [ +000.00, +000.00], [ +000.00, +000.00], [ +000.00, +000.00]]\"}",
+    "sec_s": 15.4
+  },
+  {
+    "sample": "val_s01",
+    "dtype": "fp32",
+    "n_tokens": 1156,
+    "n_mask_remaining": 0,
+    "n_image_tokens": 168,
+    "valid_json": false,
+    "traj_parseable": true,
+    "traj": [
+      [
+        -0.01,
+        0.0
+      ],
+      [
+        0.18,
+        0.0
+      ],
+      [
+        1.21,
+        0.0
+      ],
+      [
+        3.21,
+        0.0
+      ],
+      [
+        6.08,
+        0.0
+      ]
+    ],
+    "gen_text": "{\"critical_objects\": {\"nearby_vehicle\": \"no\", \"pedestrian\": \"no\", \"cyclist\": \"no\", \"construction\": \"no\", \"traffic_element\": \"yes\", \"weather_condition\": \"no\", \"road_hazard\": \"no\", \"emergency_vehicle\": \"no\", \"animal\": \"no\", \"special_vehicle\": \"no\", \"conflicting_vehicle\": \"no\", \"door_opening_vehicle\": \"no\"}, \"explanation\": \"There is a visible stop sign on the right side of the road ahead, which is a critical traffic element requiring the ego vehicle to prepare to stop or yield. No nearby vehicles, pedestrians, cyclists, or other hazards are detected that would influence immediate lateral or longitudinal behavior. The ego vehicle is expected to slow down.\", \"future_meta_behavior\": {\"longitudinal\": \"slow down\", \"lateral\": \"go straight \"trajectory\": \"[[ -000.01, +000.00], [ +000.18, +000.00], [ +001.21, +000.00], [ +003.21, +000.00], [ +006.08, +000.00]]\"}",
+    "sec_s": 18.8
+  },
+  {
+    "sample": "val_s02",
+    "dtype": "fp32",
+    "n_tokens": 1156,
+    "n_mask_remaining": 0,
+    "n_image_tokens": 168,
+    "valid_json": false,
+    "traj_parseable": true,
+    "traj": [
+      [
+        0.64,
+        -0.01
+      ],
+      [
+        0.63,
+        -0.01
+      ],
+      [
+        0.63,
+        -0.01
+      ],
+      [
+        0.63,
+        -0.01
+      ],
+      [
+        0.63,
+        -0.01
+      ]
+    ],
+    "gen_text": "{\"critical_objects\": {\"nearby_vehicle\": \"no\", \"pedestrian\": \"no\", \"cyclist\": \"no\", \"construction\": \"no\", \"traffic_element\": \"yes\", \"weather_condition\": \"no\", \"road_hazard\": \"no\", \"emergency_vehicle\": \"no\", \"animal\": \"no\", \"special_vehicle\": \"no\", \"conflicting_vehicle\": \"no\", \"door_opening_vehicle\": \"no\"}, \"explanation\": \"There is a stop sign visible on the right side of the road, which is a critical traffic element that will influence the ego vehicle's behavior. The ego vehicle is expected to slow down and prepare to stop or yield according to the stop sign requirement. No nearby vehicles, pedestrians, or other hazards are detected currently.\", \"future_meta_behavior\": {\"longitudinal\": \"slow down\", \"lateral\": \"go straight \"trajectory\": \"[[ +000.64, -000.01], [ +000.63, -000.01], [ +000.63, -000.01], [ +000.63, -000.01], [ +000.63, -000.01]]\"}",
+    "sec_s": 17.9
+  },
+  {
+    "sample": "val_s03",
+    "dtype": "fp32",
+    "n_tokens": 1154,
+    "n_mask_remaining": 0,
+    "n_image_tokens": 168,
+    "valid_json": true,
+    "traj_parseable": true,
+    "traj": [
+      [
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0
+      ]
+    ],
+    "gen_text": "{\"critical_objects\": {\"nearby_vehicle\": \"no\", \"pedestrian\": \"no\", \"cyclist\": \"no\", \"construction\": \"no\", \"traffic_element\": \"no\", \"weather_condition\": \"no\", \"road_hazard\": \"no\", \"emergency_vehicle\": \"no\", \"animal\": \"no\", \"special_vehicle\": \"no\", \"conflicting_vehicle\": \"no\", \"door_opening_vehicle\": \"no\"}, \"explanation\": \"There are no vehicles, pedestrians, cyclists, traffic elements, or other objects visible in the current camera views that would influence the ego vehicle's behavior within the next 5 seconds. The intersection and surrounding road appear clear, with no obstructions, hazards, or special circumstances present. The ego vehicle is currently stationary.\", \"future_meta_behavior\": {\"longitudinal\": \"come to stop\", \"lateral\": \"go straight\"}, \"trajectory\": \"[[ +000.00, +000.00], [ +000.00, +000.00], [ +000.00, +000.00], [ +000.00, +000.00], [ +000.00, +000.00]]\"}",
+    "sec_s": 15.1
+  },
+  {
+    "sample": "val_s04",
+    "dtype": "fp32",
+    "n_tokens": 1159,
+    "n_mask_remaining": 0,
+    "n_image_tokens": 168,
+    "valid_json": false,
+    "traj_parseable": true,
+    "traj": [
+      [
+        5.71,
+        -0.04
+      ],
+      [
+        11.3,
+        -0.12
+      ],
+      [
+        16.62,
+        -0.23
+      ],
+      [
+        21.62,
+        -0.33
+      ],
+      [
+        26.28,
+        -0.36
+      ]
+    ],
+    "gen_text": "{\"critical_objects\": {\"nearby_vehicle\": \"yes\", \"pedestrian\": \"no\", \"cyclist\": \"no\", \"construction\": \"no\", \"traffic_element\": \"no\", \"weather_condition\": \"no\", \"road_hazard\": \"no\", \"emergency_vehicle\": \"no\", \"animal\": \"no\", \"special_vehicle\": \"no\", \"conflicting_vehicle\": \"no\", \"door_opening_vehicle\": \"no\"}, \"explanation\": \"There is a nearby vehicle directly ahead in the same lane, visible in the front camera, which may influence the ego vehicle's speed and lane keeping. The vehicle appears not show brake lights or turn signals, indicating it is likely moving steadily. No pedestrians, cyclists, or conflicting vehicles are present in the immediate path.\", \"future_meta_behavior\": {\"longitudinal\": \"keep speed\", \"lateral\": \"lane follow \"trajectory\": \"[[ +005.71, -000.04], [ +011.30, -000.12], [ +016.62, -000.23], [ +021.62, -000.33], [ +026.28, -000.36]]\"}",
+    "sec_s": 19.7
+  },
+  {
+    "sample": "val_s05",
+    "dtype": "fp32",
+    "n_tokens": 1160,
+    "n_mask_remaining": 0,
+    "n_image_tokens": 168,
+    "valid_json": false,
+    "traj_parseable": true,
+    "traj": [
+      [
+        7.15,
+        0.15
+      ],
+      [
+        14.21,
+        0.45
+      ],
+      [
+        21.2,
+        0.9
+      ],
+      [
+        28.05,
+        1.5
+      ],
+      [
+        34.69,
+        2.16
+      ]
+    ],
+    "gen_text": "{\"critical_objects\": {\"nearby_vehicle\": \"no\", \"pedestrian\": \"no\", \"cyclist\": \"no\", \"construction\": \"no\", \"traffic_element\": \"no\", \"weather_condition\": \"no\", \"road_hazard\": \"no\", \"emergency_vehicle\": \"no\", \"animal\": \"no\", \"special_vehicle\": \"no\", \"conflicting_vehicle\": \"no\", \"door_opening_vehicle\": \"no\"}, \"explanation\": \"There are no visible vehicles, pedestrians, cyclists, construction signs, traffic signals, or road hazards in the current camera views that would affect the ego vehicle's path or speed within the next 3 seconds. The road ahead appears clear with no immediate obstacles or conflicts. Therefore, the ego vehicle can continue moving forward.\", \"future_meta_behavior\": {\"longitudinal\": \"speed up\", \"lateral\": \"lane follow \"trajectory\": \"[[ +007.15, +000.15], [ +014.21, +000.45], [ +021.20, +000.90], [ +028.05, +001.50], [ +034.69, +002.16]]\"}",
+    "sec_s": 18.5
+  },
+  {
+    "sample": "val_s06",
+    "dtype": "fp32",
+    "n_tokens": 1158,
+    "n_mask_remaining": 0,
+    "n_image_tokens": 168,
+    "valid_json": false,
+    "traj_parseable": true,
+    "traj": [
+      [
+        4.75,
+        -0.06
+      ],
+      [
+        9.21,
+        -0.06
+      ],
+      [
+        13.48,
+        0.12
+      ],
+      [
+        17.57,
+        0.42
+      ],
+      [
+        21.5,
+        0.65
+      ]
+    ],
+    "gen_text": "{\"critical_objects\": {\"nearby_vehicle\": \"yes\", \"pedestrian\": \"no\", \"cyclist\": \"no\", \"construction\": \"no\", \"traffic_element\": \"no\", \"weather_condition\": \"no\", \"road_hazard\": \"no\", \"emergency_vehicle\": \"no\", \"animal\": \"no\", \"special_vehicle\": \"no\", \"conflicting_vehicle\": \"no\", \"door_opening_vehicle\": \"no\"}, \"explanation\": \"There is a nearby vehicle directly ahead in the same lane, visible in the front camera, which may influence the ego vehicle's speed and lane keeping. The vehicle ahead appears to be moving normally without abrupt braking or turn signals. No pedestrians, cyclists, or conflicting vehicles are present that would require yielding or lane changes.\", \"future_meta_behavior\": {\"longitudinal\": \"slow down\", \"lateral\": \"lane follow \"trajectory\": \"[[ +004.75, -000.06], [ +009.21, -000.06], [ +013.48, +000.12], [ +017.57, +000.42], [ +021.50, +000.65]]\"}",
+    "sec_s": 20.6
+  },
+  {
+    "sample": "val_s07",
+    "dtype": "fp32",
+    "n_tokens": 1160,
+    "n_mask_remaining": 0,
+    "n_image_tokens": 168,
+    "valid_json": false,
+    "traj_parseable": true,
+    "traj": [
+      [
+        7.02,
+        -0.01
+      ],
+      [
+        13.72,
+        -0.02
+      ],
+      [
+        20.22,
+        0.04
+      ],
+      [
+        26.62,
+        0.3
+      ],
+      [
+        32.96,
+        0.76
+      ]
+    ],
+    "gen_text": "{\"critical_objects\": {\"nearby_vehicle\": \"yes\", \"pedestrian\": \"no\", \"cyclist\": \"no\", \"construction\": \"no\", \"traffic_element\": \"no\", \"weather_condition\": \"no\", \"road_hazard\": \"no\", \"emergency_vehicle\": \"no\", \"animal\": \"no\", \"special_vehicle\": \"no\", \"conflicting_vehicle\": \"no\", \"door_opening_vehicle\": \"no\"}, \"explanation\": \"There is a nearby vehicle directly ahead in the same lane, visible in the front camera, which may influence the ego vehicle's speed and lane keeping. The vehicle appears to be moving and not stopped or signaling, so the ego car is expected to maintain a safe following distance and adjust speed accordingly while continuing straight ahead.\", \"future_meta_behavior\": {\"longitudinal\": \"slow down\", \"lateral\": \"lane follow \"trajectory\": \"[[ +007.02, -000.01], [ +013.72, -000.02], [ +020.22, +000.04], [ +026.62, +000.30], [ +032.96, +000.76]]\"}",
+    "sec_s": 21.0
+  },
+  {
+    "sample": "val_s08",
+    "dtype": "fp32",
+    "n_tokens": 1168,
+    "n_mask_remaining": 0,
+    "n_image_tokens": 168,
+    "valid_json": true,
+    "traj_parseable": true,
+    "traj": [
+      [
+        9.88,
+        0.0
+      ],
+      [
+        18.62,
+        0.02
+      ],
+      [
+        27.3,
+        0.22
+      ],
+      [
+        36.21,
+        1.02
+      ],
+      [
+        45.28,
+        2.57
+      ]
+    ],
+    "gen_text": "{\"critical_objects\": {\"nearby_vehicle\": \"no\", \"pedestrian\": \"no\", \"cyclist\": \"no\", \"construction\": \"no\", \"traffic_element\": \"yes\", \"weather_condition\": \"no\", \"road_hazard\": \"no\", \"emergency_vehicle\": \"no\", \"animal\": \"no\", \"special_vehicle\": \"no\", \"conflicting_vehicle\": \"no\", \"door_opening_vehicle\": \"no\"}, \"explanation\": \"There is a visible traffic signal ahead in the front camera view displaying a red light, which is directly controlling the ego vehicle's movement at the intersection. The red signal requires the ego car to stop and wait for the light to turn green before proceeding, constraining both longitudinal and lateral behavior over the next several seconds.\", \"future_meta_behavior\": {\"longitudinal\": \"come to stop\", \"lateral\": \"go straight\"}, \"trajectory\": \"[[ +009.88, +000.00], [ +018.62, +000.02], [ +027.30, +000.22], [ +036.21, +001.02], [ +045.28, +002.57]]\"}",
+    "sec_s": 20.7
+  },
+  {
+    "sample": "val_s09",
+    "dtype": "fp32",
+    "n_tokens": 1161,
+    "n_mask_remaining": 0,
+    "n_image_tokens": 168,
+    "valid_json": false,
+    "traj_parseable": true,
+    "traj": [
+      [
+        2.4,
+        -0.04
+      ],
+      [
+        2.56,
+        -0.04
+      ],
+      [
+        2.55,
+        -0.04
+      ],
+      [
+        2.55,
+        -0.04
+      ],
+      [
+        2.55,
+        -0.04
+      ]
+    ],
+    "gen_text": "{\"critical_objects\": {\"nearby_vehicle\": \"yes\", \"pedestrian\": \"no\", \"cyclist\": \"no\", \"construction\": \"no\", \"traffic_element\": \"yes\", \"weather_condition\": \"no\", \"road_hazard\": \"no\", \"emergency_vehicle\": \"no\", \"animal\": \"no\", \"special_vehicle\": \"no\", \"conflicting_vehicle\": \"no\", \"door_opening_vehicle\": \"no\"}, \"explanation\": \"There is a nearby vehicle directly ahead in the same lane, visible in the front camera, which will influence the ego vehicle's speed and spacing decisions. The vehicle appears to be stationary or moving slowly, requiring the ego vehicle to decelerate or maintain a safe following distance. Additionally, there is a traffic element.\", \"future_meta_behavior\": {\"longitudinal\": \"slow down\", \"lateral\": \"go straight \"trajectory\": \"[[ +002.40, -000.04], [ +002.56, -000.04], [ +002.55, -000.04], [ +002.55, -000.04], [ +002.55, -000.04]]\"}",
+    "sec_s": 18.8
+  },
+  {
+    "sample": "val_s10",
+    "dtype": "fp32",
+    "n_tokens": 1156,
+    "n_mask_remaining": 0,
+    "n_image_tokens": 168,
+    "valid_json": true,
+    "traj_parseable": true,
+    "traj": [
+      [
+        3.29,
+        0.44
+      ],
+      [
+        5.5,
+        0.75
+      ],
+      [
+        7.2,
+        1.01
+      ],
+      [
+        9.02,
+        1.25
+      ],
+      [
+        11.28,
+        1.51
+      ]
+    ],
+    "gen_text": "{\"critical_objects\": {\"nearby_vehicle\": \"no\", \"pedestrian\": \"no\", \"cyclist\": \"no\", \"construction\": \"no\", \"traffic_element\": \"yes\", \"weather_condition\": \"no\", \"road_hazard\": \"no\", \"emergency_vehicle\": \"no\", \"animal\": \"no\", \"special_vehicle\": \"no\", \"conflicting_vehicle\": \"no\", \"door_opening_vehicle\": \"no\"}, \"explanation\": \"There is a visible traffic signal ahead in the front camera view displaying a red light, which is positioned directly in the ego vehicle's path at the intersection. The illuminated of this traffic control element requires the ego car to come to a complete stop before proceeding, regardless of the absence of other vehicles, pedestrians, or.\", \"future_meta_behavior\": {\"longitudinal\": \"come to stop\", \"lateral\": \"go straight\"}, \"trajectory\": \"[[ +003.29, +000.44], [ +005.50, +000.75], [ +007.20, +001.01], [ +009.02, +001.25], [ +011.28, +001.51]]\"}",
+    "sec_s": 21.3
+  },
+  {
+    "sample": "val_s11",
+    "dtype": "fp32",
+    "n_tokens": 1158,
+    "n_mask_remaining": 0,
+    "n_image_tokens": 168,
+    "valid_json": false,
+    "traj_parseable": true,
+    "traj": [
+      [
+        2.75,
+        0.05
+      ],
+      [
+        5.1,
+        0.1
+      ],
+      [
+        7.22,
+        0.16
+      ],
+      [
+        9.3,
+        0.22
+      ],
+      [
+        11.3,
+        0.27
+      ]
+    ],
+    "gen_text": "{\"critical_objects\": {\"nearby_vehicle\": \"yes\", \"pedestrian\": \"no\", \"cyclist\": \"no\", \"construction\": \"no\", \"traffic_element\": \"no\", \"weather_condition\": \"no\", \"road_hazard\": \"no\", \"emergency_vehicle\": \"no\", \"animal\": \"no\", \"special_vehicle\": \"no\", \"conflicting_vehicle\": \"no\", \"door_opening_vehicle\": \"no\"}, \"explanation\": \"There is a nearby vehicle visible ahead in the front camera, positioned in the ego lane. This vehicle may influence the ego vehicle's speed and lane keeping over the next few seconds. The ego car is expected to decelerate to maintain a safe distance and continue straight behind this vehicle without lateral lane changes or turns.\", \"future_meta_behavior\": {\"longitudinal\": \"slow down\", \"lateral\": \"go straight \"trajectory\": \"[[ +002.75, +000.05], [ +005.10, +000.10], [ +007.22, +000.16], [ +009.30, +000.22], [ +011.30, +000.27]]\"}",
+    "sec_s": 19.8
+  },
+  {
+    "sample": "val_s12",
+    "dtype": "fp32",
+    "n_tokens": 1156,
+    "n_mask_remaining": 0,
+    "n_image_tokens": 168,
+    "valid_json": true,
+    "traj_parseable": true,
+    "traj": [
+      [
+        0.06,
+        -0.01
+      ],
+      [
+        0.06,
+        -0.02
+      ],
+      [
+        0.06,
+        -0.02
+      ],
+      [
+        0.06,
+        -0.02
+      ],
+      [
+        0.06,
+        -0.02
+      ]
+    ],
+    "gen_text": "{\"critical_objects\": {\"nearby_vehicle\": \"yes\", \"pedestrian\": \"no\", \"cyclist\": \"no\", \"construction\": \"no\", \"traffic_element\": \"yes\", \"weather_condition\": \"no\", \"road_hazard\": \"no\", \"emergency_vehicle\": \"no\", \"animal\": \"no\", \"special_vehicle\": \"no\", \"conflicting_vehicle\": \"no\", \"door_opening_vehicle\": \"no\"}, \"explanation\": \"There is a nearby vehicle directly ahead in the lane, visible in the front camera, which will influence the ego vehicle's speed and spacing decisions. The vehicle's position and brake lights indicate it may slow down or maintain speed, requiring the ego vehicle to adjust speed accordingly. Additionally, there is a traffic element present.\", \"future_meta_behavior\": {\"longitudinal\": \"slow down\", \"lateral\": \"go straight\"}, \"trajectory\": \"[[ +000.06, -000.01], [ +000.06, -000.02], [ +000.06, -000.02], [ +000.06, -000.02], [ +000.06, -000.02]]\"}",
+    "sec_s": 19.3
+  },
+  {
+    "sample": "val_s13",
+    "dtype": "fp32",
+    "n_tokens": 1154,
+    "n_mask_remaining": 0,
+    "n_image_tokens": 168,
+    "valid_json": true,
+    "traj_parseable": true,
+    "traj": [
+      [
+        0.04,
+        0.0
+      ],
+      [
+        0.79,
+        -0.02
+      ],
+      [
+        2.77,
+        -0.25
+      ],
+      [
+        5.5,
+        -1.22
+      ],
+      [
+        8.28,
+        -3.42
+      ]
+    ],
+    "gen_text": "{\"critical_objects\": {\"nearby_vehicle\": \"yes\", \"pedestrian\": \"no\", \"cyclist\": \"no\", \"construction\": \"no\", \"traffic_element\": \"yes\", \"weather_condition\": \"no\", \"road_hazard\": \"no\", \"emergency_vehicle\": \"no\", \"animal\": \"no\", \"special_vehicle\": \"no\", \"conflicting_vehicle\": \"yes\", \"door_opening_vehicle\": \"no\"}, \"explanation\": \"There is a nearby vehicle visible in the front camera, positioned ahead and slightly to the right, which may influence the ego vehicle's speed and lateral position. A stop sign is present on the right side of the road, requiring the ego vehicle to stop or yield before proceeding. This stop sign creates a conflicting traffic.\", \"future_meta_behavior\": {\"longitudinal\": \"slow down\", \"lateral\": \"right turn\"}, \"trajectory\": \"[[ +000.04, +000.00], [ +000.79, -000.02], [ +002.77, -000.25], [ +005.50, -001.22], [ +008.28, -003.42]]\"}",
+    "sec_s": 19.8
+  },
+  {
+    "sample": "val_s14",
+    "dtype": "fp32",
+    "n_tokens": 1156,
+    "n_mask_remaining": 0,
+    "n_image_tokens": 168,
+    "valid_json": false,
+    "traj_parseable": true,
+    "traj": [
+      [
+        0.62,
+        -0.02
+      ],
+      [
+        1.51,
+        -0.04
+      ],
+      [
+        2.52,
+        -0.03
+      ],
+      [
+        3.8,
+        0.02
+      ],
+      [
+        5.57,
+        0.16
+      ]
+    ],
+    "gen_text": "{\"critical_objects\": {\"nearby_vehicle\": \"yes\", \"pedestrian\": \"no\", \"cyclist\": \"no\", \"construction\": \"no\", \"traffic_element\": \"no\", \"weather_condition\": \"no\", \"road_hazard\": \"no\", \"emergency_vehicle\": \"no\", \"animal\": \"no\", \"special_vehicle\": \"no\", \"conflicting_vehicle\": \"no\", \"door_opening_vehicle\": \"no\"}, \"explanation\": \"There is a nearby vehicle directly ahead in the same lane, visible in the front camera, which may influence the ego vehicle's speed and lane keeping. The vehicle appears not show brake lights or turn signals, indicating it is likely moving steadily. No pedestrians, cyclists, or conflicting vehicles are present in the immediate path.\", \"future_meta_behavior\": {\"longitudinal\": \"keep speed\", \"lateral\": \"lane follow \"trajectory\": \"[[ +000.62, -000.02], [ +001.51, -000.04], [ +002.52, -000.03], [ +003.80, +000.02], [ +005.57, +000.16]]\"}",
+    "sec_s": 20.0
+  },
+  {
+    "sample": "val_s15",
+    "dtype": "fp32",
+    "n_tokens": 1160,
+    "n_mask_remaining": 0,
+    "n_image_tokens": 168,
+    "valid_json": false,
+    "traj_parseable": true,
+    "traj": [
+      [
+        6.96,
+        -0.16
+      ],
+      [
+        13.58,
+        -0.42
+      ],
+      [
+        19.76,
+        -0.68
+      ],
+      [
+        25.38,
+        -0.79
+      ],
+      [
+        30.48,
+        -0.69
+      ]
+    ],
+    "gen_text": "{\"critical_objects\": {\"nearby_vehicle\": \"no\", \"pedestrian\": \"no\", \"cyclist\": \"no\", \"construction\": \"no\", \"traffic_element\": \"no\", \"weather_condition\": \"no\", \"road_hazard\": \"no\", \"emergency_vehicle\": \"no\", \"animal\": \"no\", \"special_vehicle\": \"no\", \"conflicting_vehicle\": \"no\", \"door_opening_vehicle\": \"no\"}, \"explanation\": \"There are no vehicles, pedestrians, cyclists, construction zones, traffic elements, or other hazards visible in the current camera views that would affect the ego vehicle's behavior within the next 5 seconds. The road ahead is clear, with no signs, signals, or obstructions present that would require yielding or lane adjustment.\", \"future_meta_behavior\": {\"longitudinal\": \"keep speed\", \"lateral\": \"go straight \"trajectory\": \"[[ +006.96, -000.16], [ +013.58, -000.42], [ +019.76, -000.68], [ +025.38, -000.79], [ +030.48, -000.69]]\"}",
+    "sec_s": 19.4
+  },
+  {
+    "sample": "val_s16",
+    "dtype": "fp32",
+    "n_tokens": 1158,
+    "n_mask_remaining": 0,
+    "n_image_tokens": 168,
+    "valid_json": false,
+    "traj_parseable": true,
+    "traj": [
+      [
+        4.4,
+        0.05
+      ],
+      [
+        8.62,
+        0.2
+      ],
+      [
+        12.35,
+        0.42
+      ],
+      [
+        15.52,
+        0.62
+      ],
+      [
+        18.3,
+        0.71
+      ]
+    ],
+    "gen_text": "{\"critical_objects\": {\"nearby_vehicle\": \"yes\", \"pedestrian\": \"no\", \"cyclist\": \"no\", \"construction\": \"no\", \"traffic_element\": \"no\", \"weather_condition\": \"no\", \"road_hazard\": \"no\", \"emergency_vehicle\": \"no\", \"animal\": \"no\", \"special_vehicle\": \"no\", \"conflicting_vehicle\": \"no\", \"door_opening_vehicle\": \"no\"}, \"explanation\": \"There is a nearby vehicle directly ahead in the same lane, visible in the front camera, which may influence the ego vehicle's speed and lane keeping. This vehicle's presence requires the ego vehicle to maintain a safe following distance and possibly adjust speed. No pedestrians, cyclists, or conflicting vehicles are in the immediate path.\", \"future_meta_behavior\": {\"longitudinal\": \"keep speed\", \"lateral\": \"lane follow \"trajectory\": \"[[ +004.40, +000.05], [ +008.62, +000.20], [ +012.35, +000.42], [ +015.52, +000.62], [ +018.30, +000.71]]\"}",
+    "sec_s": 20.1
+  },
+  {
+    "sample": "val_s17",
+    "dtype": "fp32",
+    "n_tokens": 1156,
+    "n_mask_remaining": 0,
+    "n_image_tokens": 168,
+    "valid_json": false,
+    "traj_parseable": true,
+    "traj": [
+      [
+        0.42,
+        0.0
+      ],
+      [
+        0.41,
+        0.0
+      ],
+      [
+        0.41,
+        0.0
+      ],
+      [
+        0.41,
+        0.0
+      ],
+      [
+        0.41,
+        0.0
+      ]
+    ],
+    "gen_text": "{\"critical_objects\": {\"nearby_vehicle\": \"yes\", \"pedestrian\": \"no\", \"cyclist\": \"no\", \"construction\": \"no\", \"traffic_element\": \"no\", \"weather_condition\": \"no\", \"road_hazard\": \"no\", \"emergency_vehicle\": \"no\", \"animal\": \"no\", \"special_vehicle\": \"no\", \"conflicting_vehicle\": \"no\", \"door_opening_vehicle\": \"no\"}, \"explanation\": \"There is a nearby vehicle visible ahead in the front camera, positioned in the same lane as the ego vehicle. This vehicle's presence requires the ego vehicle to reduce speed to maintain a safe following distance. No pedestrians, cyclists, or other conflicting objects are observed that would require lane changes or stops in the immediate future.\", \"future_meta_behavior\": {\"longitudinal\": \"slow down\", \"lateral\": \"lane follow \"trajectory\": \"[[ +000.42, +000.00], [ +000.41, +000.00], [ +000.41, +000.00], [ +000.41, +000.00], [ +000.41, +000.00]]\"}",
+    "sec_s": 17.7
+  },
+  {
+    "sample": "val_s18",
+    "dtype": "fp32",
+    "n_tokens": 1160,
+    "n_mask_remaining": 0,
+    "n_image_tokens": 168,
+    "valid_json": false,
+    "traj_parseable": true,
+    "traj": [
+      [
+        9.21,
+        -0.04
+      ],
+      [
+        18.21,
+        -0.12
+      ],
+      [
+        26.79,
+        -0.25
+      ],
+      [
+        34.85,
+        -0.42
+      ],
+      [
+        42.38,
+        -0.42
+      ]
+    ],
+    "gen_text": "{\"critical_objects\": {\"nearby_vehicle\": \"yes\", \"pedestrian\": \"no\", \"cyclist\": \"no\", \"construction\": \"no\", \"traffic_element\": \"no\", \"weather_condition\": \"no\", \"road_hazard\": \"no\", \"emergency_vehicle\": \"no\", \"animal\": \"no\", \"special_vehicle\": \"no\", \"conflicting_vehicle\": \"no\", \"door_opening_vehicle\": \"no\"}, \"explanation\": \"There is a nearby vehicle directly ahead in the same lane, visible in the front camera, which may influence the ego vehicle's speed and lane keeping. This vehicle's presence requires the ego vehicle to maintain a safe following distance and possibly adjust speed. No pedestrians, cyclists, or conflicting vehicles are in the immediate path.\", \"future_meta_behavior\": {\"longitudinal\": \"keep speed\", \"lateral\": \"lane follow \"trajectory\": \"[[ +009.21, -000.04], [ +018.21, -000.12], [ +026.79, -000.25], [ +034.85, -000.42], [ +042.38, -000.42]]\"}",
+    "sec_s": 20.1
+  },
+  {
+    "sample": "val_s19",
+    "dtype": "fp32",
+    "n_tokens": 1158,
+    "n_mask_remaining": 0,
+    "n_image_tokens": 168,
+    "valid_json": false,
+    "traj_parseable": true,
+    "traj": [
+      [
+        3.09,
+        0.0
+      ],
+      [
+        5.2,
+        0.0
+      ],
+      [
+        7.12,
+        -0.01
+      ],
+      [
+        9.12,
+        -0.03
+      ],
+      [
+        11.18,
+        -0.07
+      ]
+    ],
+    "gen_text": "{\"critical_objects\": {\"nearby_vehicle\": \"yes\", \"pedestrian\": \"no\", \"cyclist\": \"no\", \"construction\": \"no\", \"traffic_element\": \"no\", \"weather_condition\": \"no\", \"road_hazard\": \"no\", \"emergency_vehicle\": \"no\", \"animal\": \"no\", \"special_vehicle\": \"no\", \"conflicting_vehicle\": \"no\", \"door_opening_vehicle\": \"no\"}, \"explanation\": \"There is a nearby vehicle directly ahead in the same lane, visible in the front camera, which will influence the ego vehicle's longitudinal behavior by requiring it to slow down or maintain a safe following distance. No pedestrians, cyclists, or conflicting vehicles are present that would affect lateral movement or require a stop or lane change.\", \"future_meta_behavior\": {\"longitudinal\": \"slow down\", \"lateral\": \"lane follow \"trajectory\": \"[[ +003.09, +000.00], [ +005.20, +000.00], [ +007.12, -000.01], [ +009.12, -000.03], [ +011.18, -000.07]]\"}",
+    "sec_s": 21.0
+  }
+]

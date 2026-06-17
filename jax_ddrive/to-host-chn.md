@@ -82,6 +82,7 @@
 ### 诚实的开放项
 - **Pseudo text labels（默认）+ teacher-distill 升级管线（已建）**:三档 parquet（400/50k/415k）默认是伪 `critical_objects`/`explanation`（trajectory 是真 GT）。teacher-distill（Route A）管线已构建并验证 → distill-400 完成（L=1280,已上传 GCS）;distill-50k **已暂停**（本里程碑不需要,2026-06-13 停,中间产物已清理）。详见 §2.4 与 `docs/2implementation-details/LABELING.md`。
 - **≥8-chip 多节点跑未发生**:FSDP 数学在 CPU 8-device 仿真 + 单芯 TPU 已证;多节点只差 GCP trial 容量(Waymo 内部容量下跑验证阶梯 step 2 即可)。
+- **B4 GPU↔TPU 生成数值(2026-06-16 彩排)**:eval_sasd sampler 经 backend 代理确认 **fp32 可移植**(GPU fp32 确定性;GPU==CPU fp32 在 20 val 逐 token 位等,含 bf16 下最难的 3 个样本)→ **TPU-fp32 推理预期与 GPU 逐位一致、无需改 TPU 码**;真 v6e 确认**仍卡 GCP trial 容量**(跨 zone 重试均无可用)。bf16 为 confidence-cascade 的设计性分歧(求可信用 fp32)。详见 `docs/2implementation-details/INFERENCE_DEPLOY.md` §B4。
 - **训练循环 eval 未接线**(`eval_interval: 0`):val v2 AR(479,训练格式)已就绪,接上是小改动。
 - HF datasets 是**私有的**(WOD license 禁止再分发);GCS bucket 属 $300 trial 项目(注意到期迁移)。
 - 分支 `jax-ddrive-port` 与 maxtext fork 均**未推远端**(本地 + GCS tarball)。

@@ -1,0 +1,21 @@
+bash: /home/kaiwen/miniconda3/lib/libtinfo.so.6: no version information available (required by bash)
+[harness] jax=0.10.0 dev=[CudaDevice(id=0)] dtype=fp32 matmul=highest
+[transformers] PyTorch was not found. Models won't be available and only tokenizers, configuration and file/data utilities can be used.
+[transformers] DeepseekV32Config got `key=rope_scaling` in kwargs but hasn't set it as attribute. For RoPE standardization you need to set `self.rope_parameters` in model's config. 
+[harness] text loaded (18s)
+[transformers] `layer_type_validation` is deprecated and will be removed in v5.20. Use `PreTrainedConfig.validate_layer_type` instead
+/home/kaiwen/jax-dlm-baseline/.venv/lib/python3.11/site-packages/transformers/modeling_rope_utils.py:1034: FutureWarning: `rope_config_validation` is deprecated and has been removed. Its functionality has been moved to RotaryEmbeddingConfigMixin.validate_rope method. PreTrainedConfig inherits this class, so please call self.validate_rope() instead. Also, make sure to use the new rope_parameters syntax. You can call self.standardize_rope_params() in the meantime.
+  warnings.warn(
+[transformers] Unrecognized keys in `rope_parameters` for 'rope_type'='default': {'mrope_section'}
+[transformers] Unrecognized keys in `rope_parameters` for 'rope_type'='default': {'mrope_section'}
+[transformers] Fast_dDriveConfig got `key=rope_scaling` in kwargs but hasn't set it as attribute. For RoPE standardization you need to set `self.rope_parameters` in model's config. 
+[transformers] Unrecognized keys in `rope_parameters` for 'rope_type'='default': {'mrope_section'}
+[transformers] `layer_type_validation` is deprecated and will be removed in v5.20. Use `PreTrainedConfig.validate_layer_type` instead
+[transformers] `layer_type_validation` is deprecated and will be removed in v5.20. Use `PreTrainedConfig.validate_layer_type` instead
+[harness] val_s00 fp32: mask_rem=0 valid_json=False traj=ok (15.4s)
+[harness] val_s01 fp32: mask_rem=0 valid_json=False traj=ok (16.7s)
+[harness] val_s02 fp32: mask_rem=0 valid_json=False traj=ok (15.4s)
+[harness] val_s03 fp32: mask_rem=0 valid_json=True traj=ok (12.5s)
+[harness] val_s04 fp32: mask_rem=0 valid_json=False traj=ok (17.6s)
+[harness] wrote jax_ddrive/scripts/temp/test5_gpu_fp32.json (5 samples)
+TEST5_EXIT=0

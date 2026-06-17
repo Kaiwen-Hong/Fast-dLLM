@@ -1,0 +1,1108 @@
+08:03:10 provision retry: zones=us-east5-a us-east5-b us-east5-c us-east1-d us-central1-a us-south1-a accel=v6e-1 until +5h
+08:03:10 === round 1 ===
+08:03:10  try us-east5-a
+Create request issued for: [sasd-parity]
+Waiting for operation [projects/project-8a53f5ab-2ea2-4892-a78/locations/us-east5-a/operations/operation-1781614990480-6545e90a25468-f515f8f8-3a102bef] to complete...
+.....done.
+Created queued_resource [sasd-parity].
+08:05:58   [us-east5-a] still WAITING_FOR_RESOURCES after ~2.7m
+08:06:00  try us-east5-b
+Create request issued for: [sasd-parity]
+Waiting for operation [projects/project-8a53f5ab-2ea2-4892-a78/locations/us-east5-b/operations/operation-1781615160770-6545e9ac8c104-a97c9792-ffc79824] to complete...
+......done.
+Created queued_resource [sasd-parity].
+08:08:49   [us-east5-b] still WAITING_FOR_RESOURCES after ~2.7m
+08:08:51  try us-east5-c
+ERROR: (gcloud.compute.tpus.queued-resources.create) HttpError accessing <https://tpu.googleapis.com/v2/projects/project-8a53f5ab-2ea2-4892-a78/locations/us-east5-c/queuedResources?alt=json&queuedResourceId=sasd-parity>: response: <{'vary': 'Origin, X-Origin, Referer', 'content-type': 'application/json; charset=UTF-8', 'content-encoding': 'gzip', 'date': 'Tue, 16 Jun 2026 13:09:41 GMT', 'server': 'ESF', 'x-xss-protection': '0', 'x-frame-options': 'SAMEORIGIN', 'x-content-type-options': 'nosniff', 'alt-svc': 'h3=":443"; ma=2592000,h3-29=":443"; ma=2592000', 'transfer-encoding': 'chunked', 'status': 429}>, content <{
+  "error": {
+    "code": 429,
+    "message": "Quota limit 'TPUV6EPerProjectPerZoneForTPUAPI' has been exceeded. Limit: 0 in zone us-east5-c.",
+    "status": "RESOURCE_EXHAUSTED",
+    "details": [
+      {
+        "@type": "type.googleapis.com/google.rpc.QuotaFailure",
+        "violations": [
+          {
+            "subject": "project:23815087907",
+            "description": "Quota 'TPUV6EPerProjectPerZoneForTPUAPI' exhausted. Limit 0 in zone us-east5-c"
+          }
+        ]
+      }
+    ]
+  }
+}
+>
+This may be due to network connectivity issues. Please check your network settings, and the status of the service you are trying to reach.
+08:09:42   [us-east5-c] create rejected
+08:09:42  try us-east1-d
+Create request issued for: [sasd-parity]
+Waiting for operation [projects/project-8a53f5ab-2ea2-4892-a78/locations/us-east1-d/operations/operation-1781615383091-6545ea8091918-dfe488a0-6dad5e54] to complete...
+.....................failed.
+ERROR: (gcloud.compute.tpus.queued-resources.create) {
+  "code": 7,
+  "message": "User does not have permission to submit requests into this queue for accelerator type \"v6e-1\" in location us-east1-d. [EID: 0x9c7e3d202d774157]"
+}
+08:09:52   [us-east1-d] create rejected
+08:09:53  try us-central1-a
+Create request issued for: [sasd-parity]
+Waiting for operation [projects/project-8a53f5ab-2ea2-4892-a78/locations/us-central1-a/operations/operation-1781615393716-6545ea8ab3abd-017b9f81-b38c324d] to complete...
+.................failed.
+ERROR: (gcloud.compute.tpus.queued-resources.create) {
+  "code": 8,
+  "message": "Insufficient capacity. Try again in a different zone or at a later time.  [EID: 0x476bc8a7b3252c88]"
+}
+08:10:00   [us-central1-a] create rejected
+08:10:00  try us-south1-a
+Create request issued for: [sasd-parity]
+Waiting for operation [projects/project-8a53f5ab-2ea2-4892-a78/locations/us-south1-a/operations/operation-1781615401034-6545ea91ae4d8-cd08a564-ca6e92de] to complete...
+...................failed.
+ERROR: (gcloud.compute.tpus.queued-resources.create) {
+  "code": 8,
+  "message": "Insufficient capacity. Try again in a different zone or at a later time.  [EID: 0xe38875d50c5f49da]"
+}
+08:10:08   [us-south1-a] create rejected
+08:10:08 round 1: no capacity anywhere; backoff 8m
+08:18:08 === round 2 ===
+08:18:08  try us-east5-a
+Create request issued for: [sasd-parity]
+Waiting for operation [projects/project-8a53f5ab-2ea2-4892-a78/locations/us-east5-a/operations/operation-1781615889395-6545ec636afb7-9622c7cf-48eb2361] to complete...
+.....done.
+Created queued_resource [sasd-parity].
+08:20:16   [us-east5-a] none
+08:20:17  try us-east5-b
+Create request issued for: [sasd-parity]
+Waiting for operation [projects/project-8a53f5ab-2ea2-4892-a78/locations/us-east5-b/operations/operation-1781616017779-6545ecdddab37-43d4661d-abe8acf5] to complete...
+......done.
+Created queued_resource [sasd-parity].
+08:23:06   [us-east5-b] still WAITING_FOR_RESOURCES after ~2.7m
+08:23:08  try us-east5-c
+ERROR: (gcloud.compute.tpus.queued-resources.create) HttpError accessing <https://tpu.googleapis.com/v2/projects/project-8a53f5ab-2ea2-4892-a78/locations/us-east5-c/queuedResources?alt=json&queuedResourceId=sasd-parity>: response: <{'vary': 'Origin, X-Origin, Referer', 'content-type': 'application/json; charset=UTF-8', 'content-encoding': 'gzip', 'date': 'Tue, 16 Jun 2026 13:23:57 GMT', 'server': 'ESF', 'x-xss-protection': '0', 'x-frame-options': 'SAMEORIGIN', 'x-content-type-options': 'nosniff', 'alt-svc': 'h3=":443"; ma=2592000,h3-29=":443"; ma=2592000', 'transfer-encoding': 'chunked', 'status': 429}>, content <{
+  "error": {
+    "code": 429,
+    "message": "Quota limit 'TPUV6EPerProjectPerZoneForTPUAPI' has been exceeded. Limit: 0 in zone us-east5-c.",
+    "status": "RESOURCE_EXHAUSTED",
+    "details": [
+      {
+        "@type": "type.googleapis.com/google.rpc.QuotaFailure",
+        "violations": [
+          {
+            "subject": "project:23815087907",
+            "description": "Quota 'TPUV6EPerProjectPerZoneForTPUAPI' exhausted. Limit 0 in zone us-east5-c"
+          }
+        ]
+      }
+    ]
+  }
+}
+>
+This may be due to network connectivity issues. Please check your network settings, and the status of the service you are trying to reach.
+08:23:57   [us-east5-c] create rejected
+08:23:58  try us-east1-d
+Create request issued for: [sasd-parity]
+Waiting for operation [projects/project-8a53f5ab-2ea2-4892-a78/locations/us-east1-d/operations/operation-1781616238647-6545edb07dabe-123bef3e-3b16bd11] to complete...
+......failed.
+ERROR: (gcloud.compute.tpus.queued-resources.create) {
+  "code": 7,
+  "message": "User does not have permission to submit requests into this queue for accelerator type \"v6e-1\" in location us-east1-d. [EID: 0x5da615585a9bf2d1]"
+}
+08:24:03   [us-east1-d] create rejected
+08:24:04  try us-central1-a
+Create request issued for: [sasd-parity]
+Waiting for operation [projects/project-8a53f5ab-2ea2-4892-a78/locations/us-central1-a/operations/operation-1781616244784-6545edb657e8e-ec71d77c-a57d6a3b] to complete...
+....................failed.
+ERROR: (gcloud.compute.tpus.queued-resources.create) {
+  "code": 8,
+  "message": "Insufficient capacity. Try again in a different zone or at a later time.  [EID: 0x318d8beb3b17ad9]"
+}
+08:24:12   [us-central1-a] create rejected
+08:24:12  try us-south1-a
+Create request issued for: [sasd-parity]
+Waiting for operation [projects/project-8a53f5ab-2ea2-4892-a78/locations/us-south1-a/operations/operation-1781616253294-6545edbe75756-20f70dc1-fb4e8b61] to complete...
+..................failed.
+ERROR: (gcloud.compute.tpus.queued-resources.create) {
+  "code": 8,
+  "message": "Insufficient capacity. Try again in a different zone or at a later time.  [EID: 0x35f1e7e5a285177b]"
+}
+08:24:19   [us-south1-a] create rejected
+08:24:20 round 2: no capacity anywhere; backoff 8m
+08:32:20 === round 3 ===
+08:32:20  try us-east5-a
+Create request issued for: [sasd-parity]
+Waiting for operation [projects/project-8a53f5ab-2ea2-4892-a78/locations/us-east5-a/operations/operation-1781616740625-6545ef8f36c26-611cafe7-69c2f83f] to complete...
+.....done.
+Created queued_resource [sasd-parity].
+08:35:08   [us-east5-a] still WAITING_FOR_RESOURCES after ~2.7m
+08:35:10  try us-east5-b
+Create request issued for: [sasd-parity]
+Waiting for operation [projects/project-8a53f5ab-2ea2-4892-a78/locations/us-east5-b/operations/operation-1781616910586-6545f0314d1bf-37aec9f1-0729de0e] to complete...
+......done.
+Created queued_resource [sasd-parity].
+08:37:59   [us-east5-b] still WAITING_FOR_RESOURCES after ~2.7m
+08:38:01  try us-east5-c
+ERROR: (gcloud.compute.tpus.queued-resources.create) HttpError accessing <https://tpu.googleapis.com/v2/projects/project-8a53f5ab-2ea2-4892-a78/locations/us-east5-c/queuedResources?alt=json&queuedResourceId=sasd-parity>: response: <{'vary': 'Origin, X-Origin, Referer', 'content-type': 'application/json; charset=UTF-8', 'content-encoding': 'gzip', 'date': 'Tue, 16 Jun 2026 13:38:46 GMT', 'server': 'ESF', 'x-xss-protection': '0', 'x-frame-options': 'SAMEORIGIN', 'x-content-type-options': 'nosniff', 'alt-svc': 'h3=":443"; ma=2592000,h3-29=":443"; ma=2592000', 'transfer-encoding': 'chunked', 'status': 429}>, content <{
+  "error": {
+    "code": 429,
+    "message": "Quota limit 'TPUV6EPerProjectPerZoneForTPUAPI' has been exceeded. Limit: 0 in zone us-east5-c.",
+    "status": "RESOURCE_EXHAUSTED",
+    "details": [
+      {
+        "@type": "type.googleapis.com/google.rpc.QuotaFailure",
+        "violations": [
+          {
+            "subject": "project:23815087907",
+            "description": "Quota 'TPUV6EPerProjectPerZoneForTPUAPI' exhausted. Limit 0 in zone us-east5-c"
+          }
+        ]
+      }
+    ]
+  }
+}
+>
+This may be due to network connectivity issues. Please check your network settings, and the status of the service you are trying to reach.
+08:38:46   [us-east5-c] create rejected
+08:38:47  try us-east1-d
+Create request issued for: [sasd-parity]
+Waiting for operation [projects/project-8a53f5ab-2ea2-4892-a78/locations/us-east1-d/operations/operation-1781617127634-6545f1004b612-daa9bdb4-3f985f38] to complete...
+.....................failed.
+ERROR: (gcloud.compute.tpus.queued-resources.create) {
+  "code": 7,
+  "message": "User does not have permission to submit requests into this queue for accelerator type \"v6e-1\" in location us-east1-d. [EID: 0x39b7d23deecb17c2]"
+}
+08:38:56   [us-east1-d] create rejected
+08:38:57  try us-central1-a
+Create request issued for: [sasd-parity]
+Waiting for operation [projects/project-8a53f5ab-2ea2-4892-a78/locations/us-central1-a/operations/operation-1781617137831-6545f10a04e97-eb34b448-cafad38c] to complete...
+..................failed.
+ERROR: (gcloud.compute.tpus.queued-resources.create) {
+  "code": 8,
+  "message": "Insufficient capacity. Try again in a different zone or at a later time.  [EID: 0xa47d22b36c6ed6fb]"
+}
+08:39:04   [us-central1-a] create rejected
+08:39:04  try us-south1-a
+Create request issued for: [sasd-parity]
+Waiting for operation [projects/project-8a53f5ab-2ea2-4892-a78/locations/us-south1-a/operations/operation-1781617144866-6545f110ba72a-4399a167-4fc43f7c] to complete...
+..................failed.
+ERROR: (gcloud.compute.tpus.queued-resources.create) {
+  "code": 8,
+  "message": "Insufficient capacity. Try again in a different zone or at a later time.  [EID: 0x4d2cc82f54cd1a93]"
+}
+08:39:11   [us-south1-a] create rejected
+08:39:11 round 3: no capacity anywhere; backoff 8m
+08:47:11 === round 4 ===
+08:47:11  try us-east5-a
+Create request issued for: [sasd-parity]
+Waiting for operation [projects/project-8a53f5ab-2ea2-4892-a78/locations/us-east5-a/operations/operation-1781617632084-6545f2e1600ae-ea9328f3-a1def85e] to complete...
+......done.
+Created queued_resource [sasd-parity].
+08:49:59   [us-east5-a] still WAITING_FOR_RESOURCES after ~2.7m
+08:50:01  try us-east5-b
+Create request issued for: [sasd-parity]
+Waiting for operation [projects/project-8a53f5ab-2ea2-4892-a78/locations/us-east5-b/operations/operation-1781617802363-6545f383c4333-ae27c8e0-109ae43d] to complete...
+.....done.
+Created queued_resource [sasd-parity].
+08:52:52   [us-east5-b] still WAITING_FOR_RESOURCES after ~2.7m
+08:52:54  try us-east5-c
+ERROR: (gcloud.compute.tpus.queued-resources.create) HttpError accessing <https://tpu.googleapis.com/v2/projects/project-8a53f5ab-2ea2-4892-a78/locations/us-east5-c/queuedResources?alt=json&queuedResourceId=sasd-parity>: response: <{'vary': 'Origin, X-Origin, Referer', 'content-type': 'application/json; charset=UTF-8', 'content-encoding': 'gzip', 'date': 'Tue, 16 Jun 2026 13:53:40 GMT', 'server': 'ESF', 'x-xss-protection': '0', 'x-frame-options': 'SAMEORIGIN', 'x-content-type-options': 'nosniff', 'alt-svc': 'h3=":443"; ma=2592000,h3-29=":443"; ma=2592000', 'transfer-encoding': 'chunked', 'status': 429}>, content <{
+  "error": {
+    "code": 429,
+    "message": "Quota limit 'TPUV6EPerProjectPerZoneForTPUAPI' has been exceeded. Limit: 0 in zone us-east5-c.",
+    "status": "RESOURCE_EXHAUSTED",
+    "details": [
+      {
+        "@type": "type.googleapis.com/google.rpc.QuotaFailure",
+        "violations": [
+          {
+            "subject": "project:23815087907",
+            "description": "Quota 'TPUV6EPerProjectPerZoneForTPUAPI' exhausted. Limit 0 in zone us-east5-c"
+          }
+        ]
+      }
+    ]
+  }
+}
+>
+This may be due to network connectivity issues. Please check your network settings, and the status of the service you are trying to reach.
+08:53:40   [us-east5-c] create rejected
+08:53:41  try us-east1-d
+Create request issued for: [sasd-parity]
+Waiting for operation [projects/project-8a53f5ab-2ea2-4892-a78/locations/us-east1-d/operations/operation-1781618021777-6545f45503fd0-09172a93-e183f1dd] to complete...
+...................failed.
+ERROR: (gcloud.compute.tpus.queued-resources.create) {
+  "code": 7,
+  "message": "User does not have permission to submit requests into this queue for accelerator type \"v6e-1\" in location us-east1-d. [EID: 0xf6a6db81835263b9]"
+}
+08:53:59   [us-east1-d] create rejected
+08:54:00  try us-central1-a
+Create request issued for: [sasd-parity]
+Waiting for operation [projects/project-8a53f5ab-2ea2-4892-a78/locations/us-central1-a/operations/operation-1781618040807-6545f46729fc0-7b0cd395-172599d5] to complete...
+....................failed.
+ERROR: (gcloud.compute.tpus.queued-resources.create) {
+  "code": 8,
+  "message": "Insufficient capacity. Try again in a different zone or at a later time.  [EID: 0x2d104247df1c4de2]"
+}
+08:54:07   [us-central1-a] create rejected
+08:54:07  try us-south1-a
+Create request issued for: [sasd-parity]
+Waiting for operation [projects/project-8a53f5ab-2ea2-4892-a78/locations/us-south1-a/operations/operation-1781618048233-6545f46e3f1bf-ad52ef76-039306d0] to complete...
+..................failed.
+ERROR: (gcloud.compute.tpus.queued-resources.create) {
+  "code": 8,
+  "message": "Insufficient capacity. Try again in a different zone or at a later time.  [EID: 0x5176859890edf036]"
+}
+08:54:15   [us-south1-a] create rejected
+08:54:15 round 4: no capacity anywhere; backoff 8m
+09:02:15 === round 5 ===
+09:02:15  try us-east5-a
+Create request issued for: [sasd-parity]
+Waiting for operation [projects/project-8a53f5ab-2ea2-4892-a78/locations/us-east5-a/operations/operation-1781618536217-6545f63f9fae2-f19dd890-3fb8dbc0] to complete...
+......done.
+Created queued_resource [sasd-parity].
+09:05:07   [us-east5-a] still WAITING_FOR_RESOURCES after ~2.7m
+09:05:09  try us-east5-b
+Create request issued for: [sasd-parity]
+Waiting for operation [projects/project-8a53f5ab-2ea2-4892-a78/locations/us-east5-b/operations/operation-1781618710442-6545f6e5c70bb-29a95bee-89fa5761] to complete...
+......done.
+Created queued_resource [sasd-parity].
+09:08:05   [us-east5-b] still PROVISIONING after ~2.7m
+09:17:05  try us-east5-c
+ERROR: (gcloud.compute.tpus.queued-resources.create) HttpError accessing <https://tpu.googleapis.com/v2/projects/project-8a53f5ab-2ea2-4892-a78/locations/us-east5-c/queuedResources?alt=json&queuedResourceId=sasd-parity>: response: <{'vary': 'Origin, X-Origin, Referer', 'content-type': 'application/json; charset=UTF-8', 'content-encoding': 'gzip', 'date': 'Tue, 16 Jun 2026 14:17:57 GMT', 'server': 'ESF', 'x-xss-protection': '0', 'x-frame-options': 'SAMEORIGIN', 'x-content-type-options': 'nosniff', 'alt-svc': 'h3=":443"; ma=2592000,h3-29=":443"; ma=2592000', 'transfer-encoding': 'chunked', 'status': 429}>, content <{
+  "error": {
+    "code": 429,
+    "message": "Quota limit 'TPUV6EPerProjectPerZoneForTPUAPI' has been exceeded. Limit: 0 in zone us-east5-c.",
+    "status": "RESOURCE_EXHAUSTED",
+    "details": [
+      {
+        "@type": "type.googleapis.com/google.rpc.QuotaFailure",
+        "violations": [
+          {
+            "subject": "project:23815087907",
+            "description": "Quota 'TPUV6EPerProjectPerZoneForTPUAPI' exhausted. Limit 0 in zone us-east5-c"
+          }
+        ]
+      }
+    ]
+  }
+}
+>
+This may be due to network connectivity issues. Please check your network settings, and the status of the service you are trying to reach.
+09:17:58   [us-east5-c] create rejected
+09:17:59  try us-east1-d
+Create request issued for: [sasd-parity]
+Waiting for operation [projects/project-8a53f5ab-2ea2-4892-a78/locations/us-east1-d/operations/operation-1781619479796-6545f9c37dc1c-e095d05a-5d5d06c5] to complete...
+.....................failed.
+ERROR: (gcloud.compute.tpus.queued-resources.create) {
+  "code": 7,
+  "message": "User does not have permission to submit requests into this queue for accelerator type \"v6e-1\" in location us-east1-d. [EID: 0x3448b76c1e3f86d0]"
+}
+09:18:09   [us-east1-d] create rejected
+09:18:10  try us-central1-a
+Create request issued for: [sasd-parity]
+Waiting for operation [projects/project-8a53f5ab-2ea2-4892-a78/locations/us-central1-a/operations/operation-1781619491006-6545f9ce2e6a9-15ca0323-f22df256] to complete...
+..................failed.
+ERROR: (gcloud.compute.tpus.queued-resources.create) {
+  "code": 8,
+  "message": "Insufficient capacity. Try again in a different zone or at a later time.  [EID: 0xaf11bbfbe33a3634]"
+}
+09:18:17   [us-central1-a] create rejected
+09:18:18  try us-south1-a
+Create request issued for: [sasd-parity]
+Waiting for operation [projects/project-8a53f5ab-2ea2-4892-a78/locations/us-south1-a/operations/operation-1781619499068-6545f9d5ded35-8762fba3-1fda872d] to complete...
+....................failed.
+ERROR: (gcloud.compute.tpus.queued-resources.create) {
+  "code": 8,
+  "message": "Insufficient capacity. Try again in a different zone or at a later time.  [EID: 0x503b7ce6042b4473]"
+}
+09:18:25   [us-south1-a] create rejected
+09:18:26 round 5: no capacity anywhere; backoff 8m
+09:26:26 === round 6 ===
+09:26:26  try us-east5-a
+Create request issued for: [sasd-parity]
+Waiting for operation [projects/project-8a53f5ab-2ea2-4892-a78/locations/us-east5-a/operations/operation-1781619987444-6545fba79f3e2-1f35b000-2d3c5df4] to complete...
+......done.
+Created queued_resource [sasd-parity].
+09:29:19   [us-east5-a] still WAITING_FOR_RESOURCES after ~2.7m
+09:29:22  try us-east5-b
+Create request issued for: [sasd-parity]
+Waiting for operation [projects/project-8a53f5ab-2ea2-4892-a78/locations/us-east5-b/operations/operation-1781620162864-6545fc4eea468-eed83803-29acb803] to complete...
+.....done.
+Created queued_resource [sasd-parity].
+09:32:13   [us-east5-b] still WAITING_FOR_RESOURCES after ~2.7m
+09:32:15  try us-east5-c
+ERROR: (gcloud.compute.tpus.queued-resources.create) HttpError accessing <https://tpu.googleapis.com/v2/projects/project-8a53f5ab-2ea2-4892-a78/locations/us-east5-c/queuedResources?alt=json&queuedResourceId=sasd-parity>: response: <{'vary': 'Origin, X-Origin, Referer', 'content-type': 'application/json; charset=UTF-8', 'content-encoding': 'gzip', 'date': 'Tue, 16 Jun 2026 14:33:08 GMT', 'server': 'ESF', 'x-xss-protection': '0', 'x-frame-options': 'SAMEORIGIN', 'x-content-type-options': 'nosniff', 'alt-svc': 'h3=":443"; ma=2592000,h3-29=":443"; ma=2592000', 'transfer-encoding': 'chunked', 'status': 429}>, content <{
+  "error": {
+    "code": 429,
+    "message": "Quota limit 'TPUV6EPerProjectPerZoneForTPUAPI' has been exceeded. Limit: 0 in zone us-east5-c.",
+    "status": "RESOURCE_EXHAUSTED",
+    "details": [
+      {
+        "@type": "type.googleapis.com/google.rpc.QuotaFailure",
+        "violations": [
+          {
+            "subject": "project:23815087907",
+            "description": "Quota 'TPUV6EPerProjectPerZoneForTPUAPI' exhausted. Limit 0 in zone us-east5-c"
+          }
+        ]
+      }
+    ]
+  }
+}
+>
+This may be due to network connectivity issues. Please check your network settings, and the status of the service you are trying to reach.
+09:33:08   [us-east5-c] create rejected
+09:33:09  try us-east1-d
+Create request issued for: [sasd-parity]
+Waiting for operation [projects/project-8a53f5ab-2ea2-4892-a78/locations/us-east1-d/operations/operation-1781620389912-6545fd27720d0-99b8a41a-a04e400c] to complete...
+......failed.
+ERROR: (gcloud.compute.tpus.queued-resources.create) {
+  "code": 7,
+  "message": "User does not have permission to submit requests into this queue for accelerator type \"v6e-1\" in location us-east1-d. [EID: 0x459698a2fa1e4003]"
+}
+09:33:15   [us-east1-d] create rejected
+09:33:16  try us-central1-a
+Create request issued for: [sasd-parity]
+Waiting for operation [projects/project-8a53f5ab-2ea2-4892-a78/locations/us-central1-a/operations/operation-1781620396880-6545fd2e17297-202852b0-f4152ef9] to complete...
+..................failed.
+ERROR: (gcloud.compute.tpus.queued-resources.create) {
+  "code": 8,
+  "message": "Insufficient capacity. Try again in a different zone or at a later time.  [EID: 0x765a57350fcf1748]"
+}
+09:33:23   [us-central1-a] create rejected
+09:33:24  try us-south1-a
+Create request issued for: [sasd-parity]
+Waiting for operation [projects/project-8a53f5ab-2ea2-4892-a78/locations/us-south1-a/operations/operation-1781620404452-6545fd354fca9-24a74c15-cc4d2278] to complete...
+....................failed.
+ERROR: (gcloud.compute.tpus.queued-resources.create) {
+  "code": 8,
+  "message": "Insufficient capacity. Try again in a different zone or at a later time.  [EID: 0x544a0c196397348c]"
+}
+09:33:31   [us-south1-a] create rejected
+09:33:31 round 6: no capacity anywhere; backoff 8m
+09:41:31 === round 7 ===
+09:41:31  try us-east5-a
+Create request issued for: [sasd-parity]
+Waiting for operation [projects/project-8a53f5ab-2ea2-4892-a78/locations/us-east5-a/operations/operation-1781620892465-6545ff06b78f6-ce953741-ca07a6c8] to complete...
+.....done.
+Created queued_resource [sasd-parity].
+09:44:23   [us-east5-a] still WAITING_FOR_RESOURCES after ~2.7m
+09:44:25  try us-east5-b
+Create request issued for: [sasd-parity]
+Waiting for operation [projects/project-8a53f5ab-2ea2-4892-a78/locations/us-east5-b/operations/operation-1781621065851-6545ffac12106-f5c4b007-147d97eb] to complete...
+......done.
+Created queued_resource [sasd-parity].
+09:47:14   [us-east5-b] still WAITING_FOR_RESOURCES after ~2.7m
+09:47:15  try us-east5-c
+ERROR: (gcloud.compute.tpus.queued-resources.create) HttpError accessing <https://tpu.googleapis.com/v2/projects/project-8a53f5ab-2ea2-4892-a78/locations/us-east5-c/queuedResources?alt=json&queuedResourceId=sasd-parity>: response: <{'vary': 'Origin, X-Origin, Referer', 'content-type': 'application/json; charset=UTF-8', 'content-encoding': 'gzip', 'date': 'Tue, 16 Jun 2026 14:48:07 GMT', 'server': 'ESF', 'x-xss-protection': '0', 'x-frame-options': 'SAMEORIGIN', 'x-content-type-options': 'nosniff', 'alt-svc': 'h3=":443"; ma=2592000,h3-29=":443"; ma=2592000', 'transfer-encoding': 'chunked', 'status': 429}>, content <{
+  "error": {
+    "code": 429,
+    "message": "Quota limit 'TPUV6EPerProjectPerZoneForTPUAPI' has been exceeded. Limit: 0 in zone us-east5-c.",
+    "status": "RESOURCE_EXHAUSTED",
+    "details": [
+      {
+        "@type": "type.googleapis.com/google.rpc.QuotaFailure",
+        "violations": [
+          {
+            "subject": "project:23815087907",
+            "description": "Quota 'TPUV6EPerProjectPerZoneForTPUAPI' exhausted. Limit 0 in zone us-east5-c"
+          }
+        ]
+      }
+    ]
+  }
+}
+>
+This may be due to network connectivity issues. Please check your network settings, and the status of the service you are trying to reach.
+09:48:07   [us-east5-c] create rejected
+09:48:08  try us-east1-d
+Create request issued for: [sasd-parity]
+Waiting for operation [projects/project-8a53f5ab-2ea2-4892-a78/locations/us-east1-d/operations/operation-1781621288764-65460080a8444-3fe85fa4-57b6c8b2] to complete...
+......failed.
+ERROR: (gcloud.compute.tpus.queued-resources.create) {
+  "code": 7,
+  "message": "User does not have permission to submit requests into this queue for accelerator type \"v6e-1\" in location us-east1-d. [EID: 0xaa5e5e38cfc9cb21]"
+}
+09:48:13   [us-east1-d] create rejected
+09:48:14  try us-central1-a
+Create request issued for: [sasd-parity]
+Waiting for operation [projects/project-8a53f5ab-2ea2-4892-a78/locations/us-central1-a/operations/operation-1781621294592-654600863724a-7a44e453-1d5482b0] to complete...
+...................failed.
+ERROR: (gcloud.compute.tpus.queued-resources.create) {
+  "code": 8,
+  "message": "Insufficient capacity. Try again in a different zone or at a later time.  [EID: 0x76543f2258b02e8a]"
+}
+09:48:21   [us-central1-a] create rejected
+09:48:21  try us-south1-a
+Create request issued for: [sasd-parity]
+Waiting for operation [projects/project-8a53f5ab-2ea2-4892-a78/locations/us-south1-a/operations/operation-1781621301993-6546008d46013-feef94e0-ff0103eb] to complete...
+....................failed.
+ERROR: (gcloud.compute.tpus.queued-resources.create) {
+  "code": 8,
+  "message": "Insufficient capacity. Try again in a different zone or at a later time.  [EID: 0xb94a6a85f354f9f2]"
+}
+09:48:29   [us-south1-a] create rejected
+09:48:29 round 7: no capacity anywhere; backoff 8m
+09:56:29 === round 8 ===
+09:56:29  try us-east5-a
+Create request issued for: [sasd-parity]
+Waiting for operation [projects/project-8a53f5ab-2ea2-4892-a78/locations/us-east5-a/operations/operation-1781621790731-6546025f5ed04-43323d6e-f543cb5d] to complete...
+..........done.
+Created queued_resource [sasd-parity].
+09:59:22   [us-east5-a] still WAITING_FOR_RESOURCES after ~2.7m
+09:59:25  try us-east5-b
+Create request issued for: [sasd-parity]
+Waiting for operation [projects/project-8a53f5ab-2ea2-4892-a78/locations/us-east5-b/operations/operation-1781621966184-65460306b212f-8212b0c5-fc87a03c] to complete...
+......done.
+Created queued_resource [sasd-parity].
+10:02:18   [us-east5-b] still WAITING_FOR_RESOURCES after ~2.7m
+10:02:21  try us-east5-c
+ERROR: (gcloud.compute.tpus.queued-resources.create) HttpError accessing <https://tpu.googleapis.com/v2/projects/project-8a53f5ab-2ea2-4892-a78/locations/us-east5-c/queuedResources?alt=json&queuedResourceId=sasd-parity>: response: <{'vary': 'Origin, X-Origin, Referer', 'content-type': 'application/json; charset=UTF-8', 'content-encoding': 'gzip', 'date': 'Tue, 16 Jun 2026 15:03:14 GMT', 'server': 'ESF', 'x-xss-protection': '0', 'x-frame-options': 'SAMEORIGIN', 'x-content-type-options': 'nosniff', 'alt-svc': 'h3=":443"; ma=2592000,h3-29=":443"; ma=2592000', 'transfer-encoding': 'chunked', 'status': 429}>, content <{
+  "error": {
+    "code": 429,
+    "message": "Quota limit 'TPUV6EPerProjectPerZoneForTPUAPI' has been exceeded. Limit: 0 in zone us-east5-c.",
+    "status": "RESOURCE_EXHAUSTED",
+    "details": [
+      {
+        "@type": "type.googleapis.com/google.rpc.QuotaFailure",
+        "violations": [
+          {
+            "subject": "project:23815087907",
+            "description": "Quota 'TPUV6EPerProjectPerZoneForTPUAPI' exhausted. Limit 0 in zone us-east5-c"
+          }
+        ]
+      }
+    ]
+  }
+}
+>
+This may be due to network connectivity issues. Please check your network settings, and the status of the service you are trying to reach.
+10:03:15   [us-east5-c] create rejected
+10:03:16  try us-east1-d
+Create request issued for: [sasd-parity]
+Waiting for operation [projects/project-8a53f5ab-2ea2-4892-a78/locations/us-east1-d/operations/operation-1781622197492-654603e349b72-42ffd8bd-61c1d773] to complete...
+....................failed.
+ERROR: (gcloud.compute.tpus.queued-resources.create) {
+  "code": 7,
+  "message": "User does not have permission to submit requests into this queue for accelerator type \"v6e-1\" in location us-east1-d. [EID: 0xa2ecb31ffa94f3a3]"
+}
+10:03:26   [us-east1-d] create rejected
+10:03:27  try us-central1-a
+Create request issued for: [sasd-parity]
+Waiting for operation [projects/project-8a53f5ab-2ea2-4892-a78/locations/us-central1-a/operations/operation-1781622208266-654603ed901d5-99b7e1a9-8b0bb444] to complete...
+.....................failed.
+ERROR: (gcloud.compute.tpus.queued-resources.create) {
+  "code": 8,
+  "message": "Insufficient capacity. Try again in a different zone or at a later time.  [EID: 0x587d978f21d78666]"
+}
+10:03:35   [us-central1-a] create rejected
+10:03:36  try us-south1-a
+Create request issued for: [sasd-parity]
+Waiting for operation [projects/project-8a53f5ab-2ea2-4892-a78/locations/us-south1-a/operations/operation-1781622216890-654603f5c9940-e4e8e654-94e40f69] to complete...
+..................failed.
+ERROR: (gcloud.compute.tpus.queued-resources.create) {
+  "code": 8,
+  "message": "Insufficient capacity. Try again in a different zone or at a later time.  [EID: 0x7b12e94f83cbd06b]"
+}
+10:03:43   [us-south1-a] create rejected
+10:03:44 round 8: no capacity anywhere; backoff 8m
+10:11:44 === round 9 ===
+10:11:44  try us-east5-a
+Create request issued for: [sasd-parity]
+Waiting for operation [projects/project-8a53f5ab-2ea2-4892-a78/locations/us-east5-a/operations/operation-1781622705288-654605c78f6e8-31ca75e1-c003075a] to complete...
+......done.
+Created queued_resource [sasd-parity].
+10:14:36   [us-east5-a] still WAITING_FOR_RESOURCES after ~2.7m
+10:14:39  try us-east5-b
+Create request issued for: [sasd-parity]
+Waiting for operation [projects/project-8a53f5ab-2ea2-4892-a78/locations/us-east5-b/operations/operation-1781622879680-6546066ddf98a-7553b38e-37b354f6] to complete...
+.....done.
+Created queued_resource [sasd-parity].
+10:17:30   [us-east5-b] still WAITING_FOR_RESOURCES after ~2.7m
+10:17:32  try us-east5-c
+ERROR: (gcloud.compute.tpus.queued-resources.create) HttpError accessing <https://tpu.googleapis.com/v2/projects/project-8a53f5ab-2ea2-4892-a78/locations/us-east5-c/queuedResources?alt=json&queuedResourceId=sasd-parity>: response: <{'vary': 'Origin, X-Origin, Referer', 'content-type': 'application/json; charset=UTF-8', 'content-encoding': 'gzip', 'date': 'Tue, 16 Jun 2026 15:18:23 GMT', 'server': 'ESF', 'x-xss-protection': '0', 'x-frame-options': 'SAMEORIGIN', 'x-content-type-options': 'nosniff', 'alt-svc': 'h3=":443"; ma=2592000,h3-29=":443"; ma=2592000', 'transfer-encoding': 'chunked', 'status': 429}>, content <{
+  "error": {
+    "code": 429,
+    "message": "Quota limit 'TPUV6EPerProjectPerZoneForTPUAPI' has been exceeded. Limit: 0 in zone us-east5-c.",
+    "status": "RESOURCE_EXHAUSTED",
+    "details": [
+      {
+        "@type": "type.googleapis.com/google.rpc.QuotaFailure",
+        "violations": [
+          {
+            "subject": "project:23815087907",
+            "description": "Quota 'TPUV6EPerProjectPerZoneForTPUAPI' exhausted. Limit 0 in zone us-east5-c"
+          }
+        ]
+      }
+    ]
+  }
+}
+>
+This may be due to network connectivity issues. Please check your network settings, and the status of the service you are trying to reach.
+10:18:23   [us-east5-c] create rejected
+10:18:24  try us-east1-d
+Create request issued for: [sasd-parity]
+Waiting for operation [projects/project-8a53f5ab-2ea2-4892-a78/locations/us-east1-d/operations/operation-1781623105281-6546074505c5b-5a19524e-4a49b8d8] to complete...
+......failed.
+ERROR: (gcloud.compute.tpus.queued-resources.create) {
+  "code": 7,
+  "message": "User does not have permission to submit requests into this queue for accelerator type \"v6e-1\" in location us-east1-d. [EID: 0x74fb047ff1cebdd7]"
+}
+10:18:32   [us-east1-d] create rejected
+10:18:33  try us-central1-a
+Create request issued for: [sasd-parity]
+Waiting for operation [projects/project-8a53f5ab-2ea2-4892-a78/locations/us-central1-a/operations/operation-1781623113801-6546074d2607b-87208519-b4b0b83a] to complete...
+.....................failed.
+ERROR: (gcloud.compute.tpus.queued-resources.create) {
+  "code": 8,
+  "message": "Insufficient capacity. Try again in a different zone or at a later time.  [EID: 0xa3710c416e889933]"
+}
+10:18:40   [us-central1-a] create rejected
+10:18:41  try us-south1-a
+Create request issued for: [sasd-parity]
+Waiting for operation [projects/project-8a53f5ab-2ea2-4892-a78/locations/us-south1-a/operations/operation-1781623122476-654607556be27-ae5a5646-f5f83903] to complete...
+...................failed.
+ERROR: (gcloud.compute.tpus.queued-resources.create) {
+  "code": 8,
+  "message": "Insufficient capacity. Try again in a different zone or at a later time.  [EID: 0x9cbc3bde2d62f55f]"
+}
+10:18:49   [us-south1-a] create rejected
+10:18:49 round 9: no capacity anywhere; backoff 8m
+10:26:49 === round 10 ===
+10:26:49  try us-east5-a
+Create request issued for: [sasd-parity]
+Waiting for operation [projects/project-8a53f5ab-2ea2-4892-a78/locations/us-east5-a/operations/operation-1781623610633-65460926f6f0f-562d8392-c988cd3a] to complete...
+......done.
+Created queued_resource [sasd-parity].
+10:29:42   [us-east5-a] still WAITING_FOR_RESOURCES after ~2.7m
+10:29:44  try us-east5-b
+Create request issued for: [sasd-parity]
+Waiting for operation [projects/project-8a53f5ab-2ea2-4892-a78/locations/us-east5-b/operations/operation-1781623785505-654609cdbc3a3-90b6cb05-8a840ca0] to complete...
+......done.
+Created queued_resource [sasd-parity].
+10:32:37   [us-east5-b] still PROVISIONING after ~2.7m
+10:42:24  try us-east5-c
+ERROR: (gcloud.compute.tpus.queued-resources.create) HttpError accessing <https://tpu.googleapis.com/v2/projects/project-8a53f5ab-2ea2-4892-a78/locations/us-east5-c/queuedResources?alt=json&queuedResourceId=sasd-parity>: response: <{'vary': 'Origin, X-Origin, Referer', 'content-type': 'application/json; charset=UTF-8', 'content-encoding': 'gzip', 'date': 'Tue, 16 Jun 2026 15:43:12 GMT', 'server': 'ESF', 'x-xss-protection': '0', 'x-frame-options': 'SAMEORIGIN', 'x-content-type-options': 'nosniff', 'alt-svc': 'h3=":443"; ma=2592000,h3-29=":443"; ma=2592000', 'transfer-encoding': 'chunked', 'status': 429}>, content <{
+  "error": {
+    "code": 429,
+    "message": "Quota limit 'TPUV6EPerProjectPerZoneForTPUAPI' has been exceeded. Limit: 0 in zone us-east5-c.",
+    "status": "RESOURCE_EXHAUSTED",
+    "details": [
+      {
+        "@type": "type.googleapis.com/google.rpc.QuotaFailure",
+        "violations": [
+          {
+            "subject": "project:23815087907",
+            "description": "Quota 'TPUV6EPerProjectPerZoneForTPUAPI' exhausted. Limit 0 in zone us-east5-c"
+          }
+        ]
+      }
+    ]
+  }
+}
+>
+This may be due to network connectivity issues. Please check your network settings, and the status of the service you are trying to reach.
+10:43:12   [us-east5-c] create rejected
+10:43:13  try us-east1-d
+Create request issued for: [sasd-parity]
+Waiting for operation [projects/project-8a53f5ab-2ea2-4892-a78/locations/us-east1-d/operations/operation-1781624594432-65460cd1301ee-53278cc6-6b4c0acd] to complete...
+......failed.
+ERROR: (gcloud.compute.tpus.queued-resources.create) {
+  "code": 7,
+  "message": "User does not have permission to submit requests into this queue for accelerator type \"v6e-1\" in location us-east1-d. [EID: 0xf68046f73a9a1100]"
+}
+10:43:20   [us-east1-d] create rejected
+10:43:21  try us-central1-a
+Create request issued for: [sasd-parity]
+Waiting for operation [projects/project-8a53f5ab-2ea2-4892-a78/locations/us-central1-a/operations/operation-1781624601716-65460cd8226d3-6202959f-1acc2729] to complete...
+.....................failed.
+ERROR: (gcloud.compute.tpus.queued-resources.create) {
+  "code": 8,
+  "message": "Insufficient capacity. Try again in a different zone or at a later time.  [EID: 0x659b47cb4ec572ae]"
+}
+10:43:30   [us-central1-a] create rejected
+10:43:30  try us-south1-a
+Create request issued for: [sasd-parity]
+Waiting for operation [projects/project-8a53f5ab-2ea2-4892-a78/locations/us-south1-a/operations/operation-1781624611465-65460ce16e8bc-def4b096-a3725728] to complete...
+....................failed.
+ERROR: (gcloud.compute.tpus.queued-resources.create) {
+  "code": 8,
+  "message": "Insufficient capacity. Try again in a different zone or at a later time.  [EID: 0xc7c9fa05906e600d]"
+}
+10:43:38   [us-south1-a] create rejected
+10:43:39 round 10: no capacity anywhere; backoff 8m
+10:51:39 === round 11 ===
+10:51:39  try us-east5-a
+Create request issued for: [sasd-parity]
+Waiting for operation [projects/project-8a53f5ab-2ea2-4892-a78/locations/us-east5-a/operations/operation-1781625100221-65460eb38bc3e-fbd94e49-1057e529] to complete...
+......done.
+Created queued_resource [sasd-parity].
+10:54:34   [us-east5-a] still WAITING_FOR_RESOURCES after ~2.7m
+10:54:36  try us-east5-b
+Create request issued for: [sasd-parity]
+Waiting for operation [projects/project-8a53f5ab-2ea2-4892-a78/locations/us-east5-b/operations/operation-1781625277199-65460f5c5356e-31a79061-de0e41bf] to complete...
+.....done.
+Created queued_resource [sasd-parity].
+10:57:34   [us-east5-b] still WAITING_FOR_RESOURCES after ~2.7m
+10:57:36  try us-east5-c
+ERROR: (gcloud.compute.tpus.queued-resources.create) HttpError accessing <https://tpu.googleapis.com/v2/projects/project-8a53f5ab-2ea2-4892-a78/locations/us-east5-c/queuedResources?alt=json&queuedResourceId=sasd-parity>: response: <{'vary': 'Origin, X-Origin, Referer', 'content-type': 'application/json; charset=UTF-8', 'content-encoding': 'gzip', 'date': 'Tue, 16 Jun 2026 15:58:25 GMT', 'server': 'ESF', 'x-xss-protection': '0', 'x-frame-options': 'SAMEORIGIN', 'x-content-type-options': 'nosniff', 'alt-svc': 'h3=":443"; ma=2592000,h3-29=":443"; ma=2592000', 'transfer-encoding': 'chunked', 'status': 429}>, content <{
+  "error": {
+    "code": 429,
+    "message": "Quota limit 'TPUV6EPerProjectPerZoneForTPUAPI' has been exceeded. Limit: 0 in zone us-east5-c.",
+    "status": "RESOURCE_EXHAUSTED",
+    "details": [
+      {
+        "@type": "type.googleapis.com/google.rpc.QuotaFailure",
+        "violations": [
+          {
+            "subject": "project:23815087907",
+            "description": "Quota 'TPUV6EPerProjectPerZoneForTPUAPI' exhausted. Limit 0 in zone us-east5-c"
+          }
+        ]
+      }
+    ]
+  }
+}
+>
+This may be due to network connectivity issues. Please check your network settings, and the status of the service you are trying to reach.
+10:58:26   [us-east5-c] create rejected
+10:58:26  try us-east1-d
+Create request issued for: [sasd-parity]
+Waiting for operation [projects/project-8a53f5ab-2ea2-4892-a78/locations/us-east1-d/operations/operation-1781625515275-6546103f5f568-766bec6a-c554bfcf] to complete...
+......failed.
+ERROR: (gcloud.compute.tpus.queued-resources.create) {
+  "code": 7,
+  "message": "User does not have permission to submit requests into this queue for accelerator type \"v6e-1\" in location us-east1-d. [EID: 0x876d99c0236b947a]"
+}
+10:58:42   [us-east1-d] create rejected
+10:58:43  try us-central1-a
+Create request issued for: [sasd-parity]
+Waiting for operation [projects/project-8a53f5ab-2ea2-4892-a78/locations/us-central1-a/operations/operation-1781625524038-65461047baa98-2b49bed0-da407b2d] to complete...
+......................failed.
+ERROR: (gcloud.compute.tpus.queued-resources.create) {
+  "code": 8,
+  "message": "Insufficient capacity. Try again in a different zone or at a later time.  [EID: 0x26d7a182e9d60cc6]"
+}
+10:58:51   [us-central1-a] create rejected
+10:58:52  try us-south1-a
+Create request issued for: [sasd-parity]
+Waiting for operation [projects/project-8a53f5ab-2ea2-4892-a78/locations/us-south1-a/operations/operation-1781625532978-6546105041530-9d9ae43a-e160fbbc] to complete...
+....................failed.
+ERROR: (gcloud.compute.tpus.queued-resources.create) {
+  "code": 8,
+  "message": "Insufficient capacity. Try again in a different zone or at a later time.  [EID: 0xab027a3e329125cd]"
+}
+10:58:59   [us-south1-a] create rejected
+10:59:00 round 11: no capacity anywhere; backoff 8m
+11:07:00 === round 12 ===
+11:07:00  try us-east5-a
+Create request issued for: [sasd-parity]
+Waiting for operation [projects/project-8a53f5ab-2ea2-4892-a78/locations/us-east5-a/operations/operation-1781626021141-65461221cdc1a-a9b47860-44abf8f3] to complete...
+.....done.
+Created queued_resource [sasd-parity].
+11:09:52   [us-east5-a] still WAITING_FOR_RESOURCES after ~2.7m
+11:09:55  try us-east5-b
+Create request issued for: [sasd-parity]
+Waiting for operation [projects/project-8a53f5ab-2ea2-4892-a78/locations/us-east5-b/operations/operation-1781626195720-654612c84bace-8ec1bec7-dcf3f9e0] to complete...
+......done.
+Created queued_resource [sasd-parity].
+11:12:45   [us-east5-b] still WAITING_FOR_RESOURCES after ~2.7m
+11:12:47  try us-east5-c
+ERROR: (gcloud.compute.tpus.queued-resources.create) HttpError accessing <https://tpu.googleapis.com/v2/projects/project-8a53f5ab-2ea2-4892-a78/locations/us-east5-c/queuedResources?alt=json&queuedResourceId=sasd-parity>: response: <{'vary': 'Origin, X-Origin, Referer', 'content-type': 'application/json; charset=UTF-8', 'content-encoding': 'gzip', 'date': 'Tue, 16 Jun 2026 16:13:33 GMT', 'server': 'ESF', 'x-xss-protection': '0', 'x-frame-options': 'SAMEORIGIN', 'x-content-type-options': 'nosniff', 'alt-svc': 'h3=":443"; ma=2592000,h3-29=":443"; ma=2592000', 'transfer-encoding': 'chunked', 'status': 429}>, content <{
+  "error": {
+    "code": 429,
+    "message": "Quota limit 'TPUV6EPerProjectPerZoneForTPUAPI' has been exceeded. Limit: 0 in zone us-east5-c.",
+    "status": "RESOURCE_EXHAUSTED",
+    "details": [
+      {
+        "@type": "type.googleapis.com/google.rpc.QuotaFailure",
+        "violations": [
+          {
+            "subject": "project:23815087907",
+            "description": "Quota 'TPUV6EPerProjectPerZoneForTPUAPI' exhausted. Limit 0 in zone us-east5-c"
+          }
+        ]
+      }
+    ]
+  }
+}
+>
+This may be due to network connectivity issues. Please check your network settings, and the status of the service you are trying to reach.
+11:13:34   [us-east5-c] create rejected
+11:13:34  try us-east1-d
+Create request issued for: [sasd-parity]
+Waiting for operation [projects/project-8a53f5ab-2ea2-4892-a78/locations/us-east1-d/operations/operation-1781626415568-65461399f5800-84a28f31-e39da673] to complete...
+......failed.
+ERROR: (gcloud.compute.tpus.queued-resources.create) {
+  "code": 7,
+  "message": "User does not have permission to submit requests into this queue for accelerator type \"v6e-1\" in location us-east1-d. [EID: 0x1dd36a3bd347d75d]"
+}
+11:13:42   [us-east1-d] create rejected
+11:13:43  try us-central1-a
+Create request issued for: [sasd-parity]
+Waiting for operation [projects/project-8a53f5ab-2ea2-4892-a78/locations/us-central1-a/operations/operation-1781626423668-654613a1aef8c-77e754ae-fd582696] to complete...
+..................failed.
+ERROR: (gcloud.compute.tpus.queued-resources.create) {
+  "code": 8,
+  "message": "Insufficient capacity. Try again in a different zone or at a later time.  [EID: 0xadac534845bf545d]"
+}
+11:13:50   [us-central1-a] create rejected
+11:13:50  try us-south1-a
+Create request issued for: [sasd-parity]
+Waiting for operation [projects/project-8a53f5ab-2ea2-4892-a78/locations/us-south1-a/operations/operation-1781626431446-654613a919fc5-cbebfa68-3bccba62] to complete...
+......failed.
+ERROR: (gcloud.compute.tpus.queued-resources.create) {
+  "code": 8,
+  "message": "Insufficient capacity. Try again in a different zone or at a later time.  [EID: 0x7da6753fe280a887]"
+}
+11:13:56   [us-south1-a] create rejected
+11:13:57 round 12: no capacity anywhere; backoff 8m
+11:21:57 === round 13 ===
+11:21:57  try us-east5-a
+Create request issued for: [sasd-parity]
+Waiting for operation [projects/project-8a53f5ab-2ea2-4892-a78/locations/us-east5-a/operations/operation-1781626917956-6546157912a20-d28e27a7-fd098394] to complete...
+......done.
+Created queued_resource [sasd-parity].
+11:24:51   [us-east5-a] still WAITING_FOR_RESOURCES after ~2.7m
+11:24:54  try us-east5-b
+Create request issued for: [sasd-parity]
+Waiting for operation [projects/project-8a53f5ab-2ea2-4892-a78/locations/us-east5-b/operations/operation-1781627094526-6546162176abf-a68677e3-9d3eb350] to complete...
+.....done.
+Created queued_resource [sasd-parity].
+11:27:48   [us-east5-b] still WAITING_FOR_RESOURCES after ~2.7m
+11:27:50  try us-east5-c
+ERROR: (gcloud.compute.tpus.queued-resources.create) HttpError accessing <https://tpu.googleapis.com/v2/projects/project-8a53f5ab-2ea2-4892-a78/locations/us-east5-c/queuedResources?alt=json&queuedResourceId=sasd-parity>: response: <{'vary': 'Origin, X-Origin, Referer', 'content-type': 'application/json; charset=UTF-8', 'content-encoding': 'gzip', 'date': 'Tue, 16 Jun 2026 16:28:36 GMT', 'server': 'ESF', 'x-xss-protection': '0', 'x-frame-options': 'SAMEORIGIN', 'x-content-type-options': 'nosniff', 'alt-svc': 'h3=":443"; ma=2592000,h3-29=":443"; ma=2592000', 'transfer-encoding': 'chunked', 'status': 429}>, content <{
+  "error": {
+    "code": 429,
+    "message": "Quota limit 'TPUV6EPerProjectPerZoneForTPUAPI' has been exceeded. Limit: 0 in zone us-east5-c.",
+    "status": "RESOURCE_EXHAUSTED",
+    "details": [
+      {
+        "@type": "type.googleapis.com/google.rpc.QuotaFailure",
+        "violations": [
+          {
+            "subject": "project:23815087907",
+            "description": "Quota 'TPUV6EPerProjectPerZoneForTPUAPI' exhausted. Limit 0 in zone us-east5-c"
+          }
+        ]
+      }
+    ]
+  }
+}
+>
+This may be due to network connectivity issues. Please check your network settings, and the status of the service you are trying to reach.
+11:28:36   [us-east5-c] create rejected
+11:28:37  try us-east1-d
+Create request issued for: [sasd-parity]
+Waiting for operation [projects/project-8a53f5ab-2ea2-4892-a78/locations/us-east1-d/operations/operation-1781627318484-654616f70bf9f-703a6553-2ab0b8b8] to complete...
+......failed.
+ERROR: (gcloud.compute.tpus.queued-resources.create) {
+  "code": 7,
+  "message": "User does not have permission to submit requests into this queue for accelerator type \"v6e-1\" in location us-east1-d. [EID: 0x31ec0e3dd008f0fa]"
+}
+11:28:44   [us-east1-d] create rejected
+11:28:45  try us-central1-a
+Create request issued for: [sasd-parity]
+Waiting for operation [projects/project-8a53f5ab-2ea2-4892-a78/locations/us-central1-a/operations/operation-1781627325922-654616fe23dd6-4b027b31-2256d551] to complete...
+.................failed.
+ERROR: (gcloud.compute.tpus.queued-resources.create) {
+  "code": 8,
+  "message": "Insufficient capacity. Try again in a different zone or at a later time.  [EID: 0x1863c4558bf8294d]"
+}
+11:28:52   [us-central1-a] create rejected
+11:28:52  try us-south1-a
+Create request issued for: [sasd-parity]
+Waiting for operation [projects/project-8a53f5ab-2ea2-4892-a78/locations/us-south1-a/operations/operation-1781627333669-654617058732d-027bf476-58c6e138] to complete...
+....................failed.
+ERROR: (gcloud.compute.tpus.queued-resources.create) {
+  "code": 8,
+  "message": "Insufficient capacity. Try again in a different zone or at a later time.  [EID: 0xd7066c0380af9191]"
+}
+11:29:00   [us-south1-a] create rejected
+11:29:01 round 13: no capacity anywhere; backoff 8m
+11:37:02 === round 14 ===
+11:37:03  try us-east5-a
+Create request issued for: [sasd-parity]
+Waiting for operation [projects/project-8a53f5ab-2ea2-4892-a78/locations/us-east5-a/operations/operation-1781627825971-654618db0611c-29d4dc27-ad2594b2] to complete...
+......done.
+Created queued_resource [sasd-parity].
+11:39:57   [us-east5-a] still WAITING_FOR_RESOURCES after ~2.7m
+11:39:59  try us-east5-b
+Create request issued for: [sasd-parity]
+Waiting for operation [projects/project-8a53f5ab-2ea2-4892-a78/locations/us-east5-b/operations/operation-1781628000307-65461981489d3-bb2fd3a2-06445300] to complete...
+......done.
+Created queued_resource [sasd-parity].
+11:42:51   [us-east5-b] still WAITING_FOR_RESOURCES after ~2.7m
+11:42:53  try us-east5-c
+ERROR: (gcloud.compute.tpus.queued-resources.create) HttpError accessing <https://tpu.googleapis.com/v2/projects/project-8a53f5ab-2ea2-4892-a78/locations/us-east5-c/queuedResources?alt=json&queuedResourceId=sasd-parity>: response: <{'vary': 'Origin, X-Origin, Referer', 'content-type': 'application/json; charset=UTF-8', 'content-encoding': 'gzip', 'date': 'Tue, 16 Jun 2026 16:43:43 GMT', 'server': 'ESF', 'x-xss-protection': '0', 'x-frame-options': 'SAMEORIGIN', 'x-content-type-options': 'nosniff', 'alt-svc': 'h3=":443"; ma=2592000,h3-29=":443"; ma=2592000', 'transfer-encoding': 'chunked', 'status': 429}>, content <{
+  "error": {
+    "code": 429,
+    "message": "Quota limit 'TPUV6EPerProjectPerZoneForTPUAPI' has been exceeded. Limit: 0 in zone us-east5-c.",
+    "status": "RESOURCE_EXHAUSTED",
+    "details": [
+      {
+        "@type": "type.googleapis.com/google.rpc.QuotaFailure",
+        "violations": [
+          {
+            "subject": "project:23815087907",
+            "description": "Quota 'TPUV6EPerProjectPerZoneForTPUAPI' exhausted. Limit 0 in zone us-east5-c"
+          }
+        ]
+      }
+    ]
+  }
+}
+>
+This may be due to network connectivity issues. Please check your network settings, and the status of the service you are trying to reach.
+11:43:44   [us-east5-c] create rejected
+11:43:45  try us-east1-d
+Create request issued for: [sasd-parity]
+Waiting for operation [projects/project-8a53f5ab-2ea2-4892-a78/locations/us-east1-d/operations/operation-1781628226384-65461a58e340c-abaef387-4347f5f9] to complete...
+..........failed.
+ERROR: (gcloud.compute.tpus.queued-resources.create) {
+  "code": 7,
+  "message": "User does not have permission to submit requests into this queue for accelerator type \"v6e-1\" in location us-east1-d. [EID: 0x4b44023d2b53531d]"
+}
+11:43:54   [us-east1-d] create rejected
+11:43:59  try us-central1-a
+Create request issued for: [sasd-parity]
+Waiting for operation [projects/project-8a53f5ab-2ea2-4892-a78/locations/us-central1-a/operations/operation-1781628245620-65461a6b3b7ab-49391c7b-a7506b93] to complete...
+.....failed.
+ERROR: (gcloud.compute.tpus.queued-resources.create) {
+  "code": 8,
+  "message": "Insufficient capacity. Try again in a different zone or at a later time.  [EID: 0x4b9f7220bbd6943b]"
+}
+11:44:11   [us-central1-a] create rejected
+11:44:15  try us-south1-a
+Create request issued for: [sasd-parity]
+Waiting for operation [projects/project-8a53f5ab-2ea2-4892-a78/locations/us-south1-a/operations/operation-1781628256371-65461a757c3e0-852493d9-7a9b7751] to complete...
+......................failed.
+ERROR: (gcloud.compute.tpus.queued-resources.create) {
+  "code": 8,
+  "message": "Insufficient capacity. Try again in a different zone or at a later time.  [EID: 0x5322c07d0d0c7a6c]"
+}
+11:44:23   [us-south1-a] create rejected
+11:44:24 round 14: no capacity anywhere; backoff 8m
+11:52:24 === round 15 ===
+11:52:25  try us-east5-a
+Create request issued for: [sasd-parity]
+Waiting for operation [projects/project-8a53f5ab-2ea2-4892-a78/locations/us-east5-a/operations/operation-1781628747446-65461c49cf9bf-3c25272a-1c72e7e7] to complete...
+......done.
+Created queued_resource [sasd-parity].
+11:55:19   [us-east5-a] still WAITING_FOR_RESOURCES after ~2.7m
+11:55:21  try us-east5-b
+Create request issued for: [sasd-parity]
+Waiting for operation [projects/project-8a53f5ab-2ea2-4892-a78/locations/us-east5-b/operations/operation-1781628922127-65461cf06659b-d64ae200-d71d4d54] to complete...
+......done.
+Created queued_resource [sasd-parity].
+11:58:13   [us-east5-b] still PROVISIONING after ~2.7m
+12:07:55  try us-east5-c
+ERROR: (gcloud.compute.tpus.queued-resources.create) HttpError accessing <https://tpu.googleapis.com/v2/projects/project-8a53f5ab-2ea2-4892-a78/locations/us-east5-c/queuedResources?alt=json&queuedResourceId=sasd-parity>: response: <{'vary': 'Origin, X-Origin, Referer', 'content-type': 'application/json; charset=UTF-8', 'content-encoding': 'gzip', 'date': 'Tue, 16 Jun 2026 17:08:45 GMT', 'server': 'ESF', 'x-xss-protection': '0', 'x-frame-options': 'SAMEORIGIN', 'x-content-type-options': 'nosniff', 'alt-svc': 'h3=":443"; ma=2592000,h3-29=":443"; ma=2592000', 'transfer-encoding': 'chunked', 'status': 429}>, content <{
+  "error": {
+    "code": 429,
+    "message": "Quota limit 'TPUV6EPerProjectPerZoneForTPUAPI' has been exceeded. Limit: 0 in zone us-east5-c.",
+    "status": "RESOURCE_EXHAUSTED",
+    "details": [
+      {
+        "@type": "type.googleapis.com/google.rpc.QuotaFailure",
+        "violations": [
+          {
+            "subject": "project:23815087907",
+            "description": "Quota 'TPUV6EPerProjectPerZoneForTPUAPI' exhausted. Limit 0 in zone us-east5-c"
+          }
+        ]
+      }
+    ]
+  }
+}
+>
+This may be due to network connectivity issues. Please check your network settings, and the status of the service you are trying to reach.
+12:08:49   [us-east5-c] create rejected
+12:08:50  try us-east1-d
+Create request issued for: [sasd-parity]
+Waiting for operation [projects/project-8a53f5ab-2ea2-4892-a78/locations/us-east1-d/operations/operation-1781629731098-65461ff3e4f7a-af762ec3-66ba625f] to complete...
+.....................failed.
+ERROR: (gcloud.compute.tpus.queued-resources.create) {
+  "code": 7,
+  "message": "User does not have permission to submit requests into this queue for accelerator type \"v6e-1\" in location us-east1-d. [EID: 0xd39dd6fd7cbcfb0b]"
+}
+12:08:59   [us-east1-d] create rejected
+12:09:01  try us-central1-a
+Create request issued for: [sasd-parity]
+Waiting for operation [projects/project-8a53f5ab-2ea2-4892-a78/locations/us-central1-a/operations/operation-1781629741795-65461ffe18a26-67fdd5ae-be1e0174] to complete...
+...................failed.
+ERROR: (gcloud.compute.tpus.queued-resources.create) {
+  "code": 8,
+  "message": "Insufficient capacity. Try again in a different zone or at a later time.  [EID: 0x6b71097254bdeba7]"
+}
+12:09:08   [us-central1-a] create rejected
+12:09:09  try us-south1-a
+Create request issued for: [sasd-parity]
+Waiting for operation [projects/project-8a53f5ab-2ea2-4892-a78/locations/us-south1-a/operations/operation-1781629750046-65462005f6d65-3bea326f-f7822bf0] to complete...
+......failed.
+ERROR: (gcloud.compute.tpus.queued-resources.create) {
+  "code": 8,
+  "message": "Insufficient capacity. Try again in a different zone or at a later time.  [EID: 0x81a1e823bbfc61e]"
+}
+12:09:14   [us-south1-a] create rejected
+12:09:15 round 15: no capacity anywhere; backoff 8m
+12:17:15 === round 16 ===
+12:17:15  try us-east5-a
+Create request issued for: [sasd-parity]
+Waiting for operation [projects/project-8a53f5ab-2ea2-4892-a78/locations/us-east5-a/operations/operation-1781630236204-654621d599c6e-69fd2f3d-7cd5c2b8] to complete...
+......done.
+Created queued_resource [sasd-parity].
+12:20:07   [us-east5-a] still WAITING_FOR_RESOURCES after ~2.7m
+12:20:08  try us-east5-b
+Create request issued for: [sasd-parity]
+Waiting for operation [projects/project-8a53f5ab-2ea2-4892-a78/locations/us-east5-b/operations/operation-1781630408965-6546227a5bc17-e45c3fa7-a5da98ae] to complete...
+.....done.
+Created queued_resource [sasd-parity].
+12:23:02   [us-east5-b] still WAITING_FOR_RESOURCES after ~2.7m
+12:23:04  try us-east5-c
+ERROR: (gcloud.compute.tpus.queued-resources.create) HttpError accessing <https://tpu.googleapis.com/v2/projects/project-8a53f5ab-2ea2-4892-a78/locations/us-east5-c/queuedResources?alt=json&queuedResourceId=sasd-parity>: response: <{'vary': 'Origin, X-Origin, Referer', 'content-type': 'application/json; charset=UTF-8', 'content-encoding': 'gzip', 'date': 'Tue, 16 Jun 2026 17:23:55 GMT', 'server': 'ESF', 'x-xss-protection': '0', 'x-frame-options': 'SAMEORIGIN', 'x-content-type-options': 'nosniff', 'alt-svc': 'h3=":443"; ma=2592000,h3-29=":443"; ma=2592000', 'transfer-encoding': 'chunked', 'status': 429}>, content <{
+  "error": {
+    "code": 429,
+    "message": "Quota limit 'TPUV6EPerProjectPerZoneForTPUAPI' has been exceeded. Limit: 0 in zone us-east5-c.",
+    "status": "RESOURCE_EXHAUSTED",
+    "details": [
+      {
+        "@type": "type.googleapis.com/google.rpc.QuotaFailure",
+        "violations": [
+          {
+            "subject": "project:23815087907",
+            "description": "Quota 'TPUV6EPerProjectPerZoneForTPUAPI' exhausted. Limit 0 in zone us-east5-c"
+          }
+        ]
+      }
+    ]
+  }
+}
+>
+This may be due to network connectivity issues. Please check your network settings, and the status of the service you are trying to reach.
+12:23:55   [us-east5-c] create rejected
+12:23:56  try us-east1-d
+Create request issued for: [sasd-parity]
+Waiting for operation [projects/project-8a53f5ab-2ea2-4892-a78/locations/us-east1-d/operations/operation-1781630637165-65462353fccd2-842899ff-396a84d7] to complete...
+......failed.
+ERROR: (gcloud.compute.tpus.queued-resources.create) {
+  "code": 7,
+  "message": "User does not have permission to submit requests into this queue for accelerator type \"v6e-1\" in location us-east1-d. [EID: 0x6eece3dd1f0e43c7]"
+}
+12:24:03   [us-east1-d] create rejected
+12:24:05  try us-central1-a
+Create request issued for: [sasd-parity]
+Waiting for operation [projects/project-8a53f5ab-2ea2-4892-a78/locations/us-central1-a/operations/operation-1781630645597-6546235c073d2-fb6db713-da4d5f39] to complete...
+...................failed.
+ERROR: (gcloud.compute.tpus.queued-resources.create) {
+  "code": 8,
+  "message": "Insufficient capacity. Try again in a different zone or at a later time.  [EID: 0xabd878f1a4e7502a]"
+}
+12:24:12   [us-central1-a] create rejected
+12:24:13  try us-south1-a
+Create request issued for: [sasd-parity]
+Waiting for operation [projects/project-8a53f5ab-2ea2-4892-a78/locations/us-south1-a/operations/operation-1781630653685-65462363be037-5724fa54-b799aa43] to complete...
+.....................failed.
+ERROR: (gcloud.compute.tpus.queued-resources.create) {
+  "code": 8,
+  "message": "Insufficient capacity. Try again in a different zone or at a later time.  [EID: 0x4fbe2694e4f131eb]"
+}
+12:24:20   [us-south1-a] create rejected
+12:24:21 round 16: no capacity anywhere; backoff 8m
+12:32:21 === round 17 ===
+12:32:21  try us-east5-a
+Create request issued for: [sasd-parity]
+Waiting for operation [projects/project-8a53f5ab-2ea2-4892-a78/locations/us-east5-a/operations/operation-1781631142137-6546253590f4b-62786ade-68b59680] to complete...
+.....done.
+Created queued_resource [sasd-parity].
+12:35:13   [us-east5-a] still WAITING_FOR_RESOURCES after ~2.7m
+12:35:15  try us-east5-b
+Create request issued for: [sasd-parity]
+Waiting for operation [projects/project-8a53f5ab-2ea2-4892-a78/locations/us-east5-b/operations/operation-1781631316168-654625db88f78-47aec603-8d9d5358] to complete...
+......done.
+Created queued_resource [sasd-parity].
+12:38:11   [us-east5-b] still PROVISIONING after ~2.7m
+12:47:34  try us-east5-c
+ERROR: (gcloud.compute.tpus.queued-resources.create) HttpError accessing <https://tpu.googleapis.com/v2/projects/project-8a53f5ab-2ea2-4892-a78/locations/us-east5-c/queuedResources?alt=json&queuedResourceId=sasd-parity>: response: <{'vary': 'Origin, X-Origin, Referer', 'content-type': 'application/json; charset=UTF-8', 'content-encoding': 'gzip', 'date': 'Tue, 16 Jun 2026 17:48:22 GMT', 'server': 'ESF', 'x-xss-protection': '0', 'x-frame-options': 'SAMEORIGIN', 'x-content-type-options': 'nosniff', 'alt-svc': 'h3=":443"; ma=2592000,h3-29=":443"; ma=2592000', 'transfer-encoding': 'chunked', 'status': 429}>, content <{
+  "error": {
+    "code": 429,
+    "message": "Quota limit 'TPUV6EPerProjectPerZoneForTPUAPI' has been exceeded. Limit: 0 in zone us-east5-c.",
+    "status": "RESOURCE_EXHAUSTED",
+    "details": [
+      {
+        "@type": "type.googleapis.com/google.rpc.QuotaFailure",
+        "violations": [
+          {
+            "subject": "project:23815087907",
+            "description": "Quota 'TPUV6EPerProjectPerZoneForTPUAPI' exhausted. Limit 0 in zone us-east5-c"
+          }
+        ]
+      }
+    ]
+  }
+}
+>
+This may be due to network connectivity issues. Please check your network settings, and the status of the service you are trying to reach.
+12:48:22   [us-east5-c] create rejected
+12:48:23  try us-east1-d
+Create request issued for: [sasd-parity]
+Waiting for operation [projects/project-8a53f5ab-2ea2-4892-a78/locations/us-east1-d/operations/operation-1781632103783-654628caa9b57-2b2a5259-82d87646] to complete...
+......failed.
+ERROR: (gcloud.compute.tpus.queued-resources.create) {
+  "code": 7,
+  "message": "User does not have permission to submit requests into this queue for accelerator type \"v6e-1\" in location us-east1-d. [EID: 0x8957910184e6da4b]"
+}
+12:48:28   [us-east1-d] create rejected
+12:48:29  try us-central1-a
+Create request issued for: [sasd-parity]
+Waiting for operation [projects/project-8a53f5ab-2ea2-4892-a78/locations/us-central1-a/operations/operation-1781632109471-654628d0165bf-6bcd18a8-13e64e84] to complete...
+..................failed.
+ERROR: (gcloud.compute.tpus.queued-resources.create) {
+  "code": 8,
+  "message": "Insufficient capacity. Try again in a different zone or at a later time.  [EID: 0x6d8e3a1556066cf0]"
+}
+12:48:35   [us-central1-a] create rejected
+12:48:36  try us-south1-a
+Create request issued for: [sasd-parity]
+Waiting for operation [projects/project-8a53f5ab-2ea2-4892-a78/locations/us-south1-a/operations/operation-1781632116513-654628d6cdbee-7cb16608-e4bdee5a] to complete...
+..................failed.
+ERROR: (gcloud.compute.tpus.queued-resources.create) {
+  "code": 8,
+  "message": "Insufficient capacity. Try again in a different zone or at a later time.  [EID: 0x3d37ba2940f34e6a]"
+}
+12:48:42   [us-south1-a] create rejected
+12:48:43 round 17: no capacity anywhere; backoff 8m
+12:56:43 === round 18 ===
+12:56:43  try us-east5-a
+Create request issued for: [sasd-parity]
+Waiting for operation [projects/project-8a53f5ab-2ea2-4892-a78/locations/us-east5-a/operations/operation-1781632603903-65462aa79d428-12fcf767-c7e62bb5] to complete...
+......done.
+Created queued_resource [sasd-parity].
+12:59:32   [us-east5-a] still WAITING_FOR_RESOURCES after ~2.7m
+12:59:33  try us-east5-b
+Create request issued for: [sasd-parity]
+Waiting for operation [projects/project-8a53f5ab-2ea2-4892-a78/locations/us-east5-b/operations/operation-1781632774149-65462b49f967f-a59f8beb-940064c9] to complete...
+.....done.
+Created queued_resource [sasd-parity].
+13:02:22   [us-east5-b] still WAITING_FOR_RESOURCES after ~2.7m
+13:02:23  try us-east5-c
+ERROR: (gcloud.compute.tpus.queued-resources.create) HttpError accessing <https://tpu.googleapis.com/v2/projects/project-8a53f5ab-2ea2-4892-a78/locations/us-east5-c/queuedResources?alt=json&queuedResourceId=sasd-parity>: response: <{'vary': 'Origin, X-Origin, Referer', 'content-type': 'application/json; charset=UTF-8', 'content-encoding': 'gzip', 'date': 'Tue, 16 Jun 2026 18:03:16 GMT', 'server': 'ESF', 'x-xss-protection': '0', 'x-frame-options': 'SAMEORIGIN', 'x-content-type-options': 'nosniff', 'alt-svc': 'h3=":443"; ma=2592000,h3-29=":443"; ma=2592000', 'transfer-encoding': 'chunked', 'status': 429}>, content <{
+  "error": {
+    "code": 429,
+    "message": "Quota limit 'TPUV6EPerProjectPerZoneForTPUAPI' has been exceeded. Limit: 0 in zone us-east5-c.",
+    "status": "RESOURCE_EXHAUSTED",
+    "details": [
+      {
+        "@type": "type.googleapis.com/google.rpc.QuotaFailure",
+        "violations": [
+          {
+            "subject": "project:23815087907",
+            "description": "Quota 'TPUV6EPerProjectPerZoneForTPUAPI' exhausted. Limit 0 in zone us-east5-c"
+          }
+        ]
+      }
+    ]
+  }
+}
+>
+This may be due to network connectivity issues. Please check your network settings, and the status of the service you are trying to reach.
+13:03:16   [us-east5-c] create rejected
+13:03:16 TPU_NO_CAPACITY (no v6e-1 capacity within retry window)

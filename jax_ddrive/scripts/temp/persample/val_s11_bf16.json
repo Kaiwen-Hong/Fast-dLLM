@@ -1,0 +1,35 @@
+[
+  {
+    "sample": "val_s11",
+    "dtype": "bf16",
+    "n_tokens": 1158,
+    "n_mask_remaining": 0,
+    "n_image_tokens": 168,
+    "valid_json": false,
+    "traj_parseable": true,
+    "traj": [
+      [
+        2.75,
+        0.05
+      ],
+      [
+        5.1,
+        0.1
+      ],
+      [
+        7.21,
+        0.16
+      ],
+      [
+        9.3,
+        0.22
+      ],
+      [
+        11.3,
+        0.27
+      ]
+    ],
+    "gen_text": "{\"critical_objects\": {\"nearby_vehicle\": \"yes\", \"pedestrian\": \"no\", \"cyclist\": \"no\", \"construction\": \"no\", \"traffic_element\": \"no\", \"weather_condition\": \"no\", \"road_hazard\": \"no\", \"emergency_vehicle\": \"no\", \"animal\": \"no\", \"special_vehicle\": \"no\", \"conflicting_vehicle\": \"no\", \"door_opening_vehicle\": \"no\"}, \"explanation\": \"There is a nearby vehicle visible ahead in the front camera, positioned in the ego lane. This vehicle may influence the ego vehicle's speed and lane keeping over the next few seconds. The ego car is expected to decelerate to maintain a safe distance and continue following the lane, as indicated by the slight trajectory.\", \"future_meta_behavior\": {\"longitudinal\": \"slow down\", \"lateral\": \"lane follow \"trajectory\": \"[[ +002.75, +000.05], [ +005.10, +000.10], [ +007.21, +000.16], [ +009.30, +000.22], [ +011.30, +000.27]]\"}",
+    "sec_s": 18.7
+  }
+]

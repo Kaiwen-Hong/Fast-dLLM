@@ -1,0 +1,383 @@
+bash: /home/kaiwen/miniconda3/lib/libtinfo.so.6: no version information available (required by bash)
+###### GPU fp32 ######
+[harness] jax=0.10.0 devices=[CudaDevice(id=0)] dtype=fp32 matmul=highest
+[transformers] PyTorch was not found. Models won't be available and only tokenizers, configuration and file/data utilities can be used.
+[transformers] DeepseekV32Config got `key=rope_scaling` in kwargs but hasn't set it as attribute. For RoPE standardization you need to set `self.rope_parameters` in model's config. 
+[harness] text loaded (16s)
+[harness] vit loaded (32s)
+[transformers] `layer_type_validation` is deprecated and will be removed in v5.20. Use `PreTrainedConfig.validate_layer_type` instead
+/home/kaiwen/jax-dlm-baseline/.venv/lib/python3.11/site-packages/transformers/modeling_rope_utils.py:1034: FutureWarning: `rope_config_validation` is deprecated and has been removed. Its functionality has been moved to RotaryEmbeddingConfigMixin.validate_rope method. PreTrainedConfig inherits this class, so please call self.validate_rope() instead. Also, make sure to use the new rope_parameters syntax. You can call self.standardize_rope_params() in the meantime.
+  warnings.warn(
+[transformers] Unrecognized keys in `rope_parameters` for 'rope_type'='default': {'mrope_section'}
+[transformers] Unrecognized keys in `rope_parameters` for 'rope_type'='default': {'mrope_section'}
+[transformers] Fast_dDriveConfig got `key=rope_scaling` in kwargs but hasn't set it as attribute. For RoPE standardization you need to set `self.rope_parameters` in model's config. 
+[transformers] Unrecognized keys in `rope_parameters` for 'rope_type'='default': {'mrope_section'}
+[transformers] `layer_type_validation` is deprecated and will be removed in v5.20. Use `PreTrainedConfig.validate_layer_type` instead
+[transformers] `layer_type_validation` is deprecated and will be removed in v5.20. Use `PreTrainedConfig.validate_layer_type` instead
+[harness] val_s00 fp32: mask_rem=0 valid_json=False traj=ok (16.3s)
+[harness] val_s01 fp32: mask_rem=0 valid_json=False traj=ok (16.2s)
+W0616 07:42:41.697466  137541 bfc_allocator.cc:502] Allocator (GPU_0_bfc) ran out of memory trying to allocate 2.00MiB (rounded to 2097152)requested by op 
+If the cause is memory fragmentation maybe the environment variable 'TF_GPU_ALLOCATOR=cuda_malloc_async' will improve the situation. 
+Current allocation summary follows.
+Current allocation summary follows.
+W0616 07:42:41.697896  137541 bfc_allocator.cc:513] ****************************************************************************************************
+[harness] val_s02 FAILED: RESOURCE_EXHAUSTED: Out of memory while trying to allocate 2.00MiB.
+Traceback (most recent call last):
+  File "/home/kaiwen/Desktop/research/Fast-dLLM/jax_ddrive/scripts/temp/parity_eval.py", line 78, in main
+    out_raw = mm_section_diffusion_sample(text, vit, x_t0, rbi, pos, pv, thw,
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/kaiwen/Desktop/research/Fast-dLLM/maxtext-dlm-fork/src/maxtext/diffusion/eval_sasd/sampler_sasd.py", line 83, in mm_section_diffusion_sample
+    sec = np.asarray(text.attend(hidden[0, s - 1:e - 1]), np.float32)  # causal shift -> [blk, V]
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/kaiwen/jax-dlm-baseline/.venv/lib/python3.11/site-packages/jax/_src/array.py", line 414, in __array__
+    return np.asarray(self._value, dtype=dtype, **kwds)  # pyrefly: ignore[no-matching-overload]
+                      ^^^^^^^^^^^
+  File "/home/kaiwen/jax-dlm-baseline/.venv/lib/python3.11/site-packages/jax/_src/profiler.py", line 384, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/kaiwen/jax-dlm-baseline/.venv/lib/python3.11/site-packages/jax/_src/array.py", line 614, in _value
+    npy_value, did_copy = self._single_device_array_to_np_array_did_copy()
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+jax.errors.JaxRuntimeError: RESOURCE_EXHAUSTED: Out of memory while trying to allocate 2.00MiB.
+
+[harness] val_s03 FAILED: RESOURCE_EXHAUSTED: Out of memory while trying to allocate 2.00MiB.
+Traceback (most recent call last):
+  File "/home/kaiwen/Desktop/research/Fast-dLLM/jax_ddrive/scripts/temp/parity_eval.py", line 78, in main
+    out_raw = mm_section_diffusion_sample(text, vit, x_t0, rbi, pos, pv, thw,
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/kaiwen/Desktop/research/Fast-dLLM/maxtext-dlm-fork/src/maxtext/diffusion/eval_sasd/sampler_sasd.py", line 83, in mm_section_diffusion_sample
+    sec = np.asarray(text.attend(hidden[0, s - 1:e - 1]), np.float32)  # causal shift -> [blk, V]
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/kaiwen/jax-dlm-baseline/.venv/lib/python3.11/site-packages/jax/_src/array.py", line 414, in __array__
+    return np.asarray(self._value, dtype=dtype, **kwds)  # pyrefly: ignore[no-matching-overload]
+                      ^^^^^^^^^^^
+  File "/home/kaiwen/jax-dlm-baseline/.venv/lib/python3.11/site-packages/jax/_src/profiler.py", line 384, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/kaiwen/jax-dlm-baseline/.venv/lib/python3.11/site-packages/jax/_src/array.py", line 614, in _value
+    npy_value, did_copy = self._single_device_array_to_np_array_did_copy()
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+jax.errors.JaxRuntimeError: RESOURCE_EXHAUSTED: Out of memory while trying to allocate 2.00MiB.
+
+[harness] val_s04 FAILED: RESOURCE_EXHAUSTED: Out of memory while trying to allocate 2.00MiB.
+Traceback (most recent call last):
+  File "/home/kaiwen/Desktop/research/Fast-dLLM/jax_ddrive/scripts/temp/parity_eval.py", line 78, in main
+    out_raw = mm_section_diffusion_sample(text, vit, x_t0, rbi, pos, pv, thw,
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/kaiwen/Desktop/research/Fast-dLLM/maxtext-dlm-fork/src/maxtext/diffusion/eval_sasd/sampler_sasd.py", line 83, in mm_section_diffusion_sample
+    sec = np.asarray(text.attend(hidden[0, s - 1:e - 1]), np.float32)  # causal shift -> [blk, V]
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/kaiwen/jax-dlm-baseline/.venv/lib/python3.11/site-packages/jax/_src/array.py", line 414, in __array__
+    return np.asarray(self._value, dtype=dtype, **kwds)  # pyrefly: ignore[no-matching-overload]
+                      ^^^^^^^^^^^
+  File "/home/kaiwen/jax-dlm-baseline/.venv/lib/python3.11/site-packages/jax/_src/profiler.py", line 384, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/kaiwen/jax-dlm-baseline/.venv/lib/python3.11/site-packages/jax/_src/array.py", line 614, in _value
+    npy_value, did_copy = self._single_device_array_to_np_array_did_copy()
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+jax.errors.JaxRuntimeError: RESOURCE_EXHAUSTED: Out of memory while trying to allocate 2.00MiB.
+
+[harness] val_s05 FAILED: RESOURCE_EXHAUSTED: Out of memory while trying to allocate 2.00MiB.
+Traceback (most recent call last):
+  File "/home/kaiwen/Desktop/research/Fast-dLLM/jax_ddrive/scripts/temp/parity_eval.py", line 78, in main
+    out_raw = mm_section_diffusion_sample(text, vit, x_t0, rbi, pos, pv, thw,
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/kaiwen/Desktop/research/Fast-dLLM/maxtext-dlm-fork/src/maxtext/diffusion/eval_sasd/sampler_sasd.py", line 83, in mm_section_diffusion_sample
+    sec = np.asarray(text.attend(hidden[0, s - 1:e - 1]), np.float32)  # causal shift -> [blk, V]
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/kaiwen/jax-dlm-baseline/.venv/lib/python3.11/site-packages/jax/_src/array.py", line 414, in __array__
+    return np.asarray(self._value, dtype=dtype, **kwds)  # pyrefly: ignore[no-matching-overload]
+                      ^^^^^^^^^^^
+  File "/home/kaiwen/jax-dlm-baseline/.venv/lib/python3.11/site-packages/jax/_src/profiler.py", line 384, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/kaiwen/jax-dlm-baseline/.venv/lib/python3.11/site-packages/jax/_src/array.py", line 614, in _value
+    npy_value, did_copy = self._single_device_array_to_np_array_did_copy()
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+jax.errors.JaxRuntimeError: RESOURCE_EXHAUSTED: Out of memory while trying to allocate 2.00MiB.
+
+[harness] val_s06 FAILED: RESOURCE_EXHAUSTED: Out of memory while trying to allocate 2.00MiB.
+Traceback (most recent call last):
+  File "/home/kaiwen/Desktop/research/Fast-dLLM/jax_ddrive/scripts/temp/parity_eval.py", line 78, in main
+    out_raw = mm_section_diffusion_sample(text, vit, x_t0, rbi, pos, pv, thw,
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/kaiwen/Desktop/research/Fast-dLLM/maxtext-dlm-fork/src/maxtext/diffusion/eval_sasd/sampler_sasd.py", line 83, in mm_section_diffusion_sample
+    sec = np.asarray(text.attend(hidden[0, s - 1:e - 1]), np.float32)  # causal shift -> [blk, V]
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/kaiwen/jax-dlm-baseline/.venv/lib/python3.11/site-packages/jax/_src/array.py", line 414, in __array__
+    return np.asarray(self._value, dtype=dtype, **kwds)  # pyrefly: ignore[no-matching-overload]
+                      ^^^^^^^^^^^
+  File "/home/kaiwen/jax-dlm-baseline/.venv/lib/python3.11/site-packages/jax/_src/profiler.py", line 384, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/kaiwen/jax-dlm-baseline/.venv/lib/python3.11/site-packages/jax/_src/array.py", line 614, in _value
+    npy_value, did_copy = self._single_device_array_to_np_array_did_copy()
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+jax.errors.JaxRuntimeError: RESOURCE_EXHAUSTED: Out of memory while trying to allocate 2.00MiB.
+
+[harness] val_s07 FAILED: RESOURCE_EXHAUSTED: Out of memory while trying to allocate 2.00MiB.
+Traceback (most recent call last):
+  File "/home/kaiwen/Desktop/research/Fast-dLLM/jax_ddrive/scripts/temp/parity_eval.py", line 78, in main
+    out_raw = mm_section_diffusion_sample(text, vit, x_t0, rbi, pos, pv, thw,
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/kaiwen/Desktop/research/Fast-dLLM/maxtext-dlm-fork/src/maxtext/diffusion/eval_sasd/sampler_sasd.py", line 83, in mm_section_diffusion_sample
+    sec = np.asarray(text.attend(hidden[0, s - 1:e - 1]), np.float32)  # causal shift -> [blk, V]
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/kaiwen/jax-dlm-baseline/.venv/lib/python3.11/site-packages/jax/_src/array.py", line 414, in __array__
+    return np.asarray(self._value, dtype=dtype, **kwds)  # pyrefly: ignore[no-matching-overload]
+                      ^^^^^^^^^^^
+  File "/home/kaiwen/jax-dlm-baseline/.venv/lib/python3.11/site-packages/jax/_src/profiler.py", line 384, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/kaiwen/jax-dlm-baseline/.venv/lib/python3.11/site-packages/jax/_src/array.py", line 614, in _value
+    npy_value, did_copy = self._single_device_array_to_np_array_did_copy()
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+jax.errors.JaxRuntimeError: RESOURCE_EXHAUSTED: Out of memory while trying to allocate 2.00MiB.
+
+[harness] val_s08 FAILED: RESOURCE_EXHAUSTED: Out of memory while trying to allocate 2.00MiB.
+Traceback (most recent call last):
+  File "/home/kaiwen/Desktop/research/Fast-dLLM/jax_ddrive/scripts/temp/parity_eval.py", line 78, in main
+    out_raw = mm_section_diffusion_sample(text, vit, x_t0, rbi, pos, pv, thw,
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/kaiwen/Desktop/research/Fast-dLLM/maxtext-dlm-fork/src/maxtext/diffusion/eval_sasd/sampler_sasd.py", line 83, in mm_section_diffusion_sample
+    sec = np.asarray(text.attend(hidden[0, s - 1:e - 1]), np.float32)  # causal shift -> [blk, V]
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/kaiwen/jax-dlm-baseline/.venv/lib/python3.11/site-packages/jax/_src/array.py", line 414, in __array__
+    return np.asarray(self._value, dtype=dtype, **kwds)  # pyrefly: ignore[no-matching-overload]
+                      ^^^^^^^^^^^
+  File "/home/kaiwen/jax-dlm-baseline/.venv/lib/python3.11/site-packages/jax/_src/profiler.py", line 384, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/kaiwen/jax-dlm-baseline/.venv/lib/python3.11/site-packages/jax/_src/array.py", line 614, in _value
+    npy_value, did_copy = self._single_device_array_to_np_array_did_copy()
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+jax.errors.JaxRuntimeError: RESOURCE_EXHAUSTED: Out of memory while trying to allocate 2.00MiB.
+
+[harness] val_s09 FAILED: RESOURCE_EXHAUSTED: Out of memory while trying to allocate 2.00MiB.
+Traceback (most recent call last):
+  File "/home/kaiwen/Desktop/research/Fast-dLLM/jax_ddrive/scripts/temp/parity_eval.py", line 78, in main
+    out_raw = mm_section_diffusion_sample(text, vit, x_t0, rbi, pos, pv, thw,
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/kaiwen/Desktop/research/Fast-dLLM/maxtext-dlm-fork/src/maxtext/diffusion/eval_sasd/sampler_sasd.py", line 83, in mm_section_diffusion_sample
+    sec = np.asarray(text.attend(hidden[0, s - 1:e - 1]), np.float32)  # causal shift -> [blk, V]
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/kaiwen/jax-dlm-baseline/.venv/lib/python3.11/site-packages/jax/_src/array.py", line 414, in __array__
+    return np.asarray(self._value, dtype=dtype, **kwds)  # pyrefly: ignore[no-matching-overload]
+                      ^^^^^^^^^^^
+  File "/home/kaiwen/jax-dlm-baseline/.venv/lib/python3.11/site-packages/jax/_src/profiler.py", line 384, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/kaiwen/jax-dlm-baseline/.venv/lib/python3.11/site-packages/jax/_src/array.py", line 614, in _value
+    npy_value, did_copy = self._single_device_array_to_np_array_did_copy()
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+jax.errors.JaxRuntimeError: RESOURCE_EXHAUSTED: Out of memory while trying to allocate 2.00MiB.
+
+[harness] val_s10 FAILED: RESOURCE_EXHAUSTED: Out of memory while trying to allocate 2.00MiB.
+Traceback (most recent call last):
+  File "/home/kaiwen/Desktop/research/Fast-dLLM/jax_ddrive/scripts/temp/parity_eval.py", line 78, in main
+    out_raw = mm_section_diffusion_sample(text, vit, x_t0, rbi, pos, pv, thw,
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/kaiwen/Desktop/research/Fast-dLLM/maxtext-dlm-fork/src/maxtext/diffusion/eval_sasd/sampler_sasd.py", line 83, in mm_section_diffusion_sample
+    sec = np.asarray(text.attend(hidden[0, s - 1:e - 1]), np.float32)  # causal shift -> [blk, V]
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/kaiwen/jax-dlm-baseline/.venv/lib/python3.11/site-packages/jax/_src/array.py", line 414, in __array__
+    return np.asarray(self._value, dtype=dtype, **kwds)  # pyrefly: ignore[no-matching-overload]
+                      ^^^^^^^^^^^
+  File "/home/kaiwen/jax-dlm-baseline/.venv/lib/python3.11/site-packages/jax/_src/profiler.py", line 384, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/kaiwen/jax-dlm-baseline/.venv/lib/python3.11/site-packages/jax/_src/array.py", line 614, in _value
+    npy_value, did_copy = self._single_device_array_to_np_array_did_copy()
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+jax.errors.JaxRuntimeError: RESOURCE_EXHAUSTED: Out of memory while trying to allocate 2.00MiB.
+
+[harness] val_s11 FAILED: RESOURCE_EXHAUSTED: Out of memory while trying to allocate 2.00MiB.
+Traceback (most recent call last):
+  File "/home/kaiwen/Desktop/research/Fast-dLLM/jax_ddrive/scripts/temp/parity_eval.py", line 78, in main
+    out_raw = mm_section_diffusion_sample(text, vit, x_t0, rbi, pos, pv, thw,
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/kaiwen/Desktop/research/Fast-dLLM/maxtext-dlm-fork/src/maxtext/diffusion/eval_sasd/sampler_sasd.py", line 83, in mm_section_diffusion_sample
+    sec = np.asarray(text.attend(hidden[0, s - 1:e - 1]), np.float32)  # causal shift -> [blk, V]
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/kaiwen/jax-dlm-baseline/.venv/lib/python3.11/site-packages/jax/_src/array.py", line 414, in __array__
+    return np.asarray(self._value, dtype=dtype, **kwds)  # pyrefly: ignore[no-matching-overload]
+                      ^^^^^^^^^^^
+  File "/home/kaiwen/jax-dlm-baseline/.venv/lib/python3.11/site-packages/jax/_src/profiler.py", line 384, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/kaiwen/jax-dlm-baseline/.venv/lib/python3.11/site-packages/jax/_src/array.py", line 614, in _value
+    npy_value, did_copy = self._single_device_array_to_np_array_did_copy()
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+jax.errors.JaxRuntimeError: RESOURCE_EXHAUSTED: Out of memory while trying to allocate 2.00MiB.
+
+[harness] val_s12 FAILED: RESOURCE_EXHAUSTED: Out of memory while trying to allocate 2.00MiB.
+Traceback (most recent call last):
+  File "/home/kaiwen/Desktop/research/Fast-dLLM/jax_ddrive/scripts/temp/parity_eval.py", line 78, in main
+    out_raw = mm_section_diffusion_sample(text, vit, x_t0, rbi, pos, pv, thw,
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/kaiwen/Desktop/research/Fast-dLLM/maxtext-dlm-fork/src/maxtext/diffusion/eval_sasd/sampler_sasd.py", line 83, in mm_section_diffusion_sample
+    sec = np.asarray(text.attend(hidden[0, s - 1:e - 1]), np.float32)  # causal shift -> [blk, V]
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/kaiwen/jax-dlm-baseline/.venv/lib/python3.11/site-packages/jax/_src/array.py", line 414, in __array__
+    return np.asarray(self._value, dtype=dtype, **kwds)  # pyrefly: ignore[no-matching-overload]
+                      ^^^^^^^^^^^
+  File "/home/kaiwen/jax-dlm-baseline/.venv/lib/python3.11/site-packages/jax/_src/profiler.py", line 384, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/kaiwen/jax-dlm-baseline/.venv/lib/python3.11/site-packages/jax/_src/array.py", line 614, in _value
+    npy_value, did_copy = self._single_device_array_to_np_array_did_copy()
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+jax.errors.JaxRuntimeError: RESOURCE_EXHAUSTED: Out of memory while trying to allocate 2.00MiB.
+
+[harness] val_s13 FAILED: RESOURCE_EXHAUSTED: Out of memory while trying to allocate 2.00MiB.
+Traceback (most recent call last):
+  File "/home/kaiwen/Desktop/research/Fast-dLLM/jax_ddrive/scripts/temp/parity_eval.py", line 78, in main
+    out_raw = mm_section_diffusion_sample(text, vit, x_t0, rbi, pos, pv, thw,
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/kaiwen/Desktop/research/Fast-dLLM/maxtext-dlm-fork/src/maxtext/diffusion/eval_sasd/sampler_sasd.py", line 83, in mm_section_diffusion_sample
+    sec = np.asarray(text.attend(hidden[0, s - 1:e - 1]), np.float32)  # causal shift -> [blk, V]
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/kaiwen/jax-dlm-baseline/.venv/lib/python3.11/site-packages/jax/_src/array.py", line 414, in __array__
+    return np.asarray(self._value, dtype=dtype, **kwds)  # pyrefly: ignore[no-matching-overload]
+                      ^^^^^^^^^^^
+  File "/home/kaiwen/jax-dlm-baseline/.venv/lib/python3.11/site-packages/jax/_src/profiler.py", line 384, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/kaiwen/jax-dlm-baseline/.venv/lib/python3.11/site-packages/jax/_src/array.py", line 614, in _value
+    npy_value, did_copy = self._single_device_array_to_np_array_did_copy()
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+jax.errors.JaxRuntimeError: RESOURCE_EXHAUSTED: Out of memory while trying to allocate 2.00MiB.
+
+[harness] val_s14 FAILED: RESOURCE_EXHAUSTED: Out of memory while trying to allocate 2.00MiB.
+Traceback (most recent call last):
+  File "/home/kaiwen/Desktop/research/Fast-dLLM/jax_ddrive/scripts/temp/parity_eval.py", line 78, in main
+    out_raw = mm_section_diffusion_sample(text, vit, x_t0, rbi, pos, pv, thw,
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/kaiwen/Desktop/research/Fast-dLLM/maxtext-dlm-fork/src/maxtext/diffusion/eval_sasd/sampler_sasd.py", line 83, in mm_section_diffusion_sample
+    sec = np.asarray(text.attend(hidden[0, s - 1:e - 1]), np.float32)  # causal shift -> [blk, V]
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/kaiwen/jax-dlm-baseline/.venv/lib/python3.11/site-packages/jax/_src/array.py", line 414, in __array__
+    return np.asarray(self._value, dtype=dtype, **kwds)  # pyrefly: ignore[no-matching-overload]
+                      ^^^^^^^^^^^
+  File "/home/kaiwen/jax-dlm-baseline/.venv/lib/python3.11/site-packages/jax/_src/profiler.py", line 384, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/kaiwen/jax-dlm-baseline/.venv/lib/python3.11/site-packages/jax/_src/array.py", line 614, in _value
+    npy_value, did_copy = self._single_device_array_to_np_array_did_copy()
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+jax.errors.JaxRuntimeError: RESOURCE_EXHAUSTED: Out of memory while trying to allocate 2.00MiB.
+
+[harness] val_s15 FAILED: RESOURCE_EXHAUSTED: Out of memory while trying to allocate 2.00MiB.
+Traceback (most recent call last):
+  File "/home/kaiwen/Desktop/research/Fast-dLLM/jax_ddrive/scripts/temp/parity_eval.py", line 78, in main
+    out_raw = mm_section_diffusion_sample(text, vit, x_t0, rbi, pos, pv, thw,
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/kaiwen/Desktop/research/Fast-dLLM/maxtext-dlm-fork/src/maxtext/diffusion/eval_sasd/sampler_sasd.py", line 83, in mm_section_diffusion_sample
+    sec = np.asarray(text.attend(hidden[0, s - 1:e - 1]), np.float32)  # causal shift -> [blk, V]
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/kaiwen/jax-dlm-baseline/.venv/lib/python3.11/site-packages/jax/_src/array.py", line 414, in __array__
+    return np.asarray(self._value, dtype=dtype, **kwds)  # pyrefly: ignore[no-matching-overload]
+                      ^^^^^^^^^^^
+  File "/home/kaiwen/jax-dlm-baseline/.venv/lib/python3.11/site-packages/jax/_src/profiler.py", line 384, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/kaiwen/jax-dlm-baseline/.venv/lib/python3.11/site-packages/jax/_src/array.py", line 614, in _value
+    npy_value, did_copy = self._single_device_array_to_np_array_did_copy()
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+jax.errors.JaxRuntimeError: RESOURCE_EXHAUSTED: Out of memory while trying to allocate 2.00MiB.
+
+[harness] val_s16 FAILED: RESOURCE_EXHAUSTED: Out of memory while trying to allocate 2.00MiB.
+Traceback (most recent call last):
+  File "/home/kaiwen/Desktop/research/Fast-dLLM/jax_ddrive/scripts/temp/parity_eval.py", line 78, in main
+    out_raw = mm_section_diffusion_sample(text, vit, x_t0, rbi, pos, pv, thw,
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/kaiwen/Desktop/research/Fast-dLLM/maxtext-dlm-fork/src/maxtext/diffusion/eval_sasd/sampler_sasd.py", line 83, in mm_section_diffusion_sample
+    sec = np.asarray(text.attend(hidden[0, s - 1:e - 1]), np.float32)  # causal shift -> [blk, V]
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/kaiwen/jax-dlm-baseline/.venv/lib/python3.11/site-packages/jax/_src/array.py", line 414, in __array__
+    return np.asarray(self._value, dtype=dtype, **kwds)  # pyrefly: ignore[no-matching-overload]
+                      ^^^^^^^^^^^
+  File "/home/kaiwen/jax-dlm-baseline/.venv/lib/python3.11/site-packages/jax/_src/profiler.py", line 384, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/kaiwen/jax-dlm-baseline/.venv/lib/python3.11/site-packages/jax/_src/array.py", line 614, in _value
+    npy_value, did_copy = self._single_device_array_to_np_array_did_copy()
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+jax.errors.JaxRuntimeError: RESOURCE_EXHAUSTED: Out of memory while trying to allocate 2.00MiB.
+
+[harness] val_s17 FAILED: RESOURCE_EXHAUSTED: Out of memory while trying to allocate 2.00MiB.
+Traceback (most recent call last):
+  File "/home/kaiwen/Desktop/research/Fast-dLLM/jax_ddrive/scripts/temp/parity_eval.py", line 78, in main
+    out_raw = mm_section_diffusion_sample(text, vit, x_t0, rbi, pos, pv, thw,
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/kaiwen/Desktop/research/Fast-dLLM/maxtext-dlm-fork/src/maxtext/diffusion/eval_sasd/sampler_sasd.py", line 83, in mm_section_diffusion_sample
+    sec = np.asarray(text.attend(hidden[0, s - 1:e - 1]), np.float32)  # causal shift -> [blk, V]
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/kaiwen/jax-dlm-baseline/.venv/lib/python3.11/site-packages/jax/_src/array.py", line 414, in __array__
+    return np.asarray(self._value, dtype=dtype, **kwds)  # pyrefly: ignore[no-matching-overload]
+                      ^^^^^^^^^^^
+  File "/home/kaiwen/jax-dlm-baseline/.venv/lib/python3.11/site-packages/jax/_src/profiler.py", line 384, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/kaiwen/jax-dlm-baseline/.venv/lib/python3.11/site-packages/jax/_src/array.py", line 614, in _value
+    npy_value, did_copy = self._single_device_array_to_np_array_did_copy()
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+jax.errors.JaxRuntimeError: RESOURCE_EXHAUSTED: Out of memory while trying to allocate 2.00MiB.
+
+[harness] val_s18 FAILED: RESOURCE_EXHAUSTED: Out of memory while trying to allocate 2.00MiB.
+Traceback (most recent call last):
+  File "/home/kaiwen/Desktop/research/Fast-dLLM/jax_ddrive/scripts/temp/parity_eval.py", line 78, in main
+    out_raw = mm_section_diffusion_sample(text, vit, x_t0, rbi, pos, pv, thw,
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/kaiwen/Desktop/research/Fast-dLLM/maxtext-dlm-fork/src/maxtext/diffusion/eval_sasd/sampler_sasd.py", line 83, in mm_section_diffusion_sample
+    sec = np.asarray(text.attend(hidden[0, s - 1:e - 1]), np.float32)  # causal shift -> [blk, V]
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/kaiwen/jax-dlm-baseline/.venv/lib/python3.11/site-packages/jax/_src/array.py", line 414, in __array__
+    return np.asarray(self._value, dtype=dtype, **kwds)  # pyrefly: ignore[no-matching-overload]
+                      ^^^^^^^^^^^
+  File "/home/kaiwen/jax-dlm-baseline/.venv/lib/python3.11/site-packages/jax/_src/profiler.py", line 384, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/kaiwen/jax-dlm-baseline/.venv/lib/python3.11/site-packages/jax/_src/array.py", line 614, in _value
+    npy_value, did_copy = self._single_device_array_to_np_array_did_copy()
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+jax.errors.JaxRuntimeError: RESOURCE_EXHAUSTED: Out of memory while trying to allocate 2.00MiB.
+
+[harness] val_s19 FAILED: RESOURCE_EXHAUSTED: Out of memory while trying to allocate 2.00MiB.
+Traceback (most recent call last):
+  File "/home/kaiwen/Desktop/research/Fast-dLLM/jax_ddrive/scripts/temp/parity_eval.py", line 78, in main
+    out_raw = mm_section_diffusion_sample(text, vit, x_t0, rbi, pos, pv, thw,
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/kaiwen/Desktop/research/Fast-dLLM/maxtext-dlm-fork/src/maxtext/diffusion/eval_sasd/sampler_sasd.py", line 83, in mm_section_diffusion_sample
+    sec = np.asarray(text.attend(hidden[0, s - 1:e - 1]), np.float32)  # causal shift -> [blk, V]
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/kaiwen/jax-dlm-baseline/.venv/lib/python3.11/site-packages/jax/_src/array.py", line 414, in __array__
+    return np.asarray(self._value, dtype=dtype, **kwds)  # pyrefly: ignore[no-matching-overload]
+                      ^^^^^^^^^^^
+  File "/home/kaiwen/jax-dlm-baseline/.venv/lib/python3.11/site-packages/jax/_src/profiler.py", line 384, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/kaiwen/jax-dlm-baseline/.venv/lib/python3.11/site-packages/jax/_src/array.py", line 614, in _value
+    npy_value, did_copy = self._single_device_array_to_np_array_did_copy()
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+jax.errors.JaxRuntimeError: RESOURCE_EXHAUSTED: Out of memory while trying to allocate 2.00MiB.
+
+[harness] wrote jax_ddrive/scripts/temp/gpu_fp32.json (20 samples)
+###### GPU bf16 ######
+[harness] jax=0.10.0 devices=[CudaDevice(id=0)] dtype=bf16 matmul=None
+[transformers] PyTorch was not found. Models won't be available and only tokenizers, configuration and file/data utilities can be used.
+[transformers] DeepseekV32Config got `key=rope_scaling` in kwargs but hasn't set it as attribute. For RoPE standardization you need to set `self.rope_parameters` in model's config. 
+[harness] text loaded (19s)
+[harness] vit loaded (39s)
+[transformers] `layer_type_validation` is deprecated and will be removed in v5.20. Use `PreTrainedConfig.validate_layer_type` instead
+/home/kaiwen/jax-dlm-baseline/.venv/lib/python3.11/site-packages/transformers/modeling_rope_utils.py:1034: FutureWarning: `rope_config_validation` is deprecated and has been removed. Its functionality has been moved to RotaryEmbeddingConfigMixin.validate_rope method. PreTrainedConfig inherits this class, so please call self.validate_rope() instead. Also, make sure to use the new rope_parameters syntax. You can call self.standardize_rope_params() in the meantime.
+  warnings.warn(
+[transformers] Unrecognized keys in `rope_parameters` for 'rope_type'='default': {'mrope_section'}
+[transformers] Unrecognized keys in `rope_parameters` for 'rope_type'='default': {'mrope_section'}
+[transformers] Fast_dDriveConfig got `key=rope_scaling` in kwargs but hasn't set it as attribute. For RoPE standardization you need to set `self.rope_parameters` in model's config. 
+[transformers] Unrecognized keys in `rope_parameters` for 'rope_type'='default': {'mrope_section'}
+[transformers] `layer_type_validation` is deprecated and will be removed in v5.20. Use `PreTrainedConfig.validate_layer_type` instead
+[transformers] `layer_type_validation` is deprecated and will be removed in v5.20. Use `PreTrainedConfig.validate_layer_type` instead
+[harness] val_s00 bf16: mask_rem=0 valid_json=False traj=ok (23.1s)
+[harness] val_s01 bf16: mask_rem=0 valid_json=False traj=ok (11.6s)

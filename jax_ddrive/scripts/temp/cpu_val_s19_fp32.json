@@ -1,0 +1,35 @@
+[
+  {
+    "sample": "val_s19",
+    "dtype": "fp32",
+    "n_tokens": 1158,
+    "n_mask_remaining": 0,
+    "n_image_tokens": 168,
+    "valid_json": false,
+    "traj_parseable": true,
+    "traj": [
+      [
+        3.09,
+        0.0
+      ],
+      [
+        5.2,
+        0.0
+      ],
+      [
+        7.12,
+        -0.01
+      ],
+      [
+        9.12,
+        -0.03
+      ],
+      [
+        11.18,
+        -0.07
+      ]
+    ],
+    "gen_text": "{\"critical_objects\": {\"nearby_vehicle\": \"yes\", \"pedestrian\": \"no\", \"cyclist\": \"no\", \"construction\": \"no\", \"traffic_element\": \"no\", \"weather_condition\": \"no\", \"road_hazard\": \"no\", \"emergency_vehicle\": \"no\", \"animal\": \"no\", \"special_vehicle\": \"no\", \"conflicting_vehicle\": \"no\", \"door_opening_vehicle\": \"no\"}, \"explanation\": \"There is a nearby vehicle directly ahead in the same lane, visible in the front camera, which will influence the ego vehicle's longitudinal behavior by requiring it to slow down or maintain a safe following distance. No pedestrians, cyclists, or conflicting vehicles are present that would affect lateral movement or require a stop or lane change.\", \"future_meta_behavior\": {\"longitudinal\": \"slow down\", \"lateral\": \"lane follow \"trajectory\": \"[[ +003.09, +000.00], [ +005.20, +000.00], [ +007.12, -000.01], [ +009.12, -000.03], [ +011.18, -000.07]]\"}",
+    "sec_s": 668.6
+  }
+]

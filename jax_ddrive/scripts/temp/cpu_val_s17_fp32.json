@@ -1,0 +1,35 @@
+[
+  {
+    "sample": "val_s17",
+    "dtype": "fp32",
+    "n_tokens": 1156,
+    "n_mask_remaining": 0,
+    "n_image_tokens": 168,
+    "valid_json": false,
+    "traj_parseable": true,
+    "traj": [
+      [
+        0.42,
+        0.0
+      ],
+      [
+        0.41,
+        0.0
+      ],
+      [
+        0.41,
+        0.0
+      ],
+      [
+        0.41,
+        0.0
+      ],
+      [
+        0.41,
+        0.0
+      ]
+    ],
+    "gen_text": "{\"critical_objects\": {\"nearby_vehicle\": \"yes\", \"pedestrian\": \"no\", \"cyclist\": \"no\", \"construction\": \"no\", \"traffic_element\": \"no\", \"weather_condition\": \"no\", \"road_hazard\": \"no\", \"emergency_vehicle\": \"no\", \"animal\": \"no\", \"special_vehicle\": \"no\", \"conflicting_vehicle\": \"no\", \"door_opening_vehicle\": \"no\"}, \"explanation\": \"There is a nearby vehicle visible ahead in the front camera, positioned in the same lane as the ego vehicle. This vehicle's presence requires the ego vehicle to reduce speed to maintain a safe following distance. No pedestrians, cyclists, or other conflicting objects are observed that would require lane changes or stops in the immediate future.\", \"future_meta_behavior\": {\"longitudinal\": \"slow down\", \"lateral\": \"lane follow \"trajectory\": \"[[ +000.42, +000.00], [ +000.41, +000.00], [ +000.41, +000.00], [ +000.41, +000.00], [ +000.41, +000.00]]\"}",
+    "sec_s": 504.6
+  }
+]

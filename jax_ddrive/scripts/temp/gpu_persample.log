@@ -1,0 +1,204 @@
+bash: /home/kaiwen/miniconda3/lib/libtinfo.so.6: no version information available (required by bash)
+=== val_s00 fp32 ===
+[harness] jax=0.10.0 dev=[CudaDevice(id=0)] dtype=fp32 matmul=highest
+[harness] text loaded (13s)
+[harness] val_s00 fp32: mask_rem=0 valid_json=False traj=ok (15.4s)
+[harness] wrote jax_ddrive/scripts/temp/persample/val_s00_fp32.json (1 samples)
+=== val_s00 bf16 ===
+[harness] jax=0.10.0 dev=[CudaDevice(id=0)] dtype=bf16 matmul=None
+[harness] text loaded (16s)
+[harness] val_s00 bf16: mask_rem=0 valid_json=False traj=ok (16.6s)
+[harness] wrote jax_ddrive/scripts/temp/persample/val_s00_bf16.json (1 samples)
+=== val_s01 fp32 ===
+[harness] jax=0.10.0 dev=[CudaDevice(id=0)] dtype=fp32 matmul=highest
+[harness] text loaded (13s)
+[harness] val_s01 fp32: mask_rem=0 valid_json=False traj=ok (18.8s)
+[harness] wrote jax_ddrive/scripts/temp/persample/val_s01_fp32.json (1 samples)
+=== val_s01 bf16 ===
+[harness] jax=0.10.0 dev=[CudaDevice(id=0)] dtype=bf16 matmul=None
+[harness] text loaded (16s)
+[harness] val_s01 bf16: mask_rem=0 valid_json=False traj=ok (18.2s)
+[harness] wrote jax_ddrive/scripts/temp/persample/val_s01_bf16.json (1 samples)
+=== val_s02 fp32 ===
+[harness] jax=0.10.0 dev=[CudaDevice(id=0)] dtype=fp32 matmul=highest
+[harness] text loaded (13s)
+[harness] val_s02 fp32: mask_rem=0 valid_json=False traj=ok (17.9s)
+[harness] wrote jax_ddrive/scripts/temp/persample/val_s02_fp32.json (1 samples)
+=== val_s02 bf16 ===
+[harness] jax=0.10.0 dev=[CudaDevice(id=0)] dtype=bf16 matmul=None
+[harness] text loaded (15s)
+[harness] val_s02 bf16: mask_rem=0 valid_json=False traj=ok (17.5s)
+[harness] wrote jax_ddrive/scripts/temp/persample/val_s02_bf16.json (1 samples)
+=== val_s03 fp32 ===
+[harness] jax=0.10.0 dev=[CudaDevice(id=0)] dtype=fp32 matmul=highest
+[harness] text loaded (13s)
+[harness] val_s03 fp32: mask_rem=0 valid_json=True traj=ok (15.1s)
+[harness] wrote jax_ddrive/scripts/temp/persample/val_s03_fp32.json (1 samples)
+=== val_s03 bf16 ===
+[harness] jax=0.10.0 dev=[CudaDevice(id=0)] dtype=bf16 matmul=None
+[harness] text loaded (15s)
+[harness] val_s03 bf16: mask_rem=0 valid_json=False traj=ok (16.6s)
+[harness] wrote jax_ddrive/scripts/temp/persample/val_s03_bf16.json (1 samples)
+=== val_s04 fp32 ===
+[harness] jax=0.10.0 dev=[CudaDevice(id=0)] dtype=fp32 matmul=highest
+[harness] text loaded (13s)
+[harness] val_s04 fp32: mask_rem=0 valid_json=False traj=ok (19.7s)
+[harness] wrote jax_ddrive/scripts/temp/persample/val_s04_fp32.json (1 samples)
+=== val_s04 bf16 ===
+[harness] jax=0.10.0 dev=[CudaDevice(id=0)] dtype=bf16 matmul=None
+[harness] text loaded (15s)
+[harness] val_s04 bf16: mask_rem=0 valid_json=False traj=ok (19.0s)
+[harness] wrote jax_ddrive/scripts/temp/persample/val_s04_bf16.json (1 samples)
+=== val_s05 fp32 ===
+[harness] jax=0.10.0 dev=[CudaDevice(id=0)] dtype=fp32 matmul=highest
+[harness] text loaded (13s)
+[harness] val_s05 fp32: mask_rem=0 valid_json=False traj=ok (18.5s)
+[harness] wrote jax_ddrive/scripts/temp/persample/val_s05_fp32.json (1 samples)
+=== val_s05 bf16 ===
+[harness] jax=0.10.0 dev=[CudaDevice(id=0)] dtype=bf16 matmul=None
+[harness] text loaded (16s)
+[harness] val_s05 bf16: mask_rem=0 valid_json=False traj=ok (17.9s)
+[harness] wrote jax_ddrive/scripts/temp/persample/val_s05_bf16.json (1 samples)
+=== val_s06 fp32 ===
+[harness] jax=0.10.0 dev=[CudaDevice(id=0)] dtype=fp32 matmul=highest
+[harness] text loaded (13s)
+[harness] val_s06 fp32: mask_rem=0 valid_json=False traj=ok (20.6s)
+[harness] wrote jax_ddrive/scripts/temp/persample/val_s06_fp32.json (1 samples)
+=== val_s06 bf16 ===
+[harness] jax=0.10.0 dev=[CudaDevice(id=0)] dtype=bf16 matmul=None
+[harness] text loaded (15s)
+[harness] val_s06 bf16: mask_rem=0 valid_json=False traj=ok (19.3s)
+[harness] wrote jax_ddrive/scripts/temp/persample/val_s06_bf16.json (1 samples)
+=== val_s07 fp32 ===
+[harness] jax=0.10.0 dev=[CudaDevice(id=0)] dtype=fp32 matmul=highest
+[harness] text loaded (13s)
+[harness] val_s07 fp32: mask_rem=0 valid_json=False traj=ok (21.0s)
+[harness] wrote jax_ddrive/scripts/temp/persample/val_s07_fp32.json (1 samples)
+=== val_s07 bf16 ===
+[harness] jax=0.10.0 dev=[CudaDevice(id=0)] dtype=bf16 matmul=None
+[harness] text loaded (16s)
+[harness] val_s07 bf16: mask_rem=0 valid_json=False traj=ok (19.3s)
+[harness] wrote jax_ddrive/scripts/temp/persample/val_s07_bf16.json (1 samples)
+=== val_s08 fp32 ===
+[harness] jax=0.10.0 dev=[CudaDevice(id=0)] dtype=fp32 matmul=highest
+[harness] text loaded (13s)
+[harness] val_s08 fp32: mask_rem=0 valid_json=True traj=ok (20.7s)
+[harness] wrote jax_ddrive/scripts/temp/persample/val_s08_fp32.json (1 samples)
+=== val_s08 bf16 ===
+[harness] jax=0.10.0 dev=[CudaDevice(id=0)] dtype=bf16 matmul=None
+[harness] text loaded (15s)
+[harness] val_s08 bf16: mask_rem=0 valid_json=True traj=ok (18.8s)
+[harness] wrote jax_ddrive/scripts/temp/persample/val_s08_bf16.json (1 samples)
+=== val_s09 fp32 ===
+[harness] jax=0.10.0 dev=[CudaDevice(id=0)] dtype=fp32 matmul=highest
+[harness] text loaded (13s)
+[harness] val_s09 fp32: mask_rem=0 valid_json=False traj=ok (18.8s)
+[harness] wrote jax_ddrive/scripts/temp/persample/val_s09_fp32.json (1 samples)
+=== val_s09 bf16 ===
+[harness] jax=0.10.0 dev=[CudaDevice(id=0)] dtype=bf16 matmul=None
+[harness] text loaded (15s)
+[harness] val_s09 bf16: mask_rem=0 valid_json=False traj=ok (17.9s)
+[harness] wrote jax_ddrive/scripts/temp/persample/val_s09_bf16.json (1 samples)
+=== val_s10 fp32 ===
+[harness] jax=0.10.0 dev=[CudaDevice(id=0)] dtype=fp32 matmul=highest
+[harness] text loaded (13s)
+[harness] val_s10 fp32: mask_rem=0 valid_json=True traj=ok (21.3s)
+[harness] wrote jax_ddrive/scripts/temp/persample/val_s10_fp32.json (1 samples)
+=== val_s10 bf16 ===
+[harness] jax=0.10.0 dev=[CudaDevice(id=0)] dtype=bf16 matmul=None
+[harness] text loaded (15s)
+[harness] val_s10 bf16: mask_rem=0 valid_json=True traj=ok (19.0s)
+[harness] wrote jax_ddrive/scripts/temp/persample/val_s10_bf16.json (1 samples)
+=== val_s11 fp32 ===
+[harness] jax=0.10.0 dev=[CudaDevice(id=0)] dtype=fp32 matmul=highest
+[harness] text loaded (13s)
+[harness] val_s11 fp32: mask_rem=0 valid_json=False traj=ok (19.8s)
+[harness] wrote jax_ddrive/scripts/temp/persample/val_s11_fp32.json (1 samples)
+=== val_s11 bf16 ===
+[harness] jax=0.10.0 dev=[CudaDevice(id=0)] dtype=bf16 matmul=None
+[harness] text loaded (15s)
+[harness] val_s11 bf16: mask_rem=0 valid_json=False traj=ok (18.7s)
+[harness] wrote jax_ddrive/scripts/temp/persample/val_s11_bf16.json (1 samples)
+=== val_s12 fp32 ===
+[harness] jax=0.10.0 dev=[CudaDevice(id=0)] dtype=fp32 matmul=highest
+[harness] text loaded (13s)
+[harness] val_s12 fp32: mask_rem=0 valid_json=True traj=ok (19.3s)
+[harness] wrote jax_ddrive/scripts/temp/persample/val_s12_fp32.json (1 samples)
+=== val_s12 bf16 ===
+[harness] jax=0.10.0 dev=[CudaDevice(id=0)] dtype=bf16 matmul=None
+[harness] text loaded (15s)
+[harness] val_s12 bf16: mask_rem=0 valid_json=True traj=ok (17.9s)
+[harness] wrote jax_ddrive/scripts/temp/persample/val_s12_bf16.json (1 samples)
+=== val_s13 fp32 ===
+[harness] jax=0.10.0 dev=[CudaDevice(id=0)] dtype=fp32 matmul=highest
+[harness] text loaded (13s)
+[harness] val_s13 fp32: mask_rem=0 valid_json=True traj=ok (19.8s)
+[harness] wrote jax_ddrive/scripts/temp/persample/val_s13_fp32.json (1 samples)
+=== val_s13 bf16 ===
+[harness] jax=0.10.0 dev=[CudaDevice(id=0)] dtype=bf16 matmul=None
+[harness] text loaded (16s)
+[harness] val_s13 bf16: mask_rem=0 valid_json=False traj=ok (18.7s)
+[harness] wrote jax_ddrive/scripts/temp/persample/val_s13_bf16.json (1 samples)
+=== val_s14 fp32 ===
+[harness] jax=0.10.0 dev=[CudaDevice(id=0)] dtype=fp32 matmul=highest
+[harness] text loaded (13s)
+[harness] val_s14 fp32: mask_rem=0 valid_json=False traj=ok (20.0s)
+[harness] wrote jax_ddrive/scripts/temp/persample/val_s14_fp32.json (1 samples)
+=== val_s14 bf16 ===
+[harness] jax=0.10.0 dev=[CudaDevice(id=0)] dtype=bf16 matmul=None
+[harness] text loaded (15s)
+[harness] val_s14 bf16: mask_rem=0 valid_json=False traj=ok (18.4s)
+[harness] wrote jax_ddrive/scripts/temp/persample/val_s14_bf16.json (1 samples)
+=== val_s15 fp32 ===
+[harness] jax=0.10.0 dev=[CudaDevice(id=0)] dtype=fp32 matmul=highest
+[harness] text loaded (13s)
+[harness] val_s15 fp32: mask_rem=0 valid_json=False traj=ok (19.4s)
+[harness] wrote jax_ddrive/scripts/temp/persample/val_s15_fp32.json (1 samples)
+=== val_s15 bf16 ===
+[harness] jax=0.10.0 dev=[CudaDevice(id=0)] dtype=bf16 matmul=None
+[harness] text loaded (15s)
+[harness] val_s15 bf16: mask_rem=0 valid_json=False traj=ok (18.5s)
+[harness] wrote jax_ddrive/scripts/temp/persample/val_s15_bf16.json (1 samples)
+=== val_s16 fp32 ===
+[harness] jax=0.10.0 dev=[CudaDevice(id=0)] dtype=fp32 matmul=highest
+[harness] text loaded (13s)
+[harness] val_s16 fp32: mask_rem=0 valid_json=False traj=ok (20.1s)
+[harness] wrote jax_ddrive/scripts/temp/persample/val_s16_fp32.json (1 samples)
+=== val_s16 bf16 ===
+[harness] jax=0.10.0 dev=[CudaDevice(id=0)] dtype=bf16 matmul=None
+[harness] text loaded (15s)
+[harness] val_s16 bf16: mask_rem=0 valid_json=False traj=ok (18.9s)
+[harness] wrote jax_ddrive/scripts/temp/persample/val_s16_bf16.json (1 samples)
+=== val_s17 fp32 ===
+[harness] jax=0.10.0 dev=[CudaDevice(id=0)] dtype=fp32 matmul=highest
+[harness] text loaded (13s)
+[harness] val_s17 fp32: mask_rem=0 valid_json=False traj=ok (17.7s)
+[harness] wrote jax_ddrive/scripts/temp/persample/val_s17_fp32.json (1 samples)
+=== val_s17 bf16 ===
+[harness] jax=0.10.0 dev=[CudaDevice(id=0)] dtype=bf16 matmul=None
+[harness] text loaded (15s)
+[harness] val_s17 bf16: mask_rem=0 valid_json=False traj=ok (17.4s)
+[harness] wrote jax_ddrive/scripts/temp/persample/val_s17_bf16.json (1 samples)
+=== val_s18 fp32 ===
+[harness] jax=0.10.0 dev=[CudaDevice(id=0)] dtype=fp32 matmul=highest
+[harness] text loaded (13s)
+[harness] val_s18 fp32: mask_rem=0 valid_json=False traj=ok (20.1s)
+[harness] wrote jax_ddrive/scripts/temp/persample/val_s18_fp32.json (1 samples)
+=== val_s18 bf16 ===
+[harness] jax=0.10.0 dev=[CudaDevice(id=0)] dtype=bf16 matmul=None
+[harness] text loaded (15s)
+[harness] val_s18 bf16: mask_rem=0 valid_json=False traj=ok (18.9s)
+[harness] wrote jax_ddrive/scripts/temp/persample/val_s18_bf16.json (1 samples)
+=== val_s19 fp32 ===
+[harness] jax=0.10.0 dev=[CudaDevice(id=0)] dtype=fp32 matmul=highest
+[harness] text loaded (13s)
+[harness] val_s19 fp32: mask_rem=0 valid_json=False traj=ok (21.0s)
+[harness] wrote jax_ddrive/scripts/temp/persample/val_s19_fp32.json (1 samples)
+=== val_s19 bf16 ===
+[harness] jax=0.10.0 dev=[CudaDevice(id=0)] dtype=bf16 matmul=None
+[harness] text loaded (15s)
+[harness] val_s19 bf16: mask_rem=0 valid_json=False traj=ok (19.2s)
+[harness] wrote jax_ddrive/scripts/temp/persample/val_s19_bf16.json (1 samples)
+merged gpu_fp32.json: 20 ok=20
+merged gpu_bf16.json: 20 ok=20
+GPU_PERSAMPLE_DONE

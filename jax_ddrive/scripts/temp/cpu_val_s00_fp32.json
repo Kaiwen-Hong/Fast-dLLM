@@ -1,0 +1,35 @@
+[
+  {
+    "sample": "val_s00",
+    "dtype": "fp32",
+    "n_tokens": 1154,
+    "n_mask_remaining": 0,
+    "n_image_tokens": 168,
+    "valid_json": false,
+    "traj_parseable": true,
+    "traj": [
+      [
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0
+      ]
+    ],
+    "gen_text": "{\"critical_objects\": {\"nearby_vehicle\": \"no\", \"pedestrian\": \"no\", \"cyclist\": \"no\", \"construction\": \"no\", \"traffic_element\": \"yes\", \"weather_condition\": \"no\", \"road_hazard\": \"no\", \"emergency_vehicle\": \"no\", \"animal\": \"no\", \"special_vehicle\": \"no\", \"conflicting_vehicle\": \"no\", \"door_opening_vehicle\": \"no\"}, \"explanation\": \"The traffic light ahead is red, indicating that the ego vehicle must stop. There are no nearby vehicles, pedestrians, or other obstacles in the immediate path. The red traffic signal requires the ego vehicle to decelerate and stop before proceeding, influencing the longitudinal behavior to stop and lateral behavior to remain in its lane.\", \"future_meta_behavior\": {\"longitudinal\": \"come to stop\", \"lateral\": \"go straight \"trajectory\": \"[[ +000.00, +000.00], [ +000.00, +000.00], [ +000.00, +000.00], [ +000.00, +000.00], [ +000.00, +000.00]]\"}",
+    "sec_s": 412.4
+  }
+]

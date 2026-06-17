@@ -1,0 +1,35 @@
+[
+  {
+    "sample": "val_s08",
+    "dtype": "fp32",
+    "n_tokens": 1168,
+    "n_mask_remaining": 0,
+    "n_image_tokens": 168,
+    "valid_json": true,
+    "traj_parseable": true,
+    "traj": [
+      [
+        9.88,
+        0.0
+      ],
+      [
+        18.62,
+        0.02
+      ],
+      [
+        27.3,
+        0.22
+      ],
+      [
+        36.21,
+        1.02
+      ],
+      [
+        45.28,
+        2.57
+      ]
+    ],
+    "gen_text": "{\"critical_objects\": {\"nearby_vehicle\": \"no\", \"pedestrian\": \"no\", \"cyclist\": \"no\", \"construction\": \"no\", \"traffic_element\": \"yes\", \"weather_condition\": \"no\", \"road_hazard\": \"no\", \"emergency_vehicle\": \"no\", \"animal\": \"no\", \"special_vehicle\": \"no\", \"conflicting_vehicle\": \"no\", \"door_opening_vehicle\": \"no\"}, \"explanation\": \"There is a visible traffic signal ahead in the front camera view displaying a red light, which is directly controlling the ego vehicle's movement at the intersection. The red signal requires the ego car to stop and wait for the light to turn green before proceeding, constraining both longitudinal and lateral behavior over the next several seconds.\", \"future_meta_behavior\": {\"longitudinal\": \"come to stop\", \"lateral\": \"go straight\"}, \"trajectory\": \"[[ +009.88, +000.00], [ +018.62, +000.02], [ +027.30, +000.22], [ +036.21, +001.02], [ +045.28, +002.57]]\"}",
+    "sec_s": 20.7
+  }
+]

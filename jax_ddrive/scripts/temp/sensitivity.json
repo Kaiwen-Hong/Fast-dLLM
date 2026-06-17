@@ -1,0 +1,12 @@
+{
+  "gpu_ok": {
+    "fp32": 20,
+    "bf16": 20
+  },
+  "gpu_fp32_vs_bf16": {
+    "n": 20,
+    "mean_token_agree": 0.9847,
+    "min_token_agree": 0.9454,
+    "interpretation": "sensitive (numerics affect tokens) \u2014 GPU<->TPU test is meaningful"
+  }
+}

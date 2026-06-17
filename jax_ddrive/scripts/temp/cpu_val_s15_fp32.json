@@ -1,0 +1,35 @@
+[
+  {
+    "sample": "val_s15",
+    "dtype": "fp32",
+    "n_tokens": 1160,
+    "n_mask_remaining": 0,
+    "n_image_tokens": 168,
+    "valid_json": false,
+    "traj_parseable": true,
+    "traj": [
+      [
+        6.96,
+        -0.16
+      ],
+      [
+        13.58,
+        -0.42
+      ],
+      [
+        19.76,
+        -0.68
+      ],
+      [
+        25.38,
+        -0.79
+      ],
+      [
+        30.48,
+        -0.69
+      ]
+    ],
+    "gen_text": "{\"critical_objects\": {\"nearby_vehicle\": \"no\", \"pedestrian\": \"no\", \"cyclist\": \"no\", \"construction\": \"no\", \"traffic_element\": \"no\", \"weather_condition\": \"no\", \"road_hazard\": \"no\", \"emergency_vehicle\": \"no\", \"animal\": \"no\", \"special_vehicle\": \"no\", \"conflicting_vehicle\": \"no\", \"door_opening_vehicle\": \"no\"}, \"explanation\": \"There are no vehicles, pedestrians, cyclists, construction zones, traffic elements, or other hazards visible in the current camera views that would affect the ego vehicle's behavior within the next 5 seconds. The road ahead is clear, with no signs, signals, or obstructions present that would require yielding or lane adjustment.\", \"future_meta_behavior\": {\"longitudinal\": \"keep speed\", \"lateral\": \"go straight \"trajectory\": \"[[ +006.96, -000.16], [ +013.58, -000.42], [ +019.76, -000.68], [ +025.38, -000.79], [ +030.48, -000.69]]\"}",
+    "sec_s": 590.5
+  }
+]

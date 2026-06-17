@@ -1,0 +1,35 @@
+[
+  {
+    "sample": "val_s10",
+    "dtype": "fp32",
+    "n_tokens": 1156,
+    "n_mask_remaining": 0,
+    "n_image_tokens": 168,
+    "valid_json": true,
+    "traj_parseable": true,
+    "traj": [
+      [
+        3.29,
+        0.44
+      ],
+      [
+        5.5,
+        0.75
+      ],
+      [
+        7.2,
+        1.01
+      ],
+      [
+        9.02,
+        1.25
+      ],
+      [
+        11.28,
+        1.51
+      ]
+    ],
+    "gen_text": "{\"critical_objects\": {\"nearby_vehicle\": \"no\", \"pedestrian\": \"no\", \"cyclist\": \"no\", \"construction\": \"no\", \"traffic_element\": \"yes\", \"weather_condition\": \"no\", \"road_hazard\": \"no\", \"emergency_vehicle\": \"no\", \"animal\": \"no\", \"special_vehicle\": \"no\", \"conflicting_vehicle\": \"no\", \"door_opening_vehicle\": \"no\"}, \"explanation\": \"There is a visible traffic signal ahead in the front camera view displaying a red light, which is positioned directly in the ego vehicle's path at the intersection. The illuminated of this traffic control element requires the ego car to come to a complete stop before proceeding, regardless of the absence of other vehicles, pedestrians, or.\", \"future_meta_behavior\": {\"longitudinal\": \"come to stop\", \"lateral\": \"go straight\"}, \"trajectory\": \"[[ +003.29, +000.44], [ +005.50, +000.75], [ +007.20, +001.01], [ +009.02, +001.25], [ +011.28, +001.51]]\"}",
+    "sec_s": 693.7
+  }
+]
