@@ -420,7 +420,7 @@ bash jax_ddrive/scripts/upload_code_to_gcs.sh   # repo 内、版本化(旧 /home
 # 解包后结构:fastddrive-<TS>-<sha7>/{maxtext-dlm-fork, jax_ddrive, MANIFEST.json}
 ```
 内部侧把它下载并解到 google3 源码树:
-`/google/src/cloud/kaiwenh/fastdllm/google3/experimental/waymo/users/xqin/third_party/fastddrive-<TS>`
+`/google/src/cloud/kaiwenh/fastddrive/google3/experimental/waymo/users/xqin/third_party/fastddrive-<TS>`
 (命令见内部 runbook §4)。
 
 **数据发布(已在 GCS):** `maxtext_sasd_params_base/`(base 参数)、

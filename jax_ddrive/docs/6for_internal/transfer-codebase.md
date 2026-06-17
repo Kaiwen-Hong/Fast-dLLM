@@ -23,7 +23,7 @@
 ```bash
 gcloud auth login kaiwenh@google.com
 SRC=gs://project-8a53f5ab-2ea2-4892-a78-ddrive-sasd
-G3=/google/src/cloud/kaiwenh/fastdllm/google3/experimental/waymo/users/xqin/third_party
+G3=/google/src/cloud/kaiwenh/fastddrive/google3/experimental/waymo/users/xqin/third_party
 mkdir -p "$G3"
 
 # 拉最新代码包(要钉某个版本就把下一行换成 TS=fastddrive-<具体时间戳>):
