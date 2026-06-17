@@ -39,14 +39,15 @@ import pyarrow.parquet as pq
 from array_record.python.array_record_module import ArrayRecordWriter
 from flax import nnx
 
-sys.path.insert(0, "/home/kaiwen/Desktop/research/Fast-dLLM/jax_ddrive")
+sys.path.insert(0, os.environ.get("FASTDDRIVE_REPO", "/home/kaiwen/Desktop/research/Fast-dLLM/jax_ddrive"))
 from ddrive_jax.convert.hf_to_jax import _set
 from ddrive_jax.data.parquet_dataset import decode_row
 from ddrive_jax.models.vision_qwen25vl import (VisionConfig, VisionTransformer,
                                                _seg_ids_from_cu, cu_seqlens_full,
                                                get_window_index)
 
-SNAP_DEFAULT = ("/home/kaiwen/data/huggingface/hub/models--Efficient-Large-Model--Fast-dDrive/"
+SNAP_DEFAULT = os.environ.get("FASTDDRIVE_SNAP",
+                "/home/kaiwen/data/huggingface/hub/models--Efficient-Large-Model--Fast-dDrive/"
                 "snapshots/0fda81009f4efa58a2debbb48c0c09818e45341f")
 
 ARRAY_FIELDS = ["input_ids", "labels", "rbi", "turn", "scaffold", "weight_vec",

@@ -16,6 +16,7 @@
 ## 何时发布什么
 - **只改了代码** → 跑 §1 + §2(代码 bundle)。
 - **改/重建了数据**(dataset / base params / snapshot / eval_inputs)→ 再加 §3 + §4(传数据 + 写 manifest)。
+- **要跑内部 STEP 3**(数据处理 sanity + 发布ckpt val parity + 新 split)→ 一次性跑 §6 发布它的 3 个 artifact。
 - 每次发布后做 §5 自检。
 
 ## 1. 先 commit(让 code 版本身份有意义)
@@ -65,6 +66,36 @@ for A in maxtext_sasd_params_base wod_e2e_sasd_distilled_0613-400_baseViT_v2_ar 
   gsutil stat $SRC/$A/DATA_MANIFEST.json >/dev/null 2>&1 && echo "OK       $A/DATA_MANIFEST.json" || echo "MISSING  $A"
 done
 ```
+
+## 6.(要跑内部 STEP 3 才做)发布 STEP 3 的 artifacts
+
+STEP 3(`03_data_and_inference_parity.md`)需要 3 样在本地(5090)产出、ship 到 GCS 的东西。代码侧
+(`convert_wod_e2e.py` / `evaluate_waymo_metrics.py` / 新脚本)随 §2 的 bundle 已含 `fast_ddrive/`,无需单独处理。
+
+```bash
+SRC=gs://project-8a53f5ab-2ea2-4892-a78-ddrive-sasd
+AV=/home/kaiwen/miniconda3/envs/autovla/bin/python
+SNAP=/home/kaiwen/data/huggingface/hub/models--Efficient-Large-Model--Fast-dDrive/snapshots/0fda81009f4efa58a2debbb48c0c09818e45341f
+
+# (a) 发布的 NVIDIA fp32 ckpt(STEP 3 §2B/§3 推理用;内部没有,需 ship,~16GB):
+gsutil -m rsync -r "$SNAP" "$SRC/release_fast_ddrive_snapshot"
+
+# (b) 479 rated val 子集(让内部从原始数据端到端跑处理链 = item 1 环控;~1.1GB,免 ship 226GB 整 val):
+$AV jax_ddrive/scripts/extract_rated_val_subset.py \
+   --val_tfrecords '/home/kaiwen/data/fast-ddrive/waymo/val/val_*.tfrecord*' \
+   --out_tfrecord  /home/kaiwen/data/fast-ddrive/eval/val_rated_479.tfrecord     # 期望 kept=479
+gsutil cp /home/kaiwen/data/fast-ddrive/eval/val_rated_479.tfrecord "$SRC/eval/val_rated_479.tfrecord"
+
+# (c) GT pkl(官方 metric 用;0.55MB,本地实测复现到 ~1e-9):
+$AV jax_ddrive/scripts/build_rated_val_gt.py \
+   --val_tfrecords '/home/kaiwen/data/fast-ddrive/waymo/val/val_*.tfrecord*' \
+   --out_pkl /home/kaiwen/data/fast-ddrive/eval/rated_val_gt.pkl --rated_only    # 期望 kept=479
+gsutil cp /home/kaiwen/data/fast-ddrive/eval/rated_val_gt.pkl "$SRC/eval/rated_val_gt.pkl"
+
+# (可选)给快照写 DATA_MANIFEST(同 §4 的 provenance 习惯):
+$AV jax_ddrive/scripts/data_manifest.py "$SRC/release_fast_ddrive_snapshot" --upload
+```
+内部侧 STEP 3 §0 会把这三样 pull 到 `$DATA_ROOT/{release_fast_ddrive_snapshot, eval/val_rated_479.tfrecord, eval/rated_val_gt.pkl}`。
 
 ---
 **→ 接 STEP 1(内部侧):`transfer-codebase.md`**

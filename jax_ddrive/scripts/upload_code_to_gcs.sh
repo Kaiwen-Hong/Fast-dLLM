@@ -23,10 +23,12 @@ REPO="$(cd "$SCRIPT_DIR/../.." && pwd)"          # jax_ddrive/scripts/ -> Fast-d
 BKT="${BKT:-gs://project-8a53f5ab-2ea2-4892-a78-ddrive-sasd}"
 cd "$REPO"
 
-# the two sub-trees that make up the shipped codebase
+# the sub-trees that make up the shipped codebase
 #   maxtext-dlm-fork = training + B1 export + B2 self-contained inference (production)
-#   jax_ddrive       = offline input-prep + NNX reference
-PACK_DIRS=(maxtext-dlm-fork jax_ddrive)
+#   jax_ddrive       = offline input-prep + NNX reference + docs
+#   fast_ddrive      = WOD-E2E converter (convert_wod_e2e.py) + official metric
+#                      (evaluate_waymo_metrics.py) — needed by STEP 3 (data + val parity)
+PACK_DIRS=(maxtext-dlm-fork jax_ddrive fast_ddrive)
 for d in "${PACK_DIRS[@]}"; do [ -d "$REPO/$d" ] || { echo "ERROR: $REPO/$d not found" >&2; exit 1; }; done
 
 # ---- git provenance (single repo) ----
@@ -58,7 +60,7 @@ cat > "$TMPD/MANIFEST.json" <<EOF
   "git_branch": "${BRANCH}",
   "git_remote": "${REMOTE}",
   "dirty": ${DIRTY},
-  "contents": ["maxtext-dlm-fork/", "jax_ddrive/"],
+  "contents": ["maxtext-dlm-fork/", "jax_ddrive/", "fast_ddrive/"],
   "note": "maxtext-dlm-fork was consolidated into the Fast-dLLM repo on 2026-06-16 (from a standalone repo @ da8c92b; full history backup: /home/kaiwen/data/fast-ddrive/maxtext-dlm-fork-history-2026-06-16.bundle). One git_commit describes the whole bundle; if dirty=true the working tree had uncommitted edits beyond that commit."
 }
 EOF
@@ -67,7 +69,7 @@ EOF
 # --transform prefixes every member with fastddrive-<TS>-<sha7>/ so extraction is self-naming.
 tar czf "$TGZ" \
   --exclude='.git' --exclude='__pycache__' --exclude='*.pyc' --exclude='*.egg-info' \
-  --exclude='.pytest_cache' --exclude='jax_ddrive/visualizations' \
+  --exclude='.pytest_cache' --exclude='.claude' --exclude='jax_ddrive/visualizations' \
   --transform "s,^,${NAME}/," \
   -C "$REPO" "${PACK_DIRS[@]}" \
   -C "$TMPD" MANIFEST.json

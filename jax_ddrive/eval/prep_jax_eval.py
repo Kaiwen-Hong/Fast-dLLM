@@ -10,9 +10,10 @@ import argparse, json, os, sys
 import numpy as np
 from PIL import Image
 
-SNAP = ("/home/kaiwen/data/huggingface/hub/models--Efficient-Large-Model--Fast-dDrive/"
+SNAP = os.environ.get("FASTDDRIVE_SNAP",
+        "/home/kaiwen/data/huggingface/hub/models--Efficient-Large-Model--Fast-dDrive/"
         "snapshots/0fda81009f4efa58a2debbb48c0c09818e45341f")
-sys.path.insert(0, "/home/kaiwen/Desktop/research/Fast-dLLM/jax_ddrive")
+sys.path.insert(0, os.environ.get("FASTDDRIVE_REPO", "/home/kaiwen/Desktop/research/Fast-dLLM/jax_ddrive"))
 sys.path.insert(0, SNAP)
 
 

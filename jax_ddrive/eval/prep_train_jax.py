@@ -12,9 +12,10 @@ Run: python jax_ddrive/eval/prep_train_jax.py --train_json .../train_targets.jso
 import argparse, json, os, re, sys
 import numpy as np
 
-SNAP = ("/home/kaiwen/data/huggingface/hub/models--Efficient-Large-Model--Fast-dDrive/"
+SNAP = os.environ.get("FASTDDRIVE_SNAP",
+        "/home/kaiwen/data/huggingface/hub/models--Efficient-Large-Model--Fast-dDrive/"
         "snapshots/0fda81009f4efa58a2debbb48c0c09818e45341f")
-sys.path.insert(0, "/home/kaiwen/Desktop/research/Fast-dLLM/jax_ddrive")
+sys.path.insert(0, os.environ.get("FASTDDRIVE_REPO", "/home/kaiwen/Desktop/research/Fast-dLLM/jax_ddrive"))
 sys.path.insert(0, SNAP)
 
 MASK_ID, IM_END, BD, EXP_BUDGET = 151665, 151645, 32, 32

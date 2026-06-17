@@ -12,8 +12,9 @@ import argparse, json, os, re, sys, time
 import numpy as np
 import jax, jax.numpy as jnp
 
-sys.path.insert(0, "/home/kaiwen/Desktop/research/Fast-dLLM/jax_ddrive")
-SNAP = ("/home/kaiwen/data/huggingface/hub/models--Efficient-Large-Model--Fast-dDrive/"
+sys.path.insert(0, os.environ.get("FASTDDRIVE_REPO", "/home/kaiwen/Desktop/research/Fast-dLLM/jax_ddrive"))
+SNAP = os.environ.get("FASTDDRIVE_SNAP",
+        "/home/kaiwen/data/huggingface/hub/models--Efficient-Large-Model--Fast-dDrive/"
         "snapshots/0fda81009f4efa58a2debbb48c0c09818e45341f")
 
 
