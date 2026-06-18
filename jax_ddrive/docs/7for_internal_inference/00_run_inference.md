@@ -4,7 +4,7 @@
 
 > **PREREQ（共享 6for_internal 的 bootstrap）:** 先 STEP 0（owner 按 [`../6for_internal/00_owner_publish.md`](../6for_internal/00_owner_publish.md)
 > 发布到 GCS）→ STEP 1（内部按 [`../6for_internal/transfer-codebase.md`](../6for_internal/transfer-codebase.md) 拉代码、写
-> `~/.fastddrive_env`、建 `~/venv`）。**本篇是 STEP 2（训练）的姊妹 track**——拿一个**已有的 ckpt**（from-base 训练导出 或
+> `~/.fastddrive_env`）。**STEP 1 只写 env,不建 venv、不 ingest 数据**(那本来在 STEP 2);**没跑过 STEP 2 的纯推理路径**,本篇 §0 会幂等地现建 venv + 拉模型快照。**本篇是 STEP 2（训练）的姊妹 track**——拿一个**已有的 ckpt**（from-base 训练导出 或
 > 发布 NVIDIA ckpt）在内部 TPU 上做推理 / eval。
 >
 > **怎么用:** 把这一整篇**贴给内部 coding agent**。
@@ -50,11 +50,23 @@
 source ~/.fastddrive_env        # FORK / DDRIVE / DATA_ROOT / SRC（STEP 1 写的）
 export FASTDDRIVE_ROOT="$(dirname "$DDRIVE")"   # bundle 根（含 fast_ddrive —— Track2 的 metric 在这）
 
-# Track 1 用 STEP 1 建的 uv venv（jax + flax.nnx,采样器是 NNX,必需）:
+# ① venv（jax + flax.nnx,采样器是 NNX,必需）。STEP 1 不建 venv —— 没跑过 STEP 2 就在这里幂等现建:
+if [ ! -d ~/venv ]; then
+  curl -LsSf https://astral.sh/uv/install.sh | sh && export PATH="$HOME/.local/bin:$PATH"
+  uv venv -p 3.11 ~/venv
+  uv pip install -q -r "$FORK/src/dependencies/requirements/generated_requirements/tpu-requirements.txt"
+  uv pip install -q safetensors pyarrow transformers ml_dtypes flax     # flax/nnx 必需
+fi
 source ~/venv/bin/activate
 
-# Track 2 另外需要一个全依赖解释器（torch+transformers+tensorflow+waymo_open_dataset(+编译好的
-# end_to_end_driving_data_pb2)+jax),和 03_data_processing 同一个:
+# ② 模型快照 → CNS（幂等;Mode D 用 STEP 2 训练+导出的,本来就在 CNS,可跳过这步）:
+[ -d "$DATA_ROOT/release_fast_ddrive_snapshot" ] || \
+  gcloud storage rsync -r "$SRC/release_fast_ddrive_snapshot" "$DATA_ROOT/release_fast_ddrive_snapshot"   # Mode R 的模型
+[ -d "$DATA_ROOT/base_qwen25vl_3b_snapshot" ] || \
+  gcloud storage rsync -r "$SRC/base_qwen25vl_3b_snapshot" "$DATA_ROOT/base_qwen25vl_3b_snapshot"         # tokenizer/decode + Mode D 的 ref
+
+# ③ Track 2 另外需要一个全依赖解释器（torch+transformers+tensorflow+waymo_open_dataset(+编译好的
+#    end_to_end_driving_data_pb2)+jax),和 03_data_processing 同一个:
 export PY="<你的全依赖 python>"
 ```
 
