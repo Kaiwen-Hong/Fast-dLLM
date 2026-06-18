@@ -69,7 +69,7 @@ done
 
 ## 6.(要跑内部 STEP 3 才做)发布 STEP 3 的 artifacts
 
-STEP 3(`03_data_and_inference_parity.md`)需要 3 样在本地(5090)产出、ship 到 GCS 的东西。代码侧
+STEP 3(`03_data_processing.md`)+ STEP I(`../7for_internal_inference/00_run_inference.md`)需要这 3 样在本地(5090)产出、ship 到 GCS 的东西(快照/val 子集给两者;GT pkl 给 STEP I 的官方 metric)。代码侧
 (`convert_wod_e2e.py` / `evaluate_waymo_metrics.py` / 新脚本)随 §2 的 bundle 已含 `fast_ddrive/`,无需单独处理。
 
 ```bash

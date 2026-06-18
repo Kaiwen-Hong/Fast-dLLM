@@ -6,7 +6,7 @@
 
 ## 文档分层（一行速记；完整带 scope 的导航表在 [`0overview/00_START_HERE.md`](0overview/00_START_HERE.md) §4）
 
-- **Living（必须随现实更新）**：`../to-host-chn.md`、`2implementation-details/DATASET_V2.md`、`quick-refresh.md`、`5blockers/*`、`6for_internal/*`。
+- **Living（必须随现实更新）**：`../to-host-chn.md`、`2implementation-details/DATASET_V2.md`、`quick-refresh.md`、`5blockers/*`、`6for_internal/*`、`7for_internal_inference/*`。
 - **Stable references（组件变了才更新）**：`0overview/*`、`2implementation-details/{ARCHITECTURE,01_pytorch_reference_algorithm,EVAL_PIPELINE,INFERENCE_DEPLOY,DATASET,LABELING,AUDIT}.md`、`3summary/*`。
 - **Frozen（历史，永不编辑，append-only）**：`1plans/*`、`4collect/*`。
 - **文档维护记录（append-only）**：`8doc_updates/` —— 对 docs 体系本身的大修/审计记录 + 证据产物（不是项目里程碑，那在 `4collect/`）。
@@ -26,11 +26,13 @@ MaxText fork 侧的逐文件 diff / vendor 规则在 fork 内 `maxtext-dlm-fork/
    never a rewrite — preserve the original record.
 5. Big artifacts (datasets, ckpts, oracles) live under `/home/kaiwen/data/fast-ddrive/`
    and on GCS — docs reference them by path; nothing heavy in git.
-6. **`6for_internal/` runbooks** (`transfer-codebase.md`, `test_training.md`) are **living, undated,
-   edited in place** and shipped to the internal side in the code bundle. Record each change in
-   `6for_internal/updates-latest-<date>.md` (rolling changelog, newest on top); when a newer
-   `updates-latest-*` supersedes it, move the old one into `6for_internal/history/` (which the
-   internal agent does not read). Do NOT re-add a date prefix to the runbook filenames.
+6. **`6for_internal/` + `7for_internal_inference/` runbooks** (`transfer-codebase.md`, `test_training.md`,
+   `03_data_processing.md`, `7for_internal_inference/00_run_inference.md`) are **living, undated,
+   edited in place** and shipped to the internal side in the code bundle. Each dir has its own rolling
+   changelog `updates-latest-<date>.md` (newest on top); when a newer `updates-latest-*` supersedes it,
+   move the old one into the dir's `history/` (which the internal agent does not read). Do NOT re-add a
+   date prefix to the runbook filenames. STEP 0/1 (publish + transfer) are shared by both tracks;
+   `6for_internal` = train + data, `7for_internal_inference` = inference/eval.
 7. **`0overview/` is sourced from CODE ground-truth, not from other docs.** When code
    structure, subsystem layout, or a canonical number changes, update `0overview/` (re-read the
    code, don't transcribe from prose). `0overview/02_gotchas.md#规范数字框-canonical-numbers` is the
