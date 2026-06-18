@@ -1,6 +1,6 @@
 # STEP I — 内部 TPU 推理 / eval（B2 自包含部署 + 官方 ADE/RFS）
 
-*Last updated: 2026-06-17 — changelog: [`updates-latest-0617.md`](updates-latest-0617.md).*
+*Last updated: 2026-06-18 — changelog: [`updates-latest-0617.md`](updates-latest-0617.md).*
 
 > **PREREQ（共享 6for_internal 的 bootstrap）:** 先 STEP 0（owner 按 [`../6for_internal/00_owner_publish.md`](../6for_internal/00_owner_publish.md)
 > 发布到 GCS）→ STEP 1（内部按 [`../6for_internal/transfer-codebase.md`](../6for_internal/transfer-codebase.md) 拉代码、写
@@ -21,7 +21,7 @@
 | 分辨率 | **168 tokens**（784/50176，部署） | **200704**（paper-eval） |
 | 出什么 | `SASD_EVAL_PASS` + 逐样本标量（valid_json/traj_exact/co_match/fmb_match）+ `EMBED_PARITY_PASS` | `ADE@3s / @5s / RFS` |
 | egress | ✅ **只出标量 vlog,部署安全** | predictions.json 留内部,只出标量 metric |
-| 跑哪个 env | `~/venv`（jax+flax.nnx,STEP 1 建的） | `$PY`（torch+tf+waymo+jax 全依赖,同 `03_data_processing`） |
+| 跑哪个 env | `~/venv`（jax+flax.nnx,STEP 1 建的） | **也用 `~/venv`**（jax）+ numpy —— prep_val 由 owner 预烤,内部**零 convert/proto/tf/torch**,不需要 `$PY` |
 | 何时用 | 部署 / 逐样本可信度 / egress-safe | 要**官方 ADE/RFS 数字**（复现 0.839 或报模型自己的分） |
 
 两个 track 都支持 **Mode D**（评测 from-base 训练并导出的模型）和 **Mode R**（发布 NVIDIA ckpt）——只差 `--snapshot`。
@@ -38,7 +38,7 @@
 | **PYTHONPATH** | Track1 一律 `PYTHONPATH=$FORK/src` | ⚠️ driver/parity 的 **docstring 里写的是旧 `jax-dlm-baseline` 路径,别照抄**——用 `$FORK/src` |
 | **egress** | 只出 `validation_log.jsonl` 标量/布尔/计数；**driver 禁用 `--show_text`** | `--show_text` 会打印原文,违反内部外流策略（本地 debug 才用） |
 | **snapshot** | Mode D=`$DATA_ROOT/overfit400_base_hf`（from-base 导出）；Mode R=`$DATA_ROOT/release_fast_ddrive_snapshot` | |
-| **eval_inputs ↔ ViT** | eval_inputs 的 `image_embeds` 必须与 `--snapshot` 的 **ViT 同源** | Mode D=**base** ViT；Mode R=**release** ViT。embedding-parity 的 `fp32_vs_reference` 门会强制这点（不匹配→FAIL） |
+| **eval_inputs ↔ ViT** | eval_inputs 的 `image_embeds` 必须与 `--snapshot` 的 **ViT 同源** | Mode D=**base** ViT；Mode R=**release** ViT。parity 的 `fp32_vs_reference` 门强制这点（不匹配→FAIL）。⚠️ **现 GCS `eval_inputs`=base-ViT(只配 Mode D)**;Mode R 跑 Track 1 parity 会 `cosine≈0.54 FAIL`（base/release ViT 不同,**预期,非 TPU 问题**）→ Mode R 复现 ADE/RFS 走 **Track 2**（prep_val 与 ViT 无关,见下） |
 | **导出坑** | 训练 ckpt 导出**绝不加** `verify_against` | 它做逐位 round-trip,训练后 434 text 权重变了 → 会假 `B1_ROUNDTRIP_FAIL`（仅 BASE ckpt 才加） |
 | **metric flag** | `--gt`（接 `.pkl` 或 tfrecord glob） | ⚠️ docstring 的 `--gt_tfrecords`/`--gt_dict_pkl` 是**过时的**,会报错 |
 
@@ -65,9 +65,14 @@ source ~/venv/bin/activate
 [ -d "$DATA_ROOT/base_qwen25vl_3b_snapshot" ] || \
   gcloud storage rsync -r "$SRC/base_qwen25vl_3b_snapshot" "$DATA_ROOT/base_qwen25vl_3b_snapshot"         # tokenizer/decode + Mode D 的 ref
 
-# ③ Track 2 另外需要一个全依赖解释器（torch+transformers+tensorflow+waymo_open_dataset(+编译好的
-#    end_to_end_driving_data_pb2)+jax),和 03_data_processing 同一个:
-export PY="<你的全依赖 python>"
+# ③ Track 2（官方 ADE/RFS）—— prep_val 由 owner 预烤,内部**只用上面的 ~/venv（jax）+ numpy**:零 tf、零
+#    waymo/proto、零 torch、零 convert,**没有 $PY 这回事了**（旧文档要的 tf+waymo+编译 proto 全是 owner
+#    侧预烤时用的,内部不需要）。把预烤好的 prep_val_full(479 帧,与 ViT 无关,只含 pixel+text) + GT pkl 拉到 CNS:
+mkdir -p "$DATA_ROOT/eval"
+[ -d "$DATA_ROOT/eval/prep_val_full" ] || \
+  gcloud storage rsync -r "$SRC/eval/prep_val_full" "$DATA_ROOT/eval/prep_val_full"     # 479 npz, ~3.1GB
+[ -f "$DATA_ROOT/eval/rated_val_gt.pkl" ] || \
+  gcloud storage cp "$SRC/eval/rated_val_gt.pkl" "$DATA_ROOT/eval/rated_val_gt.pkl"      # 0.55MB
 ```
 
 ---
@@ -81,21 +86,25 @@ PYTHONPATH=$FORK/src JAX_PLATFORMS=cpu python -m maxtext.diffusion.tests.eval_sa
 # → EVAL_SASD_SELFCONTAINED_PASS
 ```
 
-## §T1.1 准备 eval-inputs（owner 离线产；内部拉已发的）
+## §T1.1 准备 eval-inputs（Track 1 driver 用；owner 离线产、含 frozen-ViT image_embeds）
 
-eval-inputs 是**离线**在 torch host 上产的 per-sample npz（含预算 frozen-ViT `image_embeds`,168-res,内部 TPU 不跑 ViT）。
+eval-inputs 是**离线**在 torch host 上产的 per-sample npz（含预烤 frozen-ViT `image_embeds`,168-res,内部 TPU 不跑 ViT）。**embeds 与 `--snapshot` 的 ViT 同源是硬约束**（§T1.3 parity 门强制；不同源→`cosine≈0.54 FAIL`）。
 
-- **Mode R（发布 ckpt,release-ViT）**——已发布的 eval_inputs 在 GCS,直接拉:
+- **Mode D（from-base,base-ViT）**——GCS 上已发布的 `eval_inputs`(20 val + 20 train) **就是 base-ViT 烤的**,直接拉(配 from-base 导出快照):
   ```bash
-  gcloud storage cp -r "$SRC/eval_inputs" "$DATA_ROOT/eval_inputs"   # 20 val + 20 train
+  gcloud storage cp -r "$SRC/eval_inputs" "$DATA_ROOT/eval_inputs"   # base-ViT；20 val + 20 train
   ```
-- **Mode D（from-base,base-ViT）**——owner **离线**重建（**torch host,不是 TPU**;`--snapshot` 决定 ViT 同源）:
+- **Mode R（发布 ckpt,release-ViT）**——⚠️ **release-ViT 的 eval_inputs 当前没发布**:
+  - **别**把上面 base-ViT 的 `eval_inputs` 喂给 Mode R 跑 §T1.3 parity —— 会 `fp32_vs_reference cosine≈0.54 FAIL`（base/release ViT 不同,**预期,不是 TPU 问题**）。
+  - **要在 Mode R 复现 ADE/RFS → 直接跳到 Track 2**（prep_val 与 ViT 无关,内部加载 release ViT,proto-free,见下）。Track 1 的 driver 只产逐样本标量,不产 ADE/RFS。
+  - 若**确实**要 Mode R 的 Track-1 driver 标量,需 owner 用 **release** snapshot 离线重烤 eval_inputs 再 ship（找 owner;命令同下,`--snapshot` 换成 release）。
+
+  <owner 离线重烤参考（torch host,不是 TPU;`--snapshot` 决定 ViT 同源；循环 idx 取多个样本）:>
   ```bash
-  # OFFLINE owner 参考（torch host;循环 idx 取多个样本）:
   PYTHONPATH=$DDRIVE python $FORK/scripts/prep_jax_eval_inputs.py \
     --sample <WOD targets JSON,如 train_targets_distilled_400.json> \
     --img_dir <对应相机 JPEG 目录> \
-    --snapshot $DATA_ROOT/base_qwen25vl_3b_snapshot \
+    --snapshot <base 或 release snapshot —— 决定 ViT 同源> \
     --out $DATA_ROOT/eval_inputs/val_s0.npz --idx 0 --with_embeds
   # 默认 min/max_pixels=784/50176 → 168 image tokens（别覆盖!）;结尾 SASD_PREP_INPUTS_DONE
   ```
@@ -150,39 +159,33 @@ done
 
 # Track 2 — 官方 ADE/RFS on val（metric 交叉核对）
 
-> 要**官方 ADE/RFS 数字**才用这个（Track 1 不产 ADE/RFS,只产逐样本标量）。需要 `$PY` 能跑 tf+waymo metric 栈,
-> 且 CNS 上有 `val_rated_479.tfrecord` + `rated_val_gt.pkl`（STEP 0 §6 发布;拉法同 `03_data_processing.md §0`）。
+> 要**官方 ADE/RFS 数字**才用这个（Track 1 不产 ADE/RFS）。**prep_val 由 owner 预烤,内部全程 `~/venv`（jax）+ numpy**:
+> 零 convert、零 proto、零 tf、零 torch、**不需要 `$PY`**。前提:§0 ③ 已把 `prep_val_full` + `rated_val_gt.pkl` 拉到 CNS。
+>
+> 为什么不要 proto/tf:① `prep_val_full` 是 owner 预烤的 479 帧 `pixel_values`+text(**与 ViT 无关** —— `jax_batch_inference`
+> 自己在 TPU 上加载 `FASTDDRIVE_SNAP` 的 ViT),所以**跳过了** convert(解析 tfrecord 才需 proto)+ prep;② metric 用 `--gt <pkl>`
+> 走纯 numpy 路径(`evaluate_waymo_metrics` 已把 tf+proto 改成**惰性 import**,只有 tfrecord-GT 分支才触发,pkl 分支不碰)。
 
 ```bash
+source ~/venv/bin/activate
 WORK=$DATA_ROOT/infer_work; mkdir -p "$WORK"
-SNAP=$DATA_ROOT/release_fast_ddrive_snapshot   # Mode R 复现 0.839;Mode D 换成 from-base 导出快照
 
-# 拉 metric 需要的两样（首次）:
-mkdir -p "$DATA_ROOT/eval"
-gcloud storage cp "$SRC/eval/val_rated_479.tfrecord" "$DATA_ROOT/eval/val_rated_479.tfrecord"
-gcloud storage cp "$SRC/eval/rated_val_gt.pkl"       "$DATA_ROOT/eval/rated_val_gt.pkl"
+# snapshot：Mode R(复现 0.839)用 release；Mode D 换成 from-base 导出快照。
+export FASTDDRIVE_SNAP=$DATA_ROOT/release_fast_ddrive_snapshot   # Mode D: =$DATA_ROOT/overfit400_base_hf
+PREP=$DATA_ROOT/eval/prep_val_full          # owner 预烤的 479 帧（pixel+text,ViT 无关）
+GT=$DATA_ROOT/eval/rated_val_gt.pkl
 
-# 1) convert val → JSON + 前视 JPEG
-$PY "$FASTDDRIVE_ROOT/fast_ddrive/data/convert_wod_e2e.py" \
-   --tfrecords "$DATA_ROOT/eval/val_rated_479.tfrecord" \
-   --out_json  "$WORK/val.json" --image_root "$WORK/val_images" --rated_only --with_target
-
-# 2) eval prep @200704（**别加** --min/max_pixels）
-$PY "$DDRIVE/eval/prep_jax_eval.py" \
-   --eval_json "$WORK/val.json" --image_root "$WORK/val_images" --out_dir "$WORK/prep_val"
-
-# 3) 推理 bf16 + fp32
+# 1) 推理 bf16 + fp32（jax_batch_inference 自己加载 FASTDDRIVE_SNAP 的 text+ViT,在 TPU 上跑 ViT）
 XLA_PYTHON_CLIENT_PREALLOCATE=false \
-  $PY "$DDRIVE/eval/jax_batch_inference.py" --prep_dir "$WORK/prep_val" --out_dir "$WORK/jax_val_bf16"
+  python "$DDRIVE/eval/jax_batch_inference.py" --prep_dir "$PREP" --out_dir "$WORK/jax_val_bf16"
 XLA_PYTHON_CLIENT_PREALLOCATE=false \
-  $PY "$DDRIVE/eval/jax_batch_inference.py" --prep_dir "$WORK/prep_val" --out_dir "$WORK/jax_val_fp32" --fp32
+  python "$DDRIVE/eval/jax_batch_inference.py" --prep_dir "$PREP" --out_dir "$WORK/jax_val_fp32" --fp32
 
-# 4) 官方 metric（--gt 用 pkl,不是 --gt_tfrecords）
+# 2) 官方 metric（--gt 用 pkl → 纯 numpy,不 import tf/proto；**不是** --gt_tfrecords）
 for tag in bf16 fp32; do
-  $PY "$FASTDDRIVE_ROOT/fast_ddrive/eval/evaluate_waymo_metrics.py" \
+  python "$FASTDDRIVE_ROOT/fast_ddrive/eval/evaluate_waymo_metrics.py" \
      --pred_json "$WORK/jax_val_${tag}/predictions.json" \
-     --gt "$DATA_ROOT/eval/rated_val_gt.pkl" \
-     --output_dir "$WORK/metric_${tag}"
+     --gt "$GT" --output_dir "$WORK/metric_${tag}"
   echo "== $tag =="; cat "$WORK/metric_${tag}/waymo_eval_results.json"
 done
 ```

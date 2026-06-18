@@ -7,6 +7,27 @@
 
 ---
 
+## 2026-06-18 — Track 2 改成 proto-free（owner 预烤 prep_val）+ 修 §T1.1 Mode R bug
+
+**触发:** 内部 agent 跑 Mode R 的 §T1.3 parity 时 `fp32_vs_reference cosine=0.54 FAIL`。本地复现确认:GCS 上的
+`eval_inputs`(20 val+train npz)是 **base-ViT** 烤的(给 Mode D),**Mode R 不能用**;旧 §T1.1 "Mode R 直接拉 GCS
+eval_inputs" 是 bug（那批 npz 的 `image_embeds` 与 release ViT 不同源 → 0.54）。
+
+**改动:**
+- **`fast_ddrive/eval/evaluate_waymo_metrics.py`**:把 `import tensorflow` + waymo `end_to_end_driving_data_pb2`
+  改成**惰性 import**（挪进 `load_waymo_e2e_data()`,仅 tfrecord-GT 分支用）。`--gt <pkl>` 路径现在**纯 numpy**,
+  不碰 tf/proto。本地在无 tf/无 proto 的 env 端到端验证通过(479 帧出 ADE/RFS)。`waymo_rfs_utils` 本就纯 numpy。
+- **owner 预烤 + 发布 `prep_val_full`**（479 帧,`pixel_values`+text,**与 ViT 无关**）→ `$SRC/eval/prep_val_full/`。
+  内部 Track 2 直接拉它跑 `jax_batch_inference`（TPU 上自加载 `FASTDDRIVE_SNAP` 的 ViT）+ metric,**全程 ~/venv(jax)
+  +numpy**:零 convert、零 proto、零 tf、零 torch、**不需要 `$PY`**。
+- **`00_run_inference.md`**:§0 ③ / Track 2 / §T1.1 / track 表 / canonical 表全部按上面重写;§T1.1 标明 GCS
+  `eval_inputs`=base-ViT(只配 Mode D),Mode R 复现 ADE/RFS 走 Track 2。
+- **`6for_internal/00_owner_publish.md` §6**:加发布 `prep_val_full` 的步骤。
+
+**Mode R 期望:** Track 2 bf16 ≈ golden **ADE@3s 0.839 / @5s 2.072 / RFS 7.929**（num_samples=479）。
+
+---
+
 ## 2026-06-17 — 新建 `7for_internal_inference/`（内部 TPU 推理 / eval 的专属 track）
 
 **为什么:** 推理内容原本散在三处（`INFERENCE_DEPLOY.md` 设计 / `test_training.md` STAGE 2-4 当训练尾巴 /

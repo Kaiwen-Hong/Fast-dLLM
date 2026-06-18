@@ -69,7 +69,7 @@ done
 
 ## 6.(要跑内部 STEP 3 才做)发布 STEP 3 的 artifacts
 
-STEP 3(`03_data_processing.md`)+ STEP I(`../7for_internal_inference/00_run_inference.md`)需要这 3 样在本地(5090)产出、ship 到 GCS 的东西(快照/val 子集给两者;GT pkl 给 STEP I 的官方 metric)。代码侧
+STEP 3(`03_data_processing.md`)+ STEP I(`../7for_internal_inference/00_run_inference.md`)需要这几样在本地(5090)产出、ship 到 GCS 的东西:快照/val 子集给两者;GT pkl + **预烤的 `prep_val_full`** 给 STEP I 的官方 metric(让内部 Track 2 **零 proto/tf/torch**:prep_val 与 ViT 无关,metric 用 `--gt pkl` 走纯 numpy)。代码侧
 (`convert_wod_e2e.py` / `evaluate_waymo_metrics.py` / 新脚本)随 §2 的 bundle 已含 `fast_ddrive/`,无需单独处理。
 
 ```bash
@@ -92,10 +92,14 @@ $AV jax_ddrive/scripts/build_rated_val_gt.py \
    --out_pkl /home/kaiwen/data/fast-ddrive/eval/rated_val_gt.pkl --rated_only    # 期望 kept=479
 gsutil cp /home/kaiwen/data/fast-ddrive/eval/rated_val_gt.pkl "$SRC/eval/rated_val_gt.pkl"
 
+# (d) 预烤的 Track 2 prep_val(479 帧,pixel+text,**与 ViT 无关**;给 STEP I 内部 proto-free 跑 ADE/RFS,~3.1GB):
+#     一份同时服务 Mode R / Mode D —— jax_batch_inference 在 TPU 上自己加载各自 snapshot 的 ViT。
+gsutil -m rsync -r /home/kaiwen/data/fast-ddrive/eval/prep_val_full "$SRC/eval/prep_val_full"   # 期望 479 npz
+
 # (可选)给快照写 DATA_MANIFEST(同 §4 的 provenance 习惯):
 $AV jax_ddrive/scripts/data_manifest.py "$SRC/release_fast_ddrive_snapshot" --upload
 ```
-内部侧 STEP 3 §0 会把这三样 pull 到 `$DATA_ROOT/{release_fast_ddrive_snapshot, eval/val_rated_479.tfrecord, eval/rated_val_gt.pkl}`。
+内部侧 STEP 3 §0 会把快照/val 子集/GT pkl pull 到 `$DATA_ROOT/{release_fast_ddrive_snapshot, eval/val_rated_479.tfrecord, eval/rated_val_gt.pkl}`;STEP I Track 2 再把 `eval/prep_val_full` pull 下来(零 proto/tf/torch)。
 
 ---
 **→ 接 STEP 1(内部侧):`transfer-codebase.md`**

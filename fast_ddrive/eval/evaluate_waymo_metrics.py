@@ -31,14 +31,20 @@ if _eval_dir not in _sys.path:
     _sys.path.insert(0, _eval_dir)
 
 import numpy as np
-import tensorflow as tf
 from tqdm import tqdm
 
-# Import RFS evaluation from waymo_rfs_utils (was kewei_scripts/utils.py)
+# Import RFS evaluation from waymo_rfs_utils (was kewei_scripts/utils.py).
+# This module is pure-numpy (no tensorflow, no compiled proto), so it stays a
+# top-level import.
 from waymo_rfs_utils import get_rater_feedback_score
 
-# Waymo protos
-from waymo_open_dataset.protos import end_to_end_driving_data_pb2 as wod_e2ed_pb2
+# NOTE: tensorflow + the waymo_open_dataset E2E proto are imported LAZILY, inside
+# load_waymo_e2e_data() (the only place they are used). This lets the --gt <pkl>
+# path (see main()) score ADE/RFS with just numpy + waymo_rfs_utils — no
+# tensorflow and no compiled end_to_end_driving_data_pb2. The pkl, built by
+# build_rated_val_gt.py, holds portable SimpleNamespace GT objects of numpy
+# arrays, so unpickling needs zero extra deps. Only the tfrecord-glob GT path
+# pulls in tensorflow + the proto.
 
 
 # Navigation command mapping (from the original code)
@@ -216,6 +222,11 @@ def load_waymo_e2e_data(tfrecord_pattern: str) -> Dict[str, Any]:
     Returns:
         Dictionary mapping frame_id to E2EDFrame proto
     """
+    # Lazy heavy imports: only this tfrecord-GT path needs tensorflow + the
+    # compiled waymo E2E proto. The --gt <pkl> path in main() avoids both.
+    import tensorflow as tf
+    from waymo_open_dataset.protos import end_to_end_driving_data_pb2 as wod_e2ed_pb2
+
     filenames = tf.io.matching_files(tfrecord_pattern)
     if tf.size(filenames) == 0:
         raise FileNotFoundError(f"No TFRecords matched {tfrecord_pattern}")
