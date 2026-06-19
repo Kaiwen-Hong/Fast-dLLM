@@ -198,16 +198,18 @@ class VisionTransformer(nnx.Module):
         self.patch_embed = Lin(patch_dim, cfg.hidden_size, bias=False, dtype=cfg.dtype, rngs=rngs)
         self.blocks = nnx.List([VisionBlock(cfg, rngs=rngs) for _ in range(cfg.depth)])
         self.merger = PatchMerger(cfg, rngs=rngs)
-        # ViT rotary inv_freq (dim = head_dim//2)
-        d = cfg.head_dim // 2
-        self.inv_freq = 1.0 / (cfg.rope_theta ** (np.arange(0, d, 2, dtype=np.float32) / d))
 
     def _rotary(self, grid_thw, window_index):
         cfg = self.cfg
+        # inv_freq is computed LOCALLY (host), NOT stored as self.inv_freq: as a non-Param numpy
+        # attribute it leaked into the train state as an abstract ShapeDtypeStruct(20,) on the
+        # full-ckpt restore path (head_dim//2=40 -> arange(0,40,2)=20 freqs), breaking shard_args.
+        d = cfg.head_dim // 2
+        inv_freq = 1.0 / (cfg.rope_theta ** (np.arange(0, d, 2, dtype=np.float32) / d))
         pos = rot_pos_ids(grid_thw, cfg.spatial_merge_size)          # [N,2]
         max_grid = int(grid_thw[:, 1:].max())
         seq = np.arange(max_grid, dtype=np.float32)
-        full = np.outer(seq, self.inv_freq)                          # [max_grid, d/2]
+        full = np.outer(seq, inv_freq)                               # [max_grid, d/2]
         rpe = full[pos].reshape(pos.shape[0], -1)                    # [N, head_dim//2]
         # reorder by window_index (merged-unit granularity)
         u = cfg.spatial_merge_unit
@@ -215,19 +217,24 @@ class VisionTransformer(nnx.Module):
         emb = np.concatenate([rpe, rpe], -1)                         # [N, head_dim]
         return jnp.asarray(np.cos(emb)), jnp.asarray(np.sin(emb))
 
-    def __call__(self, pixel_values: Array, grid_thw: np.ndarray):
+    def precompute_structural(self, grid_thw) -> dict:
+        """Host-side geometry for the ViT forward, derived ONLY from ``grid_thw``
+        (window partitioning / 2D-RoPE cos-sin / per-segment attention masks / output
+        reorder). For a fixed image resolution these are constant across all samples, so
+        they can be computed OFF-graph (in the data iterator) and fed into the jitted,
+        differentiable :meth:`body`. No pixel data, no params — pure geometry.
+
+        This is the EXACT structural half of the original ``__call__`` (same numpy ports),
+        split out so the neural body can be jitted + differentiated (trainable ViT).
+        Returns a dict of jnp arrays.
+        """
         cfg = self.cfg
         grid_thw = np.asarray(grid_thw)
-        N = int(pixel_values.shape[0])
-        u = cfg.spatial_merge_unit
+        N = int((grid_thw[:, 0] * grid_thw[:, 1] * grid_thw[:, 2]).sum())
 
         window_index, cu_win = get_window_index(grid_thw, cfg)
         cu_full = cu_seqlens_full(grid_thw)
         cos, sin = self._rotary(grid_thw, window_index)
-
-        x = self.patch_embed(pixel_values)                          # [N, hidden]
-        # reorder hidden by window_index (merged-unit granularity)
-        x = x.reshape(N // u, u, -1)[jnp.asarray(window_index)].reshape(N, -1)
 
         # segment masks: full = all patches one segment; window = per cu_win segment.
         seg_full = jnp.asarray(_seg_ids_from_cu(cu_full, N))
@@ -235,10 +242,41 @@ class VisionTransformer(nnx.Module):
         seg_win = jnp.asarray(_seg_ids_from_cu(cu_win, N))
         mask_win = (seg_win[:, None] == seg_win[None, :])
 
+        return {
+            "window_index": jnp.asarray(window_index),
+            "cos": cos, "sin": sin,
+            "mask_full": mask_full, "mask_win": mask_win,
+            "rev": jnp.asarray(np.argsort(window_index)),
+        }
+
+    def body(self, pixel_values: Array, structural: dict) -> Array:
+        """Pure-jax, differentiable ViT body: consumes ``pixel_values`` + the precomputed
+        ``structural`` dict (from :meth:`precompute_structural`). Jittable end-to-end and
+        the gradient flows to every ViT param (patch_embed / blocks / merger) — this is
+        what makes the ViT *trainable* in-graph. Numerically identical to the original
+        ``__call__`` (same ops, just no host-numpy inside).
+        """
+        cfg = self.cfg
+        N = int(pixel_values.shape[0])
+        u = cfg.spatial_merge_unit
+        window_index = structural["window_index"]
+        cos, sin = structural["cos"], structural["sin"]
+        mask_full, mask_win = structural["mask_full"], structural["mask_win"]
+        rev = structural["rev"]
+
+        x = self.patch_embed(pixel_values)                          # [N, hidden]
+        # reorder hidden by window_index (merged-unit granularity)
+        x = x.reshape(N // u, u, -1)[window_index].reshape(N, -1)
+
         for i, blk in enumerate(self.blocks):
             x = blk(x, cos, sin, mask_full if i in cfg.fullatt_block_indexes else mask_win)
 
         x = self.merger(x)                                          # [N//u, out_hidden]
-        # reverse the window reordering
-        rev = jnp.asarray(np.argsort(window_index))
-        return x[rev]
+        return x[rev]                                               # reverse window reorder
+
+    def __call__(self, pixel_values: Array, grid_thw: np.ndarray):
+        # Backward-compatible split: structural precompute (host) + differentiable body.
+        # Existing eval/iterator callers are unaffected (same inputs, same output, same
+        # numerics). The trainable-ViT train path calls precompute_structural() in the
+        # data iterator and body() inside the jitted graph.
+        return self.body(pixel_values, self.precompute_structural(grid_thw))

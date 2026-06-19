@@ -549,7 +549,16 @@ class DiffusionObjective(BaseModel):
       "", description="Directory of SASD Parquet shards for dataset_type='waymo_sasd' (local path or gs://...)."
   )
   sasd_vit_snapshot: str = Field(
-      "", description="HF snapshot dir of the frozen Fast-dDrive ViT for the waymo_sasd image path (on-the-fly embeds)."
+      "", description="HF snapshot dir of the Fast-dDrive ViT for the waymo_sasd image path. Frozen path: source of"
+      " on-the-fly/pre-baked embeds. Trainable path (sasd_vit_trainable=true): INIT source for the in-graph ViT"
+      " params (release => step-0 in-graph embeds == pre-baked; base => from-base joint training)."
+  )
+  sasd_vit_trainable: bool = Field(
+      False, description="If True, run the Qwen2.5-VL ViT IN-GRAPH on pixel_values each step (params in the train"
+      " state, trainable, sharded, checkpointed) instead of consuming frozen pre-baked image_embeds. The ViT is"
+      " bridged into the Linen model via flax.nnx.bridge.ToLinen and initialized from sasd_vit_snapshot. False keeps"
+      " the existing TPU-validated frozen/pre-baked path. To run the ViT in-graph but NOT update it, additionally"
+      " add its param path to trainable_parameters_mask's complement (i.e. freeze via the optimizer mask)."
   )
 
 

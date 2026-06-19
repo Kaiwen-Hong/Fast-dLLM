@@ -28,8 +28,12 @@ sasd_num_image_tokens: 336
 # ── data ────────────────────────────────────────────────────────────────────
 dataset_type: "waymo_sasd"
 sasd_data_dir: "/home/kaiwen/data/fast-ddrive/hf/wod_e2e_sasd"
-# Frozen Fast-dDrive ViT snapshot (on-the-fly image embeds in the iterator). Override on TPU.
+# Fast-dDrive ViT snapshot. Frozen path (default): on-the-fly/pre-baked image embeds in the iterator.
+# Trainable path (sasd_vit_trainable=true): INIT source for the in-graph ViT params. Override on TPU.
 sasd_vit_snapshot: "/home/kaiwen/data/huggingface/hub/models--Efficient-Large-Model--Fast-dDrive/snapshots/0fda81009f4efa58a2debbb48c0c09818e45341f"
+# false = existing frozen/pre-baked path (TPU-validated). true = run the ViT IN-GRAPH on pixels each step
+# (trainable, bridged via nnx.bridge.ToLinen, init from sasd_vit_snapshot). See fast-ddrive-trainable-vit.
+sasd_vit_trainable: false
 eval_interval: 0           # no eval split wired for SASD v1
 
 # ── SASD-required attention / rope wiring ─────────────────────────────────────

@@ -645,10 +645,27 @@ class Decoder(nn.Module):
     # as NNX scatters into embed_tokens output before the hidden forward. We deliberately
     # do NOT route through merge_mm_embeddings (cumsum/argsort packing, model-name gated)
     # because that op does not match NNX's exact at[img_pos].set scatter.
-    if attention_metadata is not None and attention_metadata.get("sasd_image_embeds") is not None:
-      sasd_ie = attention_metadata["sasd_image_embeds"]   # [2B, 2N, D]
-      sasd_pos = attention_metadata["sasd_image_pos"]     # [2B, 2N] i32
-      bidx = jnp.arange(y.shape[0])[:, None]              # [2B, 1]
+    # Two paths, selected by config:
+    #  - FROZEN (default, sasd_vit_trainable=false): attention_metadata carries precomputed
+    #    `sasd_image_embeds` (pre-baked / on-the-fly host ViT, stop_gradient) — unchanged behavior.
+    #  - TRAINABLE (sasd_vit_trainable=true): the Qwen2.5-VL ViT runs IN-GRAPH on `sasd_pixel_values`
+    #    (its params live in the train state, bridged via nnx.bridge.ToLinen) and produces the doubled
+    #    embeds HERE, so gradients flow to the ViT. Same scatter into the token-embed rows either way.
+    sasd_md = attention_metadata or {}
+    sasd_ie = sasd_md.get("sasd_image_embeds")           # frozen path -> [2B, 2N, D] or None
+    if getattr(cfg, "sasd_vit_trainable", False) and sasd_md.get("sasd_pixel_values") is not None:
+      # The bridged ViT is instantiated only when pixels are present (always true in the trainable
+      # train: the iterator emits them, so the ViT params are created during model.init and trained).
+      # NOTE: an UNCONDITIONAL instantiation (zero-pixel placeholder during init, to also create the
+      # ViT params for the param-ckpt BUILD path) was tried but it makes the in-graph ViT params land
+      # ABSTRACT in the train state (shard_args TypeError) — so the ckpt-side ViT snapshot-init needs a
+      # different approach; see 06_trainable_vit_plan.md §9. This conditional form is the validated one.
+      from maxtext.diffusion.sasd_vit_ingraph import SasdInGraphViT, sasd_vision_config
+      sasd_ie = SasdInGraphViT(vit_cfg=sasd_vision_config(cfg.weight_dtype))(
+          sasd_md["sasd_pixel_values"])                              # [2B, 2N, D] (ViT runs in-graph)
+    if sasd_ie is not None:
+      sasd_pos = sasd_md["sasd_image_pos"]               # [2B, 2N] i32
+      bidx = jnp.arange(y.shape[0])[:, None]             # [2B, 1]
       y = y.at[bidx, sasd_pos, :].set(sasd_ie.astype(y.dtype))
 
     # Merge the image embeddings with the text embeddings for multimodal models

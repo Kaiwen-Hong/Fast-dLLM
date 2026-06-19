@@ -145,6 +145,12 @@ def loss_fn(model, config, data, dropout_rng, params, sparsity_state=None, is_tr
     if "sasd_image_embeds" in data:
       sasd_attention_metadata["sasd_image_embeds"] = data["sasd_image_embeds"]  # [2B, 2N, D]
       sasd_attention_metadata["sasd_image_pos"] = data["sasd_image_pos"]        # [2B, 2N] i32
+    elif "sasd_pixel_values" in data:
+      # TRAINABLE in-graph ViT (sasd_vit_trainable=true): carry pixels + IMAGE_TOK positions; the
+      # ViT runs in-graph inside _apply_embedding (its params live in the train state) so gradients
+      # reach the ViT. Same scatter into the doubled sequence at sasd_image_pos.
+      sasd_attention_metadata["sasd_pixel_values"] = data["sasd_pixel_values"]  # [B, 672, 1176] f16
+      sasd_attention_metadata["sasd_image_pos"] = data["sasd_image_pos"]        # [2B, 2N] i32
 
   is_mdlm = bool(getattr(config, "objective", "ar") == "mdlm")
   if is_mdlm:

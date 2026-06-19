@@ -92,6 +92,10 @@ class GrainCheckpointHandler(PyGrainCheckpointHandler, ocp.CheckpointHandler):
         state = json.dumps(item.get_state(), indent=4)
       else:
         state = item.get_state().decode()
+      # Each process writes its own shard; on a multi-host run with a NON-shared filesystem
+      # (e.g. per-host local disk) only the primary host has the tmp dir, so non-primary
+      # processes must create their own parent dir (mirrors the ElasticIterator branch above).
+      filename.parent.mkdir(parents=True, exist_ok=True)
       filename.write_text(state)
 
     if isinstance(item, list):
@@ -295,6 +299,17 @@ def create_orbax_checkpoint_manager(
     async_options = ocp.AsyncOptions(
         timeout_secs=int(datetime.timedelta(minutes=60).total_seconds()),
     )
+  # Multi-host on a NON-shared filesystem (per-host local disk, e.g. a TPU pod writing to a local
+  # base_output_directory): each process must create its own dir and finalize independently
+  # (primary_host=None), else only the primary host's disk has the dir and others fail. Gated so the
+  # single-host (GPU) and shared-FS GCS paths keep their default coordinated behavior unchanged.
+  _local_multihost_ckpt_opts = {}
+  if jax.process_count() > 1 and not str(checkpoint_dir).startswith("gs://"):
+    max_logging.log("Multi-host + local FS checkpoint dir: per-process dir creation, primary_host=None.")
+    _local_multihost_ckpt_opts = dict(
+        enable_per_process_directory_creation=True,
+        multiprocessing_options=ocp.options.MultiprocessingOptions(primary_host=None),
+    )
   manager = CheckpointManager(
       p,
       item_names=item_names,
@@ -307,6 +322,7 @@ def create_orbax_checkpoint_manager(
           async_options=async_options,
           todelete_subdir=todelete_subdir,
           todelete_full_path=todelete_full_path,
+          **_local_multihost_ckpt_opts,
       ),
       logger=orbax_logger,
   )

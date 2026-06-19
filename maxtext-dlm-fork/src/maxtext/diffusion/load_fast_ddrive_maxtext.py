@@ -146,7 +146,9 @@ def build_maxtext_params_from_fast_ddrive(
 
   mt_dict: dict[str, tuple[int, tuple]] = {}
   for idx, (path_tuple, leaf) in enumerate(abstract_params_flat):
-    key_parts = [k.key for k in path_tuple if hasattr(k, "key")]
+    # str() each path key: text params use str DictKeys, but the bridged ViT subtree
+    # (sasd_vit_trainable) introduces INT dict keys (nnx-style) that break "-".join.
+    key_parts = [str(k.key) for k in path_tuple if hasattr(k, "key")]
     mt_dict["params-" + "-".join(key_parts)] = (idx, tuple(leaf.shape))
 
   # --- 2. mapping + hooks (generic Qwen functions, 36 layers, dense) ------------
@@ -154,7 +156,15 @@ def build_maxtext_params_from_fast_ddrive(
   param_map = QWEN_MAXTEXT_TO_HF_PARAM_MAPPING(hf_cfg, config, scan_layers=config.scan_layers)
   hook_map = QWEN_MAXTEXT_TO_HF_PARAM_HOOK_FN(hf_cfg, config, scan_layers=config.scan_layers, saving_to_hf=False)
 
-  filtered = validate_and_filter_param_map_keys(param_map.keys(), set(mt_dict.keys()))
+  # Validate/fill ONLY the TEXT leaves with the QWEN mapping. When sasd_vit_trainable adds the
+  # bridged-ViT subtree to mt_dict, those keys aren't in the text param_map (and would trip the
+  # "state must be a subset of param_map" check) — they are filled separately below by the in-graph
+  # ViT snapshot-init. So restrict the validated state keys to mt_dict ∩ param_map's atomic domain.
+  _pm_atomic = set()
+  for _k in param_map.keys():
+    _pm_atomic.update(_k if isinstance(_k, tuple) else (_k,))
+  _text_state_keys = set(mt_dict.keys()) & _pm_atomic
+  filtered = validate_and_filter_param_map_keys(param_map.keys(), _text_state_keys)
 
   # --- 3. fill leaves (streaming: one HF tensor at a time -> device -> drop) ----
   getter = _StreamingTextGetter(snapshot_dir)
@@ -184,6 +194,30 @@ def build_maxtext_params_from_fast_ddrive(
     n_loaded += 1
 
   missing = [k for k, (i, _) in mt_dict.items() if leaves[i] is None]
+  if missing and getattr(config, "sasd_vit_trainable", False):
+    # TRAINABLE in-graph ViT: the QWEN text mapping does not cover the bridged ViT subtree
+    # (SasdInGraphViT/ToLinen). Fill those remaining leaves IN ORDER from the snapshot ViT —
+    # validated 1:1 in-order correspondence (390<->390, shapes match) in loader_map_test; the
+    # per-leaf shape check below + the step-0 frozen-vs-trainable parity guard against any
+    # ordering drift. The HF visual.* -> NNX name-map lives inside load_fast_ddrive_vit.
+    from maxtext.diffusion.sasd_vit_ingraph import load_sasd_vit_leaves_in_order
+
+    idx_to_shape = {i: s for _, (i, s) in mt_dict.items()}
+    miss_idx = [i for k, (i, _) in mt_dict.items() if leaves[i] is None]
+    vit_leaves = load_sasd_vit_leaves_in_order(snapshot_dir, dtype=jnp.float32)
+    if len(miss_idx) != len(vit_leaves):
+      raise ValueError(
+          f"ViT subtree has {len(miss_idx)} unfilled leaves but snapshot ViT has {len(vit_leaves)}")
+    for i, vl in zip(miss_idx, vit_leaves):
+      want = idx_to_shape[i]
+      if tuple(np.shape(vl)) != tuple(want):
+        raise ValueError(f"ViT leaf shape mismatch at idx {i}: got {np.shape(vl)}, want {want} "
+                         "(bridged-ViT subtree order != snapshot ViT order)")
+      leaves[i] = jax.device_put(jnp.asarray(vl, dtype=jnp.float32))
+      n_loaded += 1
+    if verbose:
+      print(f"[mxt-convert] filled {len(vit_leaves)} in-graph ViT leaves from snapshot (in order)")
+    missing = [k for k, (i, _) in mt_dict.items() if leaves[i] is None]
   if missing:
     raise ValueError(f"{len(missing)} MaxText leaves left unfilled: {missing[:8]} ...")
 

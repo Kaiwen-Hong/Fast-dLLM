@@ -154,8 +154,12 @@ class WaymoSasdDataIterator:
     # the batch) — then the ViT is never loaded and the data loop is pure IO.
     self.use_image_path = int(config.sasd_num_image_tokens) > 0
     self.data_has_embeds = bool(getattr(self.loader, "has_embeds", False))
+    # TRAINABLE in-graph ViT (sasd_vit_trainable=true): the ViT runs INSIDE the model (decoders)
+    # each step, so the iterator neither loads nor runs a ViT — it just carries pixel_values + the
+    # IMAGE_TOK positions into the batch and the in-graph ViT produces the embeds.
+    self.vit_trainable = bool(getattr(config, "sasd_vit_trainable", False))
     self.vit = None
-    if self.use_image_path and not self.data_has_embeds:
+    if self.use_image_path and not self.data_has_embeds and not self.vit_trainable:
       from ddrive_jax.models.vision_qwen25vl import VisionConfig
 
       snap = config.sasd_vit_snapshot
@@ -164,6 +168,10 @@ class WaymoSasdDataIterator:
       from maxtext.utils import max_logging
 
       max_logging.log(f"[waymo_sasd] frozen ViT loaded ({n} tensors) from {snap}")
+    elif self.use_image_path and self.vit_trainable:
+      from maxtext.utils import max_logging
+
+      max_logging.log("[waymo_sasd] sasd_vit_trainable=true — ViT runs in-graph; carrying pixel_values")
     elif self.use_image_path:
       from maxtext.utils import max_logging
 
@@ -189,7 +197,7 @@ class WaymoSasdDataIterator:
     B = int(batch["input_final"].shape[0])
 
     image_embeds = None
-    if self.use_image_path:
+    if self.use_image_path and not self.vit_trainable:
       if self.data_has_embeds:
         # dataset v2: precomputed frozen-ViT embeds, single copy [B,N,D] bf16. Double via
         # concat (first N rows = noisy-half image positions, second N = clean) — exactly
@@ -222,6 +230,14 @@ class WaymoSasdDataIterator:
     if image_embeds is not None:
       local["sasd_image_embeds"] = np.asarray(prepped["image_embeds"])              # [2B, 2N, D]
       local["sasd_image_pos"] = np.asarray(prepped["img_pos"], np.int32)           # [2B, 2N]
+    elif self.use_image_path and self.vit_trainable:
+      # TRAINABLE in-graph ViT: carry pixel_values + the IMAGE_TOK positions; the model's
+      # SasdInGraphViT computes the (doubled) embeds and scatters them at these positions. Both
+      # are batch-major on axis 0 (pixels [B,...], pos [2B,...]) so _form_global_array shards them
+      # consistently with the rest of the SASD batch.
+      img_pos, _twoN = mxt_sasd._image_positions(batch, B)                          # [B, 2N]
+      local["sasd_pixel_values"] = np.asarray(batch["pixel_values"], np.float16)    # [B, N, 1176]
+      local["sasd_image_pos"] = np.asarray(np.repeat(img_pos, 2, axis=0), np.int32) # [2B, 2N]
 
     # Per-host local -> global sharded jax.Array (axis-0 batch sharding). All SASD keys are
     # batch-major on axis 0 (2B for the doubled rows, B for the [B,2,L]/[B,1,L]/[B] keys),

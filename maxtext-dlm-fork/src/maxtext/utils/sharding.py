@@ -93,8 +93,12 @@ def _get_sasd_input_data_sharding(config, mesh):
       "sasd_num_items": _sharding_for_rank(1),        # [B]
   }
   if N > 0:
-    out["sasd_image_embeds"] = _sharding_for_rank(3)  # [2B, 2N, D]
     out["sasd_image_pos"] = _sharding_for_rank(2)     # [2B, 2N]
+    if getattr(config, "sasd_vit_trainable", False):
+      # TRAINABLE in-graph ViT: batch carries pixel_values (batch-major [B, 672, 1176]), not embeds.
+      out["sasd_pixel_values"] = _sharding_for_rank(3)
+    else:
+      out["sasd_image_embeds"] = _sharding_for_rank(3)  # [2B, 2N, D]
   return out
 
 

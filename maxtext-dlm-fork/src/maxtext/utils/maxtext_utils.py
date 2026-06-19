@@ -172,11 +172,22 @@ def get_shaped_batch(config):
     }
     N = int(config.sasd_num_image_tokens)
     if N > 0:
-      twoN = 2 * N
+      # sasd_num_image_tokens is ALREADY the doubled image-token count (2*168=336): the doubled
+      # [2L] row carries 336 IMAGE_TOK and the prebaked/in-graph embeds are [2B, 336, D]. (The
+      # frozen path tolerated the old `2*N`=672 because the real train re-traces on the actual
+      # batch, but the AOT `lower(get_shaped_batch)` traces the in-graph ViT -> 336, so the abstract
+      # image-token axis must be 336 to match.) See prepare_sasd_inputs' `image_embeds.shape[1]==twoN`.
+      twoN = N
       D = config.emb_dim
       embed_dtype = jnp.dtype(config.dtype)
-      shaped["sasd_image_embeds"] = jax.ShapeDtypeStruct((twoB, twoN, D), embed_dtype)
       shaped["sasd_image_pos"] = jax.ShapeDtypeStruct((twoB, twoN), jnp.int32)
+      if getattr(config, "sasd_vit_trainable", False):
+        # TRAINABLE in-graph ViT: the batch carries pixel_values (the model's SasdInGraphViT makes
+        # the embeds), NOT precomputed sasd_image_embeds. Fixed WOD-E2E grid -> 672 ViT patches of
+        # dim 1176 (3 imgs x (1,16,14); patch_dim=3*2*14*14). f16 to match the stored pixels.
+        shaped["sasd_pixel_values"] = jax.ShapeDtypeStruct((gbs, 672, 1176), jnp.float16)
+      else:
+        shaped["sasd_image_embeds"] = jax.ShapeDtypeStruct((twoB, twoN, D), embed_dtype)
     return shaped
   if config.enable_diloco:
     batch_shape = (
