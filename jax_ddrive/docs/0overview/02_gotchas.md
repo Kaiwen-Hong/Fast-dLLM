@@ -50,6 +50,9 @@
 - **导出 `--verify_against` 只对 BASE round-trip 有效**（bitwise 824/824）；TRAINED ckpt 文本权重变了会**假性 FAIL** → trained 导出去掉它。`maxtext_to_hf_export.py:22-28,259-281`。
 
 ### ViT
+- **ViT 有两条路（`sasd_vit_trainable` 开关），别假设永远 frozen。** 默认 false=frozen/预烤 embeds（下面诸条）；true=**in-graph TRAINABLE**：Qwen2.5-VL ViT 每步在 `sasd_pixel_values` 上跑，param 进 MaxText train state（可训/可 shard/可 ckpt），经 `flax.nnx.bridge.ToLinen` 把 NNX ViT *body* 包成 Linen 子模块。`sasd_vit_ingraph.py:34,71,88`；`decoders.py:656,663`；`sharding.py:97,99`。
+- **trainable 路把 ViT 切成 `body`（纯 jax，可 jit+autodiff）+ `precompute_structural`（host-only 几何，不可 jit）。** body 收 `(pixel_values, structural)`、是在图里求导的那段；structural=window 重排/2D-RoPE/seg mask，只依赖 (固定的) `grid_thw`。`vision_qwen25vl.py:220,252`；`sasd_vit_ingraph.py:41,58`。
+- **structural 在 TRACE 时当图常量内嵌，故意 NOT 走 data pipeline。** grid_thw 全数据集恒定 → 几何是编译期常量；若塞进 batch dict 会被按 batch 轴 shard 而 mis-shard 这些 batch-共享数组。融合点在 caller（`SasdInGraphViT.__call__`），不在 `models/`。`sasd_vit_ingraph.py:68,87`。
 - **ViT 用 `stop_gradient` 冻结 OUTPUT embeds（非 param freeze），随后 `del` 掉模块**省内存。`train_waymo_sasd_jax.py:45`；`train_overfit_mm.py:48-50`。
 - **image embeds 在所有去噪步固定**（ViT 循环前跑一次，每步用相同预算值重新 scatter）。`mm_sampler.py:55,64`。
 - **图像融合是 scatter 不是 concat**：`embed_tokens(ids).at[img_pos].set(image_embeds)` 覆写 `ids==IMAGE_TOK(151655)` 的行；融合在 **caller 侧**、不在 `models/`。`train_overfit_mm.py:60`；`sasd.py:215-220`。
@@ -57,7 +60,7 @@
 - **ViT window 重排在末尾用 `argsort(window_index)` 还原**（`spatial_merge_unit=4` 粒度）；忘了还原就乱序。`vision_qwen25vl.py:230,243-244`。
 - **ViT 全注意力块恰为 `(7,15,23,31)`**；其余用 per-window seg mask；padding 哨兵 `-100`。`vision_qwen25vl.py:36,78,239`。
 - **PatchMerger 用 exact GELU（`approximate=False`）；文本 MLP 用 SiLU。** 混合激活。`vision_qwen25vl.py:191` vs `qwen2_5_text.py:132`。
-- **ViT 不能整体 jit**（混了 host numpy index/rope/seg-mask 与 device 计算）；embeds builder 只 jit device 部分，并逐 shard 对 jit-vs-eager cross-check。`parquet_to_ar_with_embeds.py:167-171`。
+- **ViT 不能*整体* jit**（混了 host numpy index/rope/seg-mask 与 device 计算）；embeds builder 只 jit device 部分，并逐 shard 对 jit-vs-eager cross-check。`parquet_to_ar_with_embeds.py:167-171`。**但 trainable 路把可 jit 的 `body` 与 host-only `precompute_structural` 显式拆开** —— body 在真 v5e 上既 compile 又 autodiff（首步 ~24 min 是一次性 XLA 编译，非挂死）。`vision_qwen25vl.py:220,252`；`sasd_vit_ingraph.py:41`。
 
 ### 数值 / 精度策略
 - **RMSNorm + 所有 attention logits/softmax 强制 fp32**（不论模型 dtype）。`qwen2_5_text.py:66-68,115-120`；`vision_qwen25vl.py:111-113,152-154`；loss cast logits 到 fp32 `sasd_loss.py:23`。
@@ -75,6 +78,15 @@
 - **`sharding.py` 是 SPEC-ONLY** —— 只给 PartitionSpec；物理 sharding 在 `train_tpu.py` 经 `shard_map`/`reshard`。embedding 永远 replicated `P()`。`sharding.py:1-9,41`。`fsdp_pspec` 只切**单个最大轴**。`sharding.py:26-28`。
 - **三套 checkpoint 系统并存**：`checkpoint.py`（StandardCheckpointer，**单 host**，含 frozen Variables）；`train/checkpoint_mgr.py`（CheckpointManager 4-item，多 host）；`train_waymo_sasd_jax.py:159` 自己的 inline `save_ckpt`（无 opt_state、吞异常）。
 - **multihost 修复**：旧 `jax.device_put(host_local_batch, global_sharding)` 在真 2-VM slice 上**错**；用 `jax.make_array_from_process_local_data`。`test_multihost_datafeed.py:5-8,65`；`train_tpu.py:368-390`。
+
+#### TPU 运维坑（trainable-ViT v5e-16 run，已实测，不在源码里）
+> 这些是**运维**教训（GCP/Orbax 行为），非代码 file:line gotcha。全程实测于 trainable-ViT 多机跑（run `be47jjta8`，loss 5.199→3.042，EXIT 0）。细节 → [`../1plans/06_trainable_vit_plan.md`](../1plans/06_trainable_vit_plan.md) §9。
+- **GCS Regional Access Boundary(RAB) 是 REGION-scoped，会墙掉 TPU compute SA。** RAB 拦 TPU 服务账号读跨区桶（源桶在 us-east5、pod 在 us-south1 → 被拦）→ restore 要么从 ckpt 的**本地副本**读（先用 USER creds `gsutil` 拉下来），要么用**同区**桶；SAVE 必须用**同区**桶（如 `us-south1`）且给 TPU SA `roles/storage.admin`（否则 `403 storage.buckets.get`）。
+- **multi-host Orbax checkpoint 必须有 SHARED filesystem。** 每 host 各自的本地盘会**逐层失败**（grain-iter 目录 → per-process 创建 → `array_metadatas`；mkdir 修复 + `primary_host=None` 只解前两层）→ **同区 GCS 才是正解**。别用 per-host 本地盘存多 host ckpt。
+- **`enable_checkpointing=false` 在设了 `load_parameters_path` 时会被配置校验拒绝**；且 **step 0 必存**（`0 % checkpoint_period == 0`）—— 想完全不存 ckpt 走不通，得给一个能写的同区目的地。
+- **fresh-pod SSH `Permission denied (publickey)` = key 还在传播**，不是配错 → 退避重试 warm-up 即可。
+- **multi-host `process_state.cc Raising signal 6` / Shutdown-barrier abort 是 SYMPTOM**（某个 worker 先死了），不是 root cause → 两段式 SSH、把每 host 全量日志写盘、再开新 session 读那个真正先崩的 worker。signal-6 别当成代码 bug 去 debug。
+- **trainable 路 ViT param 当前是 REPLICATED**（无 logical-axis sharding）—— 真正 multinode 前的 TODO；`sharding.py:97,99` 只把 `sasd_pixel_values` 按 batch 轴 shard，ViT 权重未切。
 
 ### LoRA / 其它
 - **各脚本默认 trainability 不同**：`train_overfit.py` 默认 LoRA(rank 16) 除非 `--full_ft`；`train_overfit_mm.py`/`train_waymo_sasd_jax.py` 是 **full-FT 文本**（无 LoRA）。别假设都用 LoRA。`lora.py:18`；`train_overfit.py:75`。
@@ -123,7 +135,7 @@
 | tie_embeddings / qkv_bias / qk_norm | True / True / **False** | `qwen2_5_text.py:44,41,43` |
 | release ckpt（fp32）大小 | ~16 GB | `run_all_verification.sh:3` |
 
-### ViT（frozen）
+### ViT（frozen 默认；`sasd_vit_trainable=true` 时同结构可训）
 | 量 | 规范值 | 出处 |
 |---|---|---|
 | depth / hidden / heads / head_dim | 32 / 1280 / 16 / 80 | `vision_qwen25vl.py:28-30,42` |

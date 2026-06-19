@@ -21,7 +21,7 @@ expected loss (~0.3–0.6) and 65 TFLOP/s/device.** The whole stack is proven on
 provisioning, install (uv + Python 3.11), frozen ViT (390 tensors), the Waymo SASD grain pipeline,
 real-weight param restore from GCS, and the section-weighted SASD train step compiling on TPU XLA.
 
-**The one thing I could NOT complete: the literal "multi-node" (≥2-host) run** — because **GCP did not
+**The one thing I could NOT complete: the literal "multi-node" (≥2-host) run** [完成 2026-06-19: 多主机 v5e-16（4 hosts/16 chips）trainable-ViT 跑通了，run `be47jjta8`，loss 5.199→3.921→3.042，EXIT 0 — 见 `../1plans/06_trainable_vit_plan.md` §9 与 `HANDOFF.md` 的 2026-06-19 段；用的是另一份 free-credit 项目的 v5e-16 spot @ us-south1-a，绕开了本夜的容量墙] — because **GCP did not
 allocate ≥8-chip TPU capacity to this trial account all night.** Every `v6e-8` / `v6e-16` / `v5e-16`
 request returned no-capacity / "try again at a later time"; only single-chip (`v6e-1`) had capacity.
 This is an **external, transient GCP capacity constraint — not a code/config/quota/permission issue.**
@@ -50,7 +50,7 @@ trains on GPU — so tonight was about getting it running on **TPU**, not buildi
 | Stage artifacts → GCS (param ckpt, parquet, ViT, code) | ✅ done |
 | TPU launch + install probe (v6e-1: trial-launch + uv/py3.11 + MaxText import) | ✅ `MAXTEXT_TPU_IMPORT_OK` |
 | **MaxText SASD TRAINS on real TPU (v6e-1)** | ✅ 12 steps on `TFRT TPU v6 lite`, 3.086 B params, ViT loaded, finite loss, 65 TFLOP/s/device (random init; real-weight loss↓ shown on GPU; real-weight TPU run building now) |
-| Single/multi-host SASD on TPU (≥8 chips) | ⏸ blocked by **trial TPU capacity** — `mt_multinode_catcher.sh` ran its **full 6 h (14 retries) and capacity never opened**; ≥8-chip slices were unavailable all night, all zones. Multi-node is built+ready; needs capacity (paid account / reservation / TRC, or retry off-peak). Launch: `ACCEL=v6e-16 NAME=sasd-m16 bash /home/kaiwen/launch_maxtext_sasd_tpu.sh` |
+| Single/multi-host SASD on TPU (≥8 chips) | ⏸ blocked **that night** by **trial TPU capacity** [✅ 完成 2026-06-19 on a separate free-credit project: multi-host v5e-16 / 4 hosts / 16 chips trainable-ViT train, loss 5.199→3.921→3.042, EXIT 0 — `../1plans/06_trainable_vit_plan.md` §9] — `mt_multinode_catcher.sh` ran its **full 6 h (14 retries) and capacity never opened**; ≥8-chip slices were unavailable all night, all zones. Multi-node is built+ready; needs capacity (paid account / reservation / TRC, or retry off-peak). Launch: `ACCEL=v6e-16 NAME=sasd-m16 bash /home/kaiwen/launch_maxtext_sasd_tpu.sh` |
 
 ---
 

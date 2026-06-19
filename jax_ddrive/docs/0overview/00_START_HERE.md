@@ -29,18 +29,19 @@
 
 ---
 
-## 3. 现状一览（截至 2026-06-16，**只链出证据，不复制数字**）
+## 3. 现状一览（截至 2026-06-19，**只链出证据，不复制数字**）
 
 | 阶段 | 状态 | 证据出处 |
 |---|---|---|
 | 算法 port（loss/mask/M-RoPE/ViT/权重转换） | ✅ parity-gated | [`../3summary/REPORT.md`](../3summary/REPORT.md)、`run_all_verification.sh`（**10 个 gate**） |
 | 数据 v2（AR + 预算 bf16 ViT embeds，415,663 帧） | ✅ byte-audit + TPU 验证 | [`../2implementation-details/DATASET_V2.md`](../2implementation-details/DATASET_V2.md) §6 |
 | 训练（NNX 单机 + MaxText 真实 v6e-1 单芯） | ✅ 单芯真权重 loss 下降 | [`../4collect/OVERNIGHT_TPU_PROGRESS.md`](../4collect/OVERNIGHT_TPU_PROGRESS.md)（TPU SSOT） |
+| 可训练 in-graph ViT（`sasd_vit_trainable=true`：每步吃 pixels，ViT 进 train state） | ✅ GPU 3-step PASS + 真实 v5e-16 多节点 3-step loss 下降、ckpt 落 GCS、EXIT 0 | [`../1plans/06_trainable_vit_plan.md`](../1plans/06_trainable_vit_plan.md)（滚动日志）、[`../4collect/08_trainable_vit_progress.md`](../4collect/08_trainable_vit_progress.md)、ViT 坑 [`02_gotchas.md`](02_gotchas.md) |
 | 导出 B1（MaxText→HF bf16） | ✅ 本地 round-trip | [`../2implementation-details/INFERENCE_DEPLOY.md`](../2implementation-details/INFERENCE_DEPLOY.md) |
 | 推理 B2（自包含 section-diffusion 采样器） | ✅ 本地 GPU；🧪 TPU 数值彩排未做 | 同上 |
 | 评测（WOD-E2E ADE/RFS + 嵌入 parity） | ✅ 全 479 帧 on-par | [`../3summary/REPORT.md`](../3summary/REPORT.md) |
 | from-base overfit 全在内部 TPU 完成 | ⏳ 当前活跃里程碑 | [`../6for_internal/test_training.md`](../6for_internal/test_training.md) |
-| ≥8 芯多节点 TPU 跑批 | ⏳ 唯一真 open 项，卡 GCP 容量（非代码） | [`../3summary/FEATURES.md`](../3summary/FEATURES.md) |
+| ≥8 芯多节点 TPU 跑批 | ✅ v5e-16 已端到端跑过 3 步真训（含可训练 ViT，ckpt 落 GCS）；⚠️ 剩 ViT 参数 logical-axis sharding（当前 REPLICATED）+ ckpt 侧 ViT snapshot-init 未做 | [`../1plans/06_trainable_vit_plan.md`](../1plans/06_trainable_vit_plan.md)、[`../3summary/FEATURES.md`](../3summary/FEATURES.md) |
 
 > 实时 / 更细的状态以 [`../../to-host-chn.md`](../../to-host-chn.md) 顶部状态横幅与 [`../4collect/OVERNIGHT_TPU_PROGRESS.md`](../4collect/OVERNIGHT_TPU_PROGRESS.md) 为准。
 
@@ -82,7 +83,7 @@ MaxText fork 侧 file-by-file diff / vendor 规则 → fork 内 `maxtext-dlm-for
 | [`../3summary/REPORT.md`](../3summary/REPORT.md) · [`../3summary/FEATURES.md`](../3summary/FEATURES.md) | 阶段完成总结 / 能力矩阵（**状态+证据**型，非代码导读） |
 
 ### Frozen —— 历史，**永不编辑**（onboarding 时**不要读**，只在考古时看）
-`1plans/{00_PLAN,02_tpu_plan,03_scaleup_tpu_spec,04_tpu_smallscale_validation,05_review_and_fixes_2026-06-14}.md` · `4collect/{HANDOFF,OVERNIGHT_PROGRESS,OVERNIGHT_TPU_PROGRESS(,-chn),05_maxtext_port_progress,06_dataset_v2_progress,07_from_base_b1_b2_progress}.md`
+`1plans/{00_PLAN,02_tpu_plan,03_scaleup_tpu_spec,04_tpu_smallscale_validation,05_review_and_fixes_2026-06-14}.md`（+ `06_trainable_vit_plan.md` 是该里程碑的滚动 plan/日志，§9 滚动更新） · `4collect/{HANDOFF,OVERNIGHT_PROGRESS,OVERNIGHT_TPU_PROGRESS(,-chn),05_maxtext_port_progress,06_dataset_v2_progress,07_from_base_b1_b2_progress}.md`
 
 ### 文档维护记录（append-only，非项目里程碑）
 [`8doc_updates/`](../8doc_updates/README.md) —— 对 docs 体系本身的大修/审计记录 + 可复核证据产物（如本 0overview 的建立过程）。

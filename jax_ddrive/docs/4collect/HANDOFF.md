@@ -61,3 +61,48 @@ was killed → 32 GB free. Restart cmd: `/home/kaiwen/data/fast-ddrive/RESTART_s
   bf16+remat+Adafactor, Orbax ckpt. 400 real samples prepped (`eval/prep_train_jax.py`; all L=1184 /
   7 blocks → single compile). Loss-decrease run in the overnight batch (`logs/train_jax.log`).
 - Runner: `scripts/run_overnight.sh` (PyTorch-479 eval+metric → JAX training → JAX-479 eval+metric).
+
+## Overnight 2026-06-07 — MaxText SASD port runs on TPU (single-chip proof)
+**Full session log: `OVERNIGHT_TPU_PROGRESS.md` (the TPU SSOT).** Headline: the MaxText SASD port
+(`maxtext-dlm-fork/`, discovered already well underway) **trains on real TPU (v6e-1) with real
+Fast-dDrive weights** — loss **0.308 / 0.556** at steps 10/11 (matching the GPU smoke ~0.6),
+3.086 B params, frozen ViT (390 tensors) loaded, 65 TFLOP/s/device, EXIT=0. The whole stack proven
+on TPU: provision + uv/py3.11 install + Waymo SASD grain pipeline + GCS param restore + section-weighted
+SASD train step on TPU XLA. The literal **multi-node (≥2-host)** run was NOT reached that night —
+GCP gave this trial account no ≥8-chip capacity (external/transient). [完成 2026-06-19: multi-host
+is now done — see the trainable-ViT entry below.]
+
+## Overnight 2026-06-19 — trainable in-graph ViT on multi-host TPU (MILESTONE)
+**Rolling plan + full progress log: `../1plans/06_trainable_vit_plan.md` §9; frozen milestone log:
+`08_trainable_vit_progress.md`.** Today the SASD ViT becomes **trainable & in-graph**: with
+`sasd_vit_trainable=true` the Qwen2.5-VL ViT runs in-graph on `pixel_values` every step
+(`flax.nnx.bridge.ToLinen` wraps the validated NNX ViT body), its params live in the MaxText train
+state (sharded/checkpointed/gradient-receiving). The frozen/pre-baked path is KEPT behind the toggle
+(default `false`, byte-unchanged).
+- [x] **GPU end-to-end train PASS** (RTX 5090, real MaxText loop, `wod_e2e_sasd_v2_ar`): 3 real train
+  steps, ViT params get gradients, frozen path regression PASS. Module numerics: in-graph ViT vs
+  pre-baked embeds **cosine 0.99925** (release-weights-loaded).
+- [x] **FULL MULTI-HOST TPU PASS** (run `be47jjta8`, v5e-16, **4 hosts / 16 chips**, jax 0.10.2):
+  3 real train steps, **loss strictly DECREASING 5.199 → 3.921 → 3.042** (perplexity 181 → 50 → 21)
+  ⇒ gradients flow through the in-graph trainable ViT and the optimizer updates it; checkpoint saved
+  to GCS, **EXIT 0**, pod torn down. (First step 1455 s = one-time first-execution XLA compile; later
+  steps 30 s / 1.8 s.) **→ The trainable in-graph ViT trains end-to-end on multi-host TPU.**
+  New file `maxtext-dlm-fork/src/maxtext/diffusion/sasd_vit_ingraph.py`; ViT split in
+  `jax_ddrive/ddrive_jax/models/vision_qwen25vl.py`; wired via `layers/decoders.py`,
+  `input_pipeline/waymo_sasd_data_processing.py`, `utils/{maxtext_utils,sharding}.py`,
+  `trainers/pre_train/train.py`, `configs/{types.py,sasd_waymo.yml}`. Bundle `fastddrive-20260619_112401`.
+- **TPU operational lessons (hard-won, this run; full list → `0overview/02_gotchas.md` TPU 运维坑):**
+  (a) GCS Regional Access Boundary (RAB) is REGION-scoped and walls the TPU compute SA → restore from a
+  LOCAL copy of the ckpt (gsutil w/ USER creds), and SAVE to a SAME-REGION bucket (us-south1) with the
+  TPU SA granted `roles/storage.admin`; (b) multi-host Orbax checkpointing needs a SHARED filesystem
+  (per-host local disk fails layer by layer — grain-iter dir, per-process creation, then `array_metadatas`)
+  → same-region GCS is the fix; (c) `enable_checkpointing=false` is rejected when `load_parameters_path`
+  is set, and step 0 always saves (`0 % period == 0`); (d) fresh-pod SSH `Permission denied (publickey)`
+  = key still propagating → warm-up retry; (e) a multi-host `process_state.cc Raising signal 6` /
+  Shutdown-barrier abort is a SYMPTOM (one worker died) → two-phase SSH + full per-host logs to disk,
+  read from a fresh session; (f) ViT params currently REPLICATED (no logical-axis sharding) — TODO for
+  real multinode.
+- [~] **DEFERRED:** ckpt-side ViT snapshot-init (init the in-graph ViT from base/release for real
+  training, vs. today's random-init from the BASE text ckpt). The unconditional-ViT build approach
+  leaked abstract params into the train state and was reverted; the right next approach is to pass a
+  concrete pixel batch into the param-ckpt build, or `state.replace` the ViT subtree post-restore.

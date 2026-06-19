@@ -1,6 +1,8 @@
 # Fast-dDrive JAX — trainable (in-graph) ViT — plan & status
 
-Owner: kaiwen · Started 2026-06-19 · Status: **foundation done + locally (CPU) validated; train-graph wiring not yet done; no TPU run yet**
+Owner: kaiwen · Started 2026-06-19 · Status: **✅ DONE — wiring complete; GPU 3-step trainable train PASS + FULL multi-host v5e-16 TPU PASS (run `be47jjta8`, loss 5.199→3.921→3.042, ckpt→GCS, EXIT 0). 2 items DEFERRED (ViT-param sharding, ckpt-side ViT snapshot-init). Scannable checklist → §0.1; full story → §9.**
+
+> *[2026-06-19 早些时候写的 line 3 与下面 blockquote 记的是「当天上半场」状态（wiring in progress / no TPU run yet）；当天晚些时候已全部跑通——以 §0.1（Done/TODO）与 §9（滚动日志）为准。按 frozen 规则保留原文不重写。]*
 
 > **Status when written (2026-06-19).** The three hard de-risks (ViT split / nnx.bridge / weight-load) plus
 > bf16 fidelity and the injection pattern are all **validated on CPU**, and the differentiable ViT body is now
@@ -18,6 +20,35 @@ the pod). We want to instead run the Qwen2.5-VL ViT **in-graph on `pixel_values`
 TRAINABLE** (params in the train state), optimized for multi-node TPU. Goal bar = **10 trainable steps run on
 (internal) TPU + a sanity check that the in-graph features reproduce the pre-baked embeds**. The existing
 frozen/pre-baked path is **kept behind a config toggle** (it is already TPU-validated).
+
+## 0.1 Status — Done vs TODO (final, 2026-06-19)
+
+**DONE ✅**
+- [x] **ViT split** `precompute_structural` (host geometry, constant) + `body` (pure-jax, differentiable) —
+  bit-identical to the old `__call__`. `vision_qwen25vl.py:220,252`.
+- [x] **In-graph trainable module** `SasdInGraphViT` via `flax.nnx.bridge.ToLinen` (390 ViT leaves into the
+  MaxText train state, trainable/shardable/checkpointed). `sasd_vit_ingraph.py`.
+- [x] **Toggle** `sasd_vit_trainable` (default false=frozen pre-baked embeds; true=in-graph trainable),
+  wired through the **3 batch-key places** (iterator / `get_shaped_batch` / sharding) + `decoders` forward +
+  `train.py` + configs.
+- [x] **Numerics sanity** — in-graph ViT reproduces pre-baked embeds: bf16 cosine **0.99922** (module) /
+  **0.99925** (release-loaded).
+- [x] **ViT body on a real v5e TPU** — compiles + autodiffs (smoke `tpu_vit_body_smoke.py`).
+- [x] **GPU end-to-end train PASS** — 3 real trainable steps, ViT gets gradients, **frozen path byte-unchanged**.
+- [x] **FULL MULTI-HOST TPU PASS** — v5e-16 (4 hosts/16 chips), 3 steps, **loss 5.199→3.921→3.042**, ckpt→GCS,
+  **EXIT 0** (run `be47jjta8`). + the multi-host checkpoint-save fix (same-region GCS bucket + `storage.admin`).
+
+**TODO / DEFERRED ⏳ (confirm with owner before doing)**
+- [ ] **ViT-param logical-axis sharding** — currently REPLICATED across 16 chips (fine at this scale; needed
+  for real multinode throughput). `sharding.py:97,99` only shards `sasd_pixel_values` on the batch axis.
+- [ ] **ckpt-side ViT snapshot-init** — init the in-graph ViT from base/release weights for real training
+  (today: random-init from the BASE text ckpt). Right approach = pass a concrete pixel batch into the
+  param-ckpt build, or `state.replace` the ViT subtree post-restore (NOT a zero placeholder in the forward).
+- [ ] *(optional)* speed the ~24-min first-step compile; full-model step-0 frozen-vs-trainable loss parity
+  (only module-level numerics parity is done so far).
+
+> Milestone log (frozen): [`../4collect/08_trainable_vit_progress.md`](../4collect/08_trainable_vit_progress.md).
+> Operational TPU lessons: [`../0overview/02_gotchas.md`](../0overview/02_gotchas.md) (TPU 运维坑).
 
 ## 1. Why (motivation)
 

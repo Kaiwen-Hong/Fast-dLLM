@@ -1,5 +1,7 @@
 # quick-refresh.md — distilled-dataset quick tracker
 
+> **Scope.** 本表只管 **teacher-distilled 标签数据集**。项目状态问题（如可训练 in-graph ViT 的 TPU 结果）在 [`0overview/00_START_HERE.md` §3 现状一览](0overview/00_START_HERE.md) + plan [`1plans/06_trainable_vit_plan.md` §9](1plans/06_trainable_vit_plan.md)；ViT 坑 → [`0overview/02_gotchas.md`](0overview/02_gotchas.md)。**别在这里记里程碑。**
+
 One-glance tracker for the **teacher-distilled label datasets**: where they live
 (local / GCS / CNS), when built, size, and format/AR status. Belongs to the dataset
 docs. Concept + pipeline → [`2implementation-details/LABELING.md`](2implementation-details/LABELING.md);

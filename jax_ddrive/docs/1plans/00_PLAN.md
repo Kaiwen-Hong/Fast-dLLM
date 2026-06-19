@@ -2,6 +2,8 @@
 
 Owner: kaiwen · Started 2026-06-02 · Status: **Phase 0 (env + oracle) in progress**
 
+> [订正 2026-06-19: 本计划写于 2026-06-02，止于 Phase 5。其后新增「可训练 in-graph ViT」阶段（不在本计划范围），单独立卷于同目录 [`06_trainable_vit_plan.md`](06_trainable_vit_plan.md)（rolling plan/日志）。该阶段已 GPU 3-step PASS 并 **FULL MULTI-HOST TPU PASS**（v5e-16, run be47jjta8: loss 5.199→3.921→3.042, ckpt 存 GCS, EXIT 0）。本文件按 frozen 规则只做指针标注，不重写。]
+
 ## 0. TL;DR verdict
 
 **FEASIBLE, MEDIUM difficulty for the chosen bar.** The bar is **"JAX trains with decreasing SASD
@@ -51,6 +53,8 @@ Qwen2.5-VL-**3B** block-diffusion VLA for Waymo WOD-E2E, saved **fp32** (16.3 GB
 | Scaffold/section map | **MEDIUM** | Port `section_utils.py` boundary logic to build `response_block_idx`, `block_to_section`, `scaffold_mask`. |
 | Loss-decrease validation | **EASY** (once above) | Overfit 2 samples; mirrors handoff Phase 7. |
 | Vision tower + M-RoPE | **MEDIUM–HARD** (Phase 4) | New Qwen2.5-VL ViT (dyn-res, window attn, spatial_merge, M-RoPE 3D); ref ViT is square/224-only. |
+
+*[订正 2026-06-19: ViT 后续做成 **可训练 in-graph** 变体（`sasd_vit_trainable=true`）——ViT 每步在 pixels 上跑（`flax.nnx.bridge.ToLinen` 包 NNX ViT body），params 进 MaxText train state（trainable/sharded/checkpointed）；新文件 `maxtext-dlm-fork/src/maxtext/diffusion/sasd_vit_ingraph.py` + `models/vision_qwen25vl.py` 拆 ViT。详见 [`06_trainable_vit_plan.md`](06_trainable_vit_plan.md)。]*
 | Sampler / KV-cache | **HARD** (deferred) | Only in remote `generation_utils.py`; not in the bar. |
 
 **Single hardest in-scope risk:** faithfully reproducing the **doubled `[noisy|clean]` hybrid block-causal
@@ -115,6 +119,8 @@ Code adapted from the reference is copied+modified (provenance noted), not cross
   *Exit:* sharded train step runs unchanged at mesh=1; a written TPU mesh/sharding plan.
 
 Deferred (out of bar): decoder parity (SD/SS/multi-traj), real Waymo training, ADE/RFS metrics.
+
+*[订正 2026-06-19: 「可训练 in-graph ViT」阶段（计划外，见 [`06_trainable_vit_plan.md`](06_trainable_vit_plan.md)）已落地并 GPU + 多机 TPU PASS。两项仍 DEFERRED：(1) ViT params 当前 **REPLICATED**，logical-axis sharding 是真多机的 TODO；(2) ckpt 侧 ViT snapshot-init（从 base/release 初始化 ViT）仍未做。]*
 
 ## 8. Waymo download (parallel track — your action needed)
 

@@ -28,6 +28,7 @@
 - **算法 A→B→C**：`ddrive_jax` 是可执行规格，MaxText-fork 是规模化部署，PyTorch 是不动的数值锚。
 - **vendoring B→C**（推理）：`eval_sasd/*`（pin `4b0f4f2`）、`sasd_data/ar_dataset.py`（pin `b18e861`）从 `ddrive_jax` 原样拷入，带 `DO NOT EDIT logic here` 头——**改 `ddrive_jax` 再 re-copy**，规则见 fork `PATCHES.md`。
 - C 里的**训练数学** `diffusion/sasd.py` 是独立 re-port，必须与 B 保持同步。
+- **trainable in-graph ViT 路径（`sasd_vit_trainable=true`，默认 false）**：训练默认吃 frozen pre-baked `image_embeds`；置 true 后 ViT 改为每步在 `pixel_values` 上 in-graph 跑、params 进 MaxText train state（可训/分片/ckpt）。C 不重写 ViT —— `diffusion/sasd_vit_ingraph.py` 经 `ToLinen` 直接复用 B 的 `VisionTransformer.body`（host 几何由数据迭代器 `precompute_sasd_structural` 预算）。已 v5e-16 多 host 跑通（loss ↓、ckpt 落 GCS），TPU 坑/算法细节见 [`../1plans/06_trainable_vit_plan.md`](../1plans/06_trainable_vit_plan.md)。
 - **验证 C/B→A**：`run_all_verification.sh` 在 `ddrive` env 捕获 oracle、在 `jax` venv 跑 gate。
 - **eval 对称**：两套 JAX 栈都按 PyTorch-eval schema 写 `predictions.json`，**同一个官方 Waymo metric** 给三方打分。
 
@@ -60,7 +61,7 @@
 |---|---|---|
 | `rope.py` | 文本路径 1D RoPE（**SPLIT/rotate-half** HF 约定） | `default_rope_params`、`apply_rope`(SPLIT)、`RoPE.__call__`(fp32 `Precision.HIGHEST`) |
 | `qwen2_5_text.py` | Qwen2.5-3B 文本 decoder（GQA、qkv bias、无 qk-norm、tied embeds、SiLU、RMSNorm）+ 3D M-RoPE builder | `Qwen25TextConfig.fast_ddrive`、`Linear`(kernel `[in,out]`)、`Qwen25Attention.__call__`、`apply_rope_full`(FULL)、`mrope_cos_sin`(host numpy float64)、`attend`(tied)、`hidden_forward_mrope_cs` |
-| `vision_qwen25vl.py` | Qwen2.5-VL ViT（depth 32, hidden 1280）；训练时 frozen | `rot_pos_ids`、`get_window_index`、`VisionAttention.__call__`、`VisionTransformer.__call__`(window 重排+还原)、`PatchMerger`(exact GELU) |
+| `vision_qwen25vl.py` | Qwen2.5-VL ViT（depth 32, hidden 1280）；默认训练 frozen，**trainable 路径下 in-graph 可微** | `rot_pos_ids`、`get_window_index`、`VisionAttention.__call__`、`VisionTransformer.__call__`(`:277` 全程)、`precompute_structural`(`:220` host 端纯几何：window_index/cos/sin/mask/rev)、`body`(`:252` 纯 jax 可微半，trainable-ViT 用它)、`PatchMerger`(exact GELU) |
 | `sharded.py` | TP mesh 的 sharding-aware drop-in（mesh size 1 时等价） | `ShardedLinear`、`ShardedEmbedding` |
 
 **diffusion/** `ddrive_jax/ddrive_jax/diffusion/`
@@ -99,6 +100,7 @@
 | `jax_ddrive/eval/prep_jax_eval.py` | PyTorch-env eval npz producer（paper-res 200704） | — |
 | `jax_ddrive/eval/jax_batch_inference.py` | JAX-env eval driver → `predictions.json` | `parse_trajectory`（bf16 默认 / `--fp32`） |
 | `jax_ddrive/eval/prep_train_jax.py` | PyTorch-env SASD 训练 npz producer（无权重） | `process_gpt`；**SECTION_W / NOISE_SCHED 字面值在此**（22-24） |
+| `ddrive_jax/scripts/tpu_vit_body_smoke.py` | **trainable-ViT TPU 起步 smoke**：验 `VisionTransformer.body` 在真 TPU 上 compile+autodiff（有限非零梯度到每个 ViT param）；可选 `--snapshot/--ar` 加 cosine 对比 pre-baked embeds | `main`（random-init，仅需 ddrive_jax + jax[tpu]，无权重无数据） |
 
 ### `maxtext-dlm-fork/`（生产/TPU）
 
@@ -106,6 +108,7 @@
 |---|---|---|
 | `src/maxtext/diffusion/sasd.py` | SASD 数学（loss/noising/mask/M-RoPE/embed-doubling/host prep/global loss） | `make_batch`、`num_items`(2×)、`mrope_cos_sin`(float64 contiguous)、`compute_fast_ddrive_image_embeds`、`prepare_sasd_inputs`(`flat=2b+r`)、`sasd_loss_from_logits` |
 | `src/maxtext/diffusion/load_fast_ddrive_maxtext.py` | HF 文本 → MaxText Linen tree（流式） | `build_maxtext_params_from_fast_ddrive`、`_StreamingTextGetter` |
+| `src/maxtext/diffusion/sasd_vit_ingraph.py` | **trainable in-graph ViT**（`sasd_vit_trainable=true`）：每步在 pixels 上跑 ViT，params 进 train state（可训/可分片/可 ckpt）。复用 B 的 NNX `VisionTransformer.body`，经 `flax.nnx.bridge.ToLinen` 包成 Linen 子模块 | `sasd_vision_config`、`precompute_sasd_structural`(host 几何，仅依赖 grid_thw)、`SasdInGraphViT`(Linen：pixels `[B,N,1176]`→doubled embeds `[2B,2N,D]`)、`load_sasd_vit_leaves_in_order`(390↔390 in-order 填充)、`SASD_GRID_THW`(3×(1,16,14)→672 patch→168 tok) |
 | `src/maxtext/diffusion/mdlm.py` | **独立 MDLM objective（≠ SASD）** | `mdlm_loss` |
 | `src/maxtext/diffusion/eval_sasd/`（vendored @ `4b0f4f2`） | 自包含推理栈：`sampler_sasd.py`、`masks_eval.py`、`models/`、`driver.py`、`embedding_parity.py`、`hf_to_jax.py`（bf16-硬化） | `mm_section_diffusion_sample`、`run_eval`、`run_parity` |
 | `src/maxtext/configs/sasd_waymo.yml` | 生产 SASD train config | `objective=sasd`、`sasd_mrope_section [16,24,24]`、`sasd_seq_len 1184`、`sasd_num_image_tokens 336`、`use_mrope false`、`max_target_length 2376` |
