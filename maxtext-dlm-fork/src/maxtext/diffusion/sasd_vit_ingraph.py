@@ -49,10 +49,11 @@ def _as_jnp_dtype(dt):
     return dt
 
 
-def sasd_vision_config(dtype=jnp.bfloat16) -> VisionConfig:
+def sasd_vision_config(dtype=jnp.bfloat16, remat: bool = False) -> VisionConfig:
     """The fixed Fast-dDrive ViT config (depth 32 / hidden 1280 / out 2048 / ...).
-    ``dtype`` may be a jnp dtype or a config string ('bfloat16')."""
-    return VisionConfig(dtype=_as_jnp_dtype(dtype))
+    ``dtype`` may be a jnp dtype or a config string ('bfloat16'). ``remat`` gates per-block
+    activation checkpointing in the ViT body (trainable-ViT hi-res memory; numerically identical)."""
+    return VisionConfig(dtype=_as_jnp_dtype(dtype), remat=remat)
 
 
 def precompute_sasd_structural(grid_thw, *, dtype=jnp.bfloat16) -> dict:
@@ -63,9 +64,17 @@ def precompute_sasd_structural(grid_thw, *, dtype=jnp.bfloat16) -> dict:
     return vit.precompute_structural(grid_thw)
 
 
-# Fixed WOD-E2E image grid (3 imgs x (t,h,w)=(1,16,14) -> 672 patches -> 168 tokens). Verified
-# constant across the dataset, so the ViT geometry (structural) is a compile-time CONSTANT.
-SASD_GRID_THW = ((1, 16, 14), (1, 16, 14), (1, 16, 14))
+# Fixed WOD-E2E image grid (3 imgs x (t,h,w)). Constant across the dataset at a given resolution, so the ViT
+# geometry (structural) is a compile-time CONSTANT. Default = (1,32,30) -> 2880 patches -> 720 image tokens
+# (200704 px = original Fast-dDrive res). The retired downscale was (1,16,14) -> 672 -> 168.
+SASD_GRID_THW = ((1, 32, 30), (1, 32, 30), (1, 32, 30))
+
+
+def sasd_grid_thw_from_str(grid_str: str = "1,32,30", n_images: int = 3) -> tuple:
+    """Build the n_images-camera grid tuple from a config 't,h,w' string (cfg.sasd_vit_grid_thw).
+    Lets the resolution be config-driven instead of hardcoded; the structural geometry stays a constant."""
+    thw = tuple(int(x) for x in str(grid_str).split(","))
+    return tuple(thw for _ in range(n_images))
 
 
 class SasdInGraphViT(nn.Module):

@@ -106,7 +106,7 @@
 
 | 文件 | 职责 | 关键符号 |
 |---|---|---|
-| `src/maxtext/diffusion/sasd.py` | SASD 数学（loss/noising/mask/M-RoPE/embed-doubling/host prep/global loss） | `make_batch`、`num_items`(2×)、`mrope_cos_sin`(float64 contiguous)、`compute_fast_ddrive_image_embeds`、`prepare_sasd_inputs`(`flat=2b+r`)、`sasd_loss_from_logits` |
+| `src/maxtext/diffusion/sasd.py` | SASD 数学（loss/noising/mask/M-RoPE/embed-doubling/host prep/global loss） | `make_batch`、`num_items`(2×)、`mrope_cos_sin`(float64 contiguous)、`compute_fast_ddrive_image_embeds`、`prepare_sasd_inputs`(`flat=2b+r`)、`sasd_loss_from_logits`；`_ce_per_token`(fp32 per-token NLL，现 **按 `_CE_ROW_CHUNK=512` 行分块 + `@jax.checkpoint` remat**：把 fp32 `[N,V]` log_softmax 峰值压到 `[chunk,V]`，**数值 bit-identical**——纯显存，修 720-OOM；根因/数字见 [`../1plans/07_fidelity_fixes_2026-06-20.md`](../1plans/07_fidelity_fixes_2026-06-20.md)) |
 | `src/maxtext/diffusion/load_fast_ddrive_maxtext.py` | HF 文本 → MaxText Linen tree（流式） | `build_maxtext_params_from_fast_ddrive`、`_StreamingTextGetter` |
 | `src/maxtext/diffusion/sasd_vit_ingraph.py` | **trainable in-graph ViT**（`sasd_vit_trainable=true`）：每步在 pixels 上跑 ViT，params 进 train state（可训/可分片/可 ckpt）。复用 B 的 NNX `VisionTransformer.body`，经 `flax.nnx.bridge.ToLinen` 包成 Linen 子模块 | `sasd_vision_config`、`precompute_sasd_structural`(host 几何，仅依赖 grid_thw)、`SasdInGraphViT`(Linen：pixels `[B,N,1176]`→doubled embeds `[2B,2N,D]`)、`load_sasd_vit_leaves_in_order`(390↔390 in-order 填充)、`SASD_GRID_THW`(3×(1,16,14)→672 patch→168 tok) |
 | `src/maxtext/diffusion/mdlm.py` | **独立 MDLM objective（≠ SASD）** | `mdlm_loss` |

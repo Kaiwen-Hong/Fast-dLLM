@@ -545,6 +545,18 @@ class DiffusionObjective(BaseModel):
   sasd_num_image_tokens: int = Field(
       0, description="SASD per-sample IMAGE_TOK count N (doubled to 2N). 0 => text-only SASD (no image path)."
   )
+  sasd_vit_grid_thw: str = Field(
+      "1,32,30", description="Per-image ViT patch grid 't,h,w' for the TRAINABLE in-graph ViT's structural"
+      " precompute (3 WOD-E2E cameras of this grid). '1,32,30' => 2880 patches -> 720 image tokens (200704 px,"
+      " original Fast-dDrive res). '1,16,14' => 672 -> 168 (our retired downscale). n_patches must equal"
+      " 2*sasd_num_image_tokens; only the trainable path reads this."
+  )
+  sasd_vit_remat: bool = Field(
+      False, description="If True, per-block activation checkpointing (nnx.remat) inside the TRAINABLE in-graph ViT"
+      " body. Numerically identical. NOTE: measured ~0 train-step memory effect at 720 (the dominant memory is the"
+      " fp32 vocab log_softmax in the loss, addressed by chunked CE in diffusion/sasd.py:_ce_per_token, not the ViT"
+      " activations) -- kept as an off-by-default knob. Only the trainable path reads it."
+  )
   sasd_data_dir: str = Field(
       "", description="Directory of SASD Parquet shards for dataset_type='waymo_sasd' (local path or gs://...)."
   )

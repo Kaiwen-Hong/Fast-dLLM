@@ -10,7 +10,7 @@ SNAP = ("/home/kaiwen/data/huggingface/hub/models--Efficient-Large-Model--Fast-d
 SAMPLE = "/home/kaiwen/Desktop/research/Fast-dLLM/fast_ddrive/data/example/sample.json"
 IMG = "/home/kaiwen/Desktop/research/Fast-dLLM/fast_ddrive/data/example/images/161_CAM_FRONT.jpg"
 OUT = "/home/kaiwen/data/fast-ddrive/ref_logits/overfit_data_mm.npz"
-MASK_ID, IM_END, BD, EXP_BUDGET = 151665, 151645, 32, 32
+MASK_ID, IM_END, BD, EXP_BUDGET = 151665, 151645, 32, 32 * 6   # 192 = block_length*6 (original); was 32 (bug)
 IMAGE_TOK, VSTART = 151655, 151652
 SECTION_W = {"critical_objects": 1.5, "explanation": 1.0, "future_meta_behavior": 2.0, "trajectory": 3.0}
 NOISE_SCHED = {"critical_objects": (1.0, 2.0), "explanation": (1.0, 1.0),

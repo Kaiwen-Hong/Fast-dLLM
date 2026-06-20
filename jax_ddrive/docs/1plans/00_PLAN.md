@@ -122,6 +122,8 @@ Deferred (out of bar): decoder parity (SD/SS/multi-traj), real Waymo training, A
 
 *[订正 2026-06-19: 「可训练 in-graph ViT」阶段（计划外，见 [`06_trainable_vit_plan.md`](06_trainable_vit_plan.md)）已落地并 GPU + 多机 TPU PASS。两项仍 DEFERRED：(1) ViT params 当前 **REPLICATED**，logical-axis sharding 是真多机的 TODO；(2) ckpt 侧 ViT snapshot-init（从 base/release 初始化 ViT）仍未做。]*
 
+*[订正 2026-06-20: 在 06 之后又做了一轮 **fidelity 修正**——把 JAX prep 改成在 **720 image tokens / 200704 px**（released-model 分辨率）下对原版逐字节忠实，修掉 `EXP_BUDGET=192`（block_length×6）的 explanation padding bug，并把 in-graph ViT grid 改成 config-driven（`sasd_vit_grid_thw`）+ pixels-only 默认。单独立卷 [`07_fidelity_fixes_2026-06-20.md`](07_fidelity_fixes_2026-06-20.md)；720 trainable 路径 GPU toy PASS（peak 19.6G/32G）；但 v5e-16 上 720 trainable 在 compile 阶段 **OOM**（HLO temporaries 17.11G > 单芯 15.75G HBM，需 v6e/remat/FSDP；168-res 已在 v5e PASS）。此前 168/784 一组为已退役下采样。]*
+
 ## 8. Waymo download (parallel track — your action needed)
 
 Not required for the milestone, but to enable it later: (1) register at https://waymo.com/open with a

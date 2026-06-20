@@ -26,12 +26,30 @@ MASK_ID, IM_END, EPS = 151665, 151645, 1e-3
 # ---------------------------------------------------------------------------
 # Loss (port of sasd_loss.py)
 # ---------------------------------------------------------------------------
+# Rows processed at once when materializing the fp32 [chunk, V] log_softmax for CE. The full
+# [N, V] fp32 log_softmax (V=151936) is the DOMINANT train-step memory; computing it in row
+# chunks (+ remat) bounds the peak to ~CHUNK*V instead of N*V. Pure memory knob -- numerically
+# identical (log_softmax is per-row independent). The un-chunked 720 loss (N=2L=3712) OOMs a
+# 16G-HBM v5e chip (HLO temporaries 17.11G > 15.75G); chunking removes the ~4.5G fp32-softmax peak.
+_CE_ROW_CHUNK = 512
+
+
 def _ce_per_token(logits2d, labels1d, ignore: int = -100):
-    """fp32 per-token NLL; returns (nll[N] with 0 at ignored, valid_bool[N])."""
-    logp = jax.nn.log_softmax(logits2d.astype(jnp.float32), axis=-1)
+    """fp32 per-token NLL; returns (nll[N] with 0 at ignored, valid_bool[N]).
+
+    The per-row fp32 log_softmax over the full vocab is computed in row CHUNKS with
+    rematerialization (``jax.lax.map`` batch_size), so the peak fp32 tensor stays [chunk, V]
+    rather than [N, V] -- numerically identical to the all-at-once form, just memory-bounded."""
     valid = labels1d != ignore
     safe = jnp.where(valid, labels1d, 0)
-    nll = -jnp.take_along_axis(logp, safe[:, None], axis=-1)[:, 0]
+
+    @jax.checkpoint
+    def _row_nll(lg_row, lab_row):
+        logp = jax.nn.log_softmax(lg_row.astype(jnp.float32), axis=-1)   # [V] fp32 (one row)
+        return -logp[lab_row]
+
+    nll = jax.lax.map(lambda a: _row_nll(a[0], a[1]), (logits2d, safe),
+                      batch_size=_CE_ROW_CHUNK)                          # [N], chunked + rematerialized
     return jnp.where(valid, nll, 0.0), valid
 
 

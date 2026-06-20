@@ -660,9 +660,11 @@ class Decoder(nn.Module):
       # ViT params for the param-ckpt BUILD path) was tried but it makes the in-graph ViT params land
       # ABSTRACT in the train state (shard_args TypeError) — so the ckpt-side ViT snapshot-init needs a
       # different approach; see 06_trainable_vit_plan.md §9. This conditional form is the validated one.
-      from maxtext.diffusion.sasd_vit_ingraph import SasdInGraphViT, sasd_vision_config
-      sasd_ie = SasdInGraphViT(vit_cfg=sasd_vision_config(cfg.weight_dtype))(
-          sasd_md["sasd_pixel_values"])                              # [2B, 2N, D] (ViT runs in-graph)
+      from maxtext.diffusion.sasd_vit_ingraph import SasdInGraphViT, sasd_vision_config, sasd_grid_thw_from_str
+      sasd_ie = SasdInGraphViT(
+          vit_cfg=sasd_vision_config(cfg.weight_dtype, remat=getattr(cfg, "sasd_vit_remat", True)),
+          grid_thw=sasd_grid_thw_from_str(getattr(cfg, "sasd_vit_grid_thw", "1,32,30")),  # resolution-driven
+      )(sasd_md["sasd_pixel_values"])                              # [2B, 2N, D] (ViT runs in-graph)
     if sasd_ie is not None:
       sasd_pos = sasd_md["sasd_image_pos"]               # [2B, 2N] i32
       bidx = jnp.arange(y.shape[0])[:, None]             # [2B, 1]

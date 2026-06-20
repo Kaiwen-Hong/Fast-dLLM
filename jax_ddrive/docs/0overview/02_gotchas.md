@@ -65,7 +65,8 @@
 ### 数值 / 精度策略
 - **RMSNorm + 所有 attention logits/softmax 强制 fp32**（不论模型 dtype）。`qwen2_5_text.py:66-68,115-120`；`vision_qwen25vl.py:111-113,152-154`；loss cast logits 到 fp32 `sasd_loss.py:23`。
 - **每个 parity 脚本 + embeds builder 设 `jax_default_matmul_precision='highest'`（关 TF32）。** 否则 ViT 系统性抬高 ~7.5e-4，被 rolling-median<1e-4 guard 抓到。`parquet_to_ar_with_embeds.py:35,239-243`；所有 `parity_*.py`。
-- **section_weighted_ce 的分母（`num_items` 为 None 时）是无权 `valid.sum()`**，不是权重和 —— 有意匹配 PyTorch。`sasd_loss.py:38-41`。
+- **section_weighted_ce 的分母（`num_items` 为 None 时）是无权 `valid.sum()`**，不是权重和 —— 有意匹配 PyTorch。`sasd_loss.py:38-41`。- **train-step 显存的 DOMINANT 项是 loss 侧的 fp32 全词表 log_softmax，不是 ViT 激活。** CE 在 causal-shift + 2L packing 后展平成 `[N,V]`（`N=2L`，`V=151936`），un-chunked 路一次性 materialize fp32 `[N,V]` log_softmax（forward + backward grad 各一份）—— 单个 ~4.5G fp32 transient。它随 **2L 线性增长**：168 配置 `N=2L=1856` 这块只 ~2.26G、整步装得下 v5e；720 配置 `N=2L=3712` 翻倍 → HLO temporaries 撑到 v5e 单芯 OOM（这正是「168 装得下 v5e 而 720 OOM」的机制）。**修复 = chunked CE**：`_ce_per_token` 用 `jax.lax.map(batch_size=_CE_ROW_CHUNK=512)` + `@jax.checkpoint` 把 fp32 log_softmax 按行分块 + remat，峰值 fp32 张量从 `[N,V]` 降到 `[chunk,V]`，**数值 bit-identical**（log_softmax 逐行独立，loss 7.945 不变）。`sasd.py:29-53`。**ViT remat（`sasd_vit_remat`）对此 OOM ~0 效果**（实测 Temp 13.8→13.8G bit-identical，dominant 张量不在 ViT 里）；canonical 数字 + v5e OOM 上下文见 [`../1plans/07_fidelity_fixes_2026-06-20.md`](../1plans/07_fidelity_fixes_2026-06-20.md) §6.3 / §7。
+- **诊断技巧：MaxText 的静态 `Total memory size` 指标（`utils/max_utils.py:796`）查不出这类变化、是误导的 OOM 预测器。** 它在 baseline/ViT-remat/chunked-CE/bf16-logit 之间几乎不动（Temp 13.8↔13.6G），且在 32G GPU 上**永不触发** OOM → 对 16G v5e 毫无预测力。**真信号是 BFC `MaxInUse`，只有把池子 cap 住才看得见**：用 `XLA_PYTHON_CLIENT_MEM_FRACTION=0.50` 把 GPU 压到 ~15.7G 当 v5e proxy，再读 `bfc_allocator.cc` 的 `MaxInUse`。**720 trainable step 在该 15.7G proxy 上的真实峰值 ~12.66G < 15.75G v5e 预算（step 本身 NO RESOURCE_EXHAUSTED；OOM 来自 step 后的 checkpoint-save 路径在 capped 池里碎片化，非 step OOM）；真 v5e 复跑 pending。** 链路与所有 dead-end（ViT-remat / 单独 `cast_logits_to_fp32=False` / `enable_checkpointing=false`）见 [`../1plans/07_fidelity_fixes_2026-06-20.md`](../1plans/07_fidelity_fixes_2026-06-20.md) §6.3 / §7。
 
 ### noise schedule / 权重出处
 - **always-mask im_end(151645)** 在 response 位置、两行都遮、不管 Beta 抽样。`noise.py:31,37`。
@@ -156,6 +157,7 @@
 | conf 阈值 / step 上限 / 内层步数 / bd_size | 0.9 / 512 / n_mask+5 / 32 | `sample_sd.py:40,52` |
 | section 权重（CO/exp/fmb/traj）| 1.5 / 1.0 / 2.0 / 3.0 | `prep_train_jax.py:22`（**data-prep，不在模块**） |
 | Beta(α,β)：CO/exp/fmb/traj | (1,2)/(1,1)/(1,1.5)/(2,1) | `prep_train_jax.py:23-24` |
+| EXP_BUDGET（explanation NULL-pad 预算）| **192** = block_length(32)×6（固定 pad 到 6 block）| `prep_train_jax.py:21`。**曾见错值 32**（只 pad ~1 block → 训练 scaffold≠inference，[订正 2026-06-20，见 `1plans/07_fidelity_fixes_2026-06-20.md` §2]）|
 
 ### 序列长（**合理变体，别一刀切**）
 | 量 | 值 | 语境 / 出处 |
@@ -165,21 +167,25 @@
 | L（一次性 parity 样本） | 1120 | 仅指 `HANDOFF.md` 那一个捕获样本，**非**规范 L |
 | 2L（doubled） | 2368（=2×1184） | `sasd_waymo.yml:24` 注释 |
 | max_target_length（config） | **2376**（≥2L） | `sasd_waymo.yml:63`。**曾见错值 2576**（那是 distilled 覆盖值，非committed config） |
+| L / 2L / N @720（trainable-ViT, 200704px）| **1856 / 3712 / 1440** | 720-res override：image budget double 把 L 推到 1856，2L=3712=max_target_length。`1plans/07_fidelity_fixes_2026-06-20.md` §6.1；2026-06-20 GPU log |
 
-### image tokens（**合理变体**）
+### image tokens（**合理变体**；[订正 2026-06-20 见 `1plans/07_fidelity_fixes_2026-06-20.md`]：released-model 忠实分辨率为 **720 tokens / 200704 px**；168/784 一组为**已退役下采样**，committed `sasd_waymo.yml` 仍用之，trainable-ViT 路径迁向 720）
 | 值 | 含义 | 出处 |
 |---|---|---|
-| **168** | 单份、train-res（3 cams × 56/img，grid (1,16,14) @ 784/50176） | `parquet_to_ar_with_embeds.py:6`；`driver.py:128` |
-| **336** | doubled config（2×168） | `sasd_waymo.yml:26` `sasd_num_image_tokens` |
-| 672 | pixel patch 数（merge 前） | `grain_pipeline.py:267` |
-| 720 | paper-eval 200704 分辨率下的诊断值（**从不断言**，非模型常数） | `driver.py:128` |
-| image_embeds shape / dtype | `[168,2048]` / bfloat16 | `parquet_to_ar_with_embeds.py:206` |
+| **720** | **canonical 单份 train+infer**（200704 px，released model；grid (1,32,30)×3 → 2880 patch /4）；2026-06-20 toy GPU PASS | `sasd_vit_ingraph.py:67-69`；`1plans/07_fidelity_fixes_2026-06-20.md` §6.1 |
+| **1440** | doubled config @720（2×720）= `sasd_num_image_tokens` | `1plans/07` §6.1；GPU log `sasd_num_image_tokens=1440` |
+| 2880 | pixel patch 数 @720（merge 前；= 2×1440 = 3×960） | `sasd_vit_ingraph.py:67-69` |
+| 168 | **retired** 单份 train-res（grid (1,16,14) @ 784/50176）；committed config / 旧 embeds-AR 仍用 | `parquet_to_ar_with_embeds.py:6`；`driver.py:128` |
+| 336 | retired doubled config（2×168） | `sasd_waymo.yml:26` `sasd_num_image_tokens` |
+| 672 | retired pixel patch 数 @168（merge 前） | `grain_pipeline.py:267` |
+| image_embeds shape / dtype | `[168,2048]` / bfloat16（retired；720 走 pixels-only AR，不再 bake embeds） | `parquet_to_ar_with_embeds.py:206` |
 
-### 图像分辨率（**合理变体，按用途**）
+### 图像分辨率（**合理变体，按用途**；[订正 2026-06-20 见 `1plans/07_fidelity_fixes_2026-06-20.md`]）
 | 路径 | min/max pixels | 出处 |
 |---|---|---|
-| 训练 / 部署推理 | 784 / 50176 → 168 tokens | `prep_train_jax.py:56-57`；`prep_jax_eval_inputs.py:53-54` |
+| **canonical 训练 / 推理（trainable-ViT, released-model 忠实）** | **200704 / 200704 → 720 tokens** | `prep_train_jax.py:72-73`（默认已改 200704）；`finetune_fast_ddrive.py:159-160`（os.environ 默认 200704）；`batch_inference.py:1168`（字面量） |
 | paper-eval（479 帧 ADE/RFS） | 200704 / 200704 | `prep_jax_eval.py:24-25` |
+| **retired** 下采样（shared-GPU full-FT；committed config 仍用） | 784 / 50176 → 168 tokens | `sasd_waymo.yml`；`prep_jax_eval_inputs.py:53-54` |
 
 ### M-RoPE
 | 量 | 值 | 出处 |

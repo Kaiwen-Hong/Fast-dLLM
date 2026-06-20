@@ -108,3 +108,39 @@ free-credit TPU (≈10 steps is enough for the pipeline-works bar). Document eve
 * Launcher: `/tmp/tpu_trainable.sh` (v5e-16 spot @ us-south1-a, SSH warm-up, local data+ckpt, same-region
   GCS output, trap-deletes the pod). Same-region output bucket: `gs://ddrive-sasd-ussouth1-8a53f5ab`.
 * Memory: `fast-ddrive-trainable-vit`, `fast-ddrive-trainable-vit-tpu-run` (full TPU gotchas + the PASS).
+
+## 2026-06-20 — fidelity-fix pass (downstream of the trainable-ViT milestone)
+
+After the multi-host TPU PASS, a faithfulness pass corrected the JAX prep to be byte-faithful to the
+original Fast-dDrive at **720 image tokens (200704 px)** — the released-model resolution — and fixed the
+`EXP_BUDGET=192` (block_length×6) explanation-padding bug (was 32 → train scaffold ≠ inference). Also made
+the in-graph ViT grid config-driven (`sasd_vit_grid_thw`, default `(1,32,30)×3`) and pixels-only by default
+(`image_embeds` baking kept but off). Validated the 720 trainable path end-to-end on a 5090 GPU
+(**`TOY720_GPU_STEP0: PASS`** — 3.086B params, lm_loss 7.945, peak 19.6 GB, step-0 ckpt saved). The same 720
+trainable step **OOM'd at compile on v5e-16** (`TPU_VIT_720: OOM` — HLO temporaries 17.11G > 15.75G HBM/chip,
+`TRAINABLE_EXIT=1`): a v5e *capacity* limit, not a fidelity issue — needs v6e (32G) or remat/FSDP (the 168-res
+trainable passed on v5e-16 earlier, run be47jjta8). The 168/784 downscale is now **retired**. Full frozen record:
+[`../1plans/07_fidelity_fixes_2026-06-20.md`](../1plans/07_fidelity_fixes_2026-06-20.md).
+## 2026-06-20 (cont.) — 720 OOM 根因定位 + chunked-CE 修复
+
+承接上面的 720 保真度 entry：之前把 v5e-16 上的 `TPU_VIT_720: OOM` 归为「v5e 容量上限，需 v6e/remat/FSDP」。本轮把它**根因定位 (root-caused)** 并修掉——OOM 不在 ViT。
+
+### 根因（OOM 的真正出处）
+* 720 步的主导临时张量是 **loss 侧 `diffusion/sasd.py:_ce_per_token` 里整词表的 fp32 `log_softmax`**，不是 ViT 激活。causal `-1` shift + 2L packing 后 CE 作用在 flatten 的 `[N, V]` logit 上，`N = 2L = 3712`、`V = 151936`（Qwen2.5 词表）；未分块时要落地一块 fp32 `[N, V]` log_softmax（前向 + 反向 softmax-grad 各一份），单个瞬时 fp32 峰值约 **~4.5G**。它随 2L **线性**增长：168 配置 `N=2L=1856` 该块只有一半、整步能塞进 16G v5e；翻倍到 720（`N=2L=3712`）把这块也翻倍，正是把 XLA 估的 HLO temporaries 顶到 `17.11G > 15.75G` 而 OOM。机制由源码注释 `sasd.py:29-33` 记录，并被算式 `fp32 [3712,151936]×2 = 4.51G` 佐证。
+
+### 修复（chunked CE，bit-identical）
+* `_ce_per_token` 从「一次性 fp32 `[N,V]` log_softmax」改写为 **逐行分块 + remat**：`jax.lax.map(batch_size=_CE_ROW_CHUNK=512)` 包一个 `@jax.checkpoint` 的单行 helper，峰值 fp32 张量从 `[N,V]` 收到 `[512,V]`（`sasd.py:34-53`）。因 log_softmax 逐行独立，**数值 bit-identical**：loss 仍是 **7.945**（与未改前一致）。
+
+### 容量验证（capped 15.7G v5e GPU-proxy）
+* 用 `XLA_PYTHON_CLIENT_MEM_FRACTION` 把 BFC 压到 **15.68 GiB** 模拟 16G-HBM v5e（`preallocate=true` 为更干净的 proxy）：train step 真实峰值 **BFC MaxInUse 12.66G < 15.75G** v5e 预算，**整步内无 RESOURCE_EXHAUSTED**——`jax.block_until_ready(state)` 通过、step 0 完成。崩溃发生在**步后的 checkpoint-SAVE**（请求 13.58G 落进碎片化的受限池），被 `checkpointing.py` 捕获后以 `StopTraining('Job is preempted.')` 重抛，是 save 碎片伪影、不是 step OOM。
+
+### 死胡同（记录以免重走）
+* **ViT remat = 0 效果**：对 vision body 加 remat 后 Total/Temp 与 baseline **逐位相同**（19.6G/13.8G）、loss 同为 7.945——主导张量不在 ViT。已加 `sasd_vit_remat` 开关但**默认关 (off)**，仅作休眠旋钮（`models/vision_qwen25vl.py` 的 body 循环 + `configs/types.py:sasd_vit_remat` docstring 都注明这一点）。
+* **MaxText 静态 `Total/Temp memory size`（`utils/max_utils.py:796`）不可信**：baseline/remat/chunk/bf16 之间几乎不动（13.8→13.6G），从不暴露真实 BFC 峰值；32G GPU 上压根不触发 OOM，做 v5e 预测器很误导。真信号是受限后才可见的 **BFC MaxInUse**。
+* **`cast_logits_to_fp32=False` 单独翻 = 无效**：`logits_dot_in_fp32=True` 仍把最终 matmul（及 logits）强制 fp32，fp32 `[N,V]` 块不变。备用 bf16-logit 杠杆须**两个旋钮一起翻**，作为兜底保留（详见 1plans/07）。
+* **`enable_checkpointing=false` 绕 save-OOM = 被拒**：加载 base ckpt 时 pydantic 报 `You must set enable_checkpointing=True to load a checkpoint`——反过来印证那次 OOM 在 save 路径、无法这样绕过。
+
+### 结论与待办
+* **`CHUNKED_CE_720: GPU PASS`**——chunked CE 移除 ~4.5G fp32-softmax 峰值、数值不变（loss 7.945），capped-proxy 强烈预测 720 step 能塞进 v5e。
+* **Caveat / PENDING**：proxy 是 GPU BFC 实测，不等于 TPU 的 XLA 编译期估计（原 `17.11G>15.75G` 是 v5e HLO-temporary 估值）；GPU 证据**必要但不充分**，真正确认仍需一次实际 ~$5 的 **v5e run（PENDING）**。
+* 代码改动：`sasd.py`（chunked CE，THE fix）、`vision_qwen25vl.py` / `sasd_vit_ingraph.py` / `decoders.py` / `configs/types.py`（`sasd_vit_remat` 开关 + `sasd_vit_grid_thw` 分辨率配置化，默认 720 grid `(1,32,30)`）。规范数字勿在此重述；见 [`../1plans/07_fidelity_fixes_2026-06-20.md`](../1plans/07_fidelity_fixes_2026-06-20.md) §9（及其 §6.3 的 720-OOM 记录，本条 root-cause 是其延续）与 `../0overview/02_gotchas.md#规范数字框-canonical-numbers`。

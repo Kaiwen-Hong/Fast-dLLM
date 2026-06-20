@@ -38,6 +38,7 @@ class VisionConfig:
     intermediate_size: int = 3420
     rms_norm_eps: float = 1e-6
     rope_theta: float = 10000.0
+    remat: bool = False        # gate per-block activation checkpointing in body() (trainable-ViT hi-res memory)
 
     @property
     def head_dim(self):
@@ -268,8 +269,18 @@ class VisionTransformer(nnx.Module):
         # reorder hidden by window_index (merged-unit granularity)
         x = x.reshape(N // u, u, -1)[window_index].reshape(N, -1)
 
-        for i, blk in enumerate(self.blocks):
-            x = blk(x, cos, sin, mask_full if i in cfg.fullatt_block_indexes else mask_win)
+        if cfg.remat:
+            # Per-block activation checkpointing: recompute each ViT block's internals in the backward
+            # pass instead of storing them -- numerically identical, large activation-memory cut for the
+            # trainable in-graph ViT at high resolution (the un-rematted 720 ViT OOMs a 16G-HBM v5e chip).
+            # nnx.remat lifts a fn whose first arg is the nnx block module; cos/sin/mask are plain arrays.
+            blk_remat = nnx.remat(lambda blk, x, cos, sin, mask: blk(x, cos, sin, mask))
+            for i, blk in enumerate(self.blocks):
+                m = mask_full if i in cfg.fullatt_block_indexes else mask_win
+                x = blk_remat(blk, x, cos, sin, m)
+        else:
+            for i, blk in enumerate(self.blocks):
+                x = blk(x, cos, sin, mask_full if i in cfg.fullatt_block_indexes else mask_win)
 
         x = self.merger(x)                                          # [N//u, out_hidden]
         return x[rev]                                               # reverse window reorder

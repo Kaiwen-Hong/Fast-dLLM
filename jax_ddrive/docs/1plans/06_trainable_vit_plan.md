@@ -153,6 +153,8 @@ frozen/pre-baked path is **kept behind a config toggle** (it is already TPU-vali
 - Training dataset / embeds provenance: `2implementation-details/DATASET_V2.md`.
 - TPU provisioning shape + queued-resources recipe: `1plans/04_tpu_smallscale_validation.md`, `02_tpu_plan.md`.
 - Internal-TPU train + export loop (where the 10-step run will live): `6for_internal/test_training.md`.
+- 06 之后的**保真度修正**（EXP_BUDGET=192 / 720 分辨率忠实于 released model / config-driven ViT grid / pixels-only，
+  GPU toy PASS；v5e-16 上 720 trainable compile OOM 17.11G>15.75G，需 v6e/remat/FSDP）：[`07_fidelity_fixes_2026-06-20.md`](07_fidelity_fixes_2026-06-20.md).
 
 ---
 

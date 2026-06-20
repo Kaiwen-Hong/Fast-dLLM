@@ -18,18 +18,33 @@ SNAP = os.environ.get("FASTDDRIVE_SNAP",
 sys.path.insert(0, os.environ.get("FASTDDRIVE_REPO", "/home/kaiwen/Desktop/research/Fast-dLLM/jax_ddrive"))
 sys.path.insert(0, SNAP)
 
-MASK_ID, IM_END, BD, EXP_BUDGET = 151665, 151645, 32, 32
+MASK_ID, IM_END, BD, EXP_BUDGET = 151665, 151645, 32, 32 * 6   # EXP_BUDGET=192=block_length*6 (original
+# exp_total_budget). WAS 32 — a bug that under-padded the explanation section to ~1-5 blocks instead of the
+# fixed 6, so training saw a different scaffold than inference/the original. See validate_prep_consistency.py.
 IMAGE_TOK, VSTART = 151655, 151652
 SECTION_W = {"critical_objects": 1.5, "explanation": 1.0, "future_meta_behavior": 2.0, "trajectory": 3.0}
 NOISE_SCHED = {"critical_objects": (1.0, 2.0), "explanation": (1.0, 1.0),
                "future_meta_behavior": (1.0, 1.5), "trajectory": (2.0, 1.0)}
 
 
+def _clean_nulls(x):
+    """Recursively strip pre-existing <|NULL|> from string values, mirroring the original dataloader
+    (CustomMultiModalDataset.clean_nulls) so the per-section token budgets measure TRUE content length."""
+    if isinstance(x, str):
+        return x.replace("<|NULL|>", "")
+    if isinstance(x, dict):
+        return {k: _clean_nulls(v) for k, v in x.items()}
+    if isinstance(x, list):
+        return [_clean_nulls(v) for v in x]
+    return x
+
+
 def process_gpt(gpt_raw, tok):
-    """Replicate prep_overfit_data_mm.py gpt normalisation (strip mdm, pad NULL, fmt traj)."""
+    """Replicate the ORIGINAL CustomMultiModalDataset gpt normalisation: strip mdm markers, clean_nulls,
+    pad explanation to the FIXED 192-token / 6-block budget, pad fmb fields to 3, format trajectory."""
     gpt = (gpt_raw.replace("<|mdm_start|>", "").replace("<|mdm_end|>", "")
            .replace("|<NULL>|", "<|NULL|>"))
-    obj = json.loads(gpt)
+    obj = _clean_nulls(json.loads(gpt))
     if "explanation" in obj:
         n = len(tok.encode(obj["explanation"], add_special_tokens=False))
         pad = EXP_BUDGET - n if n < EXP_BUDGET else (BD - n % BD) % BD or BD
@@ -54,8 +69,8 @@ def main():
     ap.add_argument("--train_json", required=True)
     ap.add_argument("--image_root", required=True)
     ap.add_argument("--out_dir", required=True)
-    ap.add_argument("--min_pixels", type=int, default=784)
-    ap.add_argument("--max_pixels", type=int, default=784 * 64)   # ~64 merged tokens/img
+    ap.add_argument("--min_pixels", type=int, default=200704)     # original Fast-dDrive res -> ~720 img tokens
+    ap.add_argument("--max_pixels", type=int, default=200704)     # WAS 784 / 784*64 (168 tok) = our old downscale
     ap.add_argument("--max_samples", type=int, default=-1)
     args = ap.parse_args()
 

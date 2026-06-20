@@ -183,9 +183,10 @@ def get_shaped_batch(config):
       shaped["sasd_image_pos"] = jax.ShapeDtypeStruct((twoB, twoN), jnp.int32)
       if getattr(config, "sasd_vit_trainable", False):
         # TRAINABLE in-graph ViT: the batch carries pixel_values (the model's SasdInGraphViT makes
-        # the embeds), NOT precomputed sasd_image_embeds. Fixed WOD-E2E grid -> 672 ViT patches of
-        # dim 1176 (3 imgs x (1,16,14); patch_dim=3*2*14*14). f16 to match the stored pixels.
-        shaped["sasd_pixel_values"] = jax.ShapeDtypeStruct((gbs, 672, 1176), jnp.float16)
+        # the embeds), NOT precomputed sasd_image_embeds. n_patches = 2*N (N=sasd_num_image_tokens is the
+        # DOUBLED token count = patches/2, so 2N = patches: 336->672 @168, 1440->2880 @720). dim 1176 =
+        # 3*2*14*14 patch_dim. f16 to match the stored pixels.
+        shaped["sasd_pixel_values"] = jax.ShapeDtypeStruct((gbs, 2 * N, 1176), jnp.float16)
       else:
         shaped["sasd_image_embeds"] = jax.ShapeDtypeStruct((twoB, twoN, D), embed_dtype)
     return shaped
