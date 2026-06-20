@@ -27,7 +27,7 @@ MaxText fork 侧的逐文件 diff / vendor 规则在 fork 内 `maxtext-dlm-fork/
 5. Big artifacts (datasets, ckpts, oracles) live under `/home/kaiwen/data/fast-ddrive/`
    and on GCS — docs reference them by path; nothing heavy in git.
 6. **`6for_internal/` + `7for_internal_inference/` runbooks** (`transfer-codebase.md`, `test_training.md`,
-   `03_data_processing.md`, `7for_internal_inference/00_run_inference.md`) are **living, undated,
+   `sanitycheck_dataprocessing.md`, `7for_internal_inference/00_run_inference.md`) are **living, undated,
    edited in place** and shipped to the internal side in the code bundle. Each dir has its own rolling
    changelog `updates-latest-<date>.md` (newest on top); when a newer `updates-latest-*` supersedes it,
    move the old one into the dir's `history/` (which the internal agent does not read). Do NOT re-add a

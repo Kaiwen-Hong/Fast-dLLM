@@ -51,6 +51,6 @@ eval_inputs" 是 bug（那批 npz 的 `image_embeds` 与 release ViT 不同源 �
 - egress:driver **禁用** `--show_text`;只出 `validation_log.jsonl` 标量。
 
 **配套改动（同批）:**
-- `6for_internal/03_data_and_inference_parity.md` → **瘦身 + 改名** `03_data_processing.md`:移除 §2B（val parity/metric →
+- `6for_internal/03_data_and_inference_parity.md` → **瘦身 + 改名** `03_data_processing.md`(2026-06-20 再改名 → `sanitycheck_dataprocessing.md`):移除 §2B（val parity/metric →
   迁到本 track Track 2),只留数据处理（处理 sanity + 格式检查 + 新 split）。
 - 前门 `0overview/00_START_HERE.md` 路由 + 导航补上"内部跑推理/eval → 7"和改名后的 03;`README.md` 把 7 列为 Living。

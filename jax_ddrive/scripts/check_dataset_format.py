@@ -9,12 +9,16 @@ do not have internally).  This script keeps only the SCHEMA self-checks and drop
 Checks (all CPU, no GPU, no model):
   (1) COUNT     : decodable records == dataset_info_<split>.json ``num_samples`` sidecar.
   (2) FIELDS    : the 12 base arrays + sample_id/L/n_blocks present; for v2 also
-                  ``image_embeds`` -- and its presence is UNIFORM across ALL shards
+                  ``image_embeds`` (OPTIONAL: absent=pixels-only, present=embeds) -- whose
+                  presence is UNIFORM across ALL shards
                   (mixed presence => FAIL, mirroring grain_pipeline's has_embeds guard).
   (3) DTYPES    : exact dtype per ARRAY_DTYPES (+ image_embeds bfloat16) on sampled records.
-  (4) SHAPES    : L==1184, [L]/[3,L]/(672,1176)/(3,3)/(168,2048) uniformity, n_blocks scalar
-                  == block_alpha/beta length, L%32==0.
-  (5) CROSS-FIELD: image_pad runs==3 with len==(t*h*w)/4 and sum==pixel/4==168; vision_mask
+  (4) SHAPES    : per-record RESOLUTION-DERIVED shapes -- [L]/[3,L]/(N,1176)/(3,3) with
+                  N=sum(t*h*w) from image_grid_thw and L uniform across records (no hardcoded
+                  L); image_embeds (when present) (N//4,2048); n_blocks scalar ==
+                  block_alpha/beta length, L%32==0.
+  (5) CROSS-FIELD: image_pad runs==3 with len==(t*h*w)/4 and sum==pixel/4==N//4 (derived,
+                  not literal 168); vision_mask
                   == isin(input_ids,{image_pad,vision_start,vision_pad}); labels!=-100 only on
                   the assistant span bracketed by 151644/77091/198 .. 151645 with labels==ids
                   there; weight_vec values subset of {1.0,1.5,2.0,3.0}.
@@ -53,12 +57,13 @@ if REPO not in sys.path:
 from ddrive_jax.convert.prep_to_parquet import ARRAY_DTYPES, ARRAY_FIELDS  # noqa: E402
 
 # --- canonical schema constants (SSOT mirrored from the task spec / verify_ar_round2.py) ---
-L_CANON = 1184
-N_PATCH_CANON = 672          # pixel_values rows
-PIXEL_FEAT = 1176            # pixel_values cols
-GRID_SHAPE = (3, 3)          # image_grid_thw
-EMB_SHAPE = (168, 2048)      # image_embeds single copy
-N_IMG_TOKENS = 168           # == N_PATCH_CANON / 4 == sum(t*h*w//4)
+# NOTE: shapes/token-counts are RESOLUTION-DERIVED per record from image_grid_thw (so both the
+# 168/L=1184 embeds AR and the 720/L=1856 pixels-only AR validate with one code path); the
+# only genuinely constant dataset-family facts kept here are the 1176-dim Qwen2-VL patch
+# feature and the 3-image context grid.
+PIXEL_FEAT = 1176            # pixel_values cols (Qwen2-VL patch feature dim -- constant)
+GRID_SHAPE = (3, 3)          # image_grid_thw -- 3-image context, constant for this family
+EMB_FEAT = 2048              # image_embeds feature dim (rows derived = sum(t*h*w)//4)
 
 MASK_ID = 151665
 IM_END = 151645
@@ -73,19 +78,21 @@ SECTION_WEIGHTS = {1.0, 1.5, 2.0, 3.0}
 # dtype each array must decode to (numpy dtype) -- base 12 from ARRAY_DTYPES + image_embeds.
 EXPECT_DTYPES = {k: np.dtype(v) for k, v in ARRAY_DTYPES.items()}
 
-# canonical shape per field (None axis = batch-independent here, all fixed for uniform set).
-EXPECT_SHAPES = {
-    "input_ids": (L_CANON,),
-    "labels": (L_CANON,),
-    "rbi": (L_CANON,),
-    "turn": (L_CANON,),
-    "scaffold": (L_CANON,),
-    "vision_mask": (L_CANON,),
-    "weight_vec": (L_CANON,),
-    "position_ids": (3, L_CANON),
-    "pixel_values": (N_PATCH_CANON, PIXEL_FEAT),
-    "image_grid_thw": GRID_SHAPE,
-}
+# Fields whose canonical shape is RESOLUTION-DERIVED per record (built from L_ref / N below).
+L_FIELDS = ("input_ids", "labels", "rbi", "turn", "scaffold", "vision_mask", "weight_vec")
+
+
+def _expected_shapes(L, N):
+    """Per-record canonical shapes derived from sequence length L and pixel-row count N.
+
+    L  = input_ids.shape[0] (uniform across records, asserted separately).
+    N  = sum(t*h*w) over image_grid_thw rows == pixel_values row count.
+    """
+    shp = {f: (L,) for f in L_FIELDS}
+    shp["position_ids"] = (3, L)
+    shp["pixel_values"] = (N, PIXEL_FEAT)
+    shp["image_grid_thw"] = GRID_SHAPE
+    return shp
 
 
 # ============================================================================ helpers =====
@@ -205,8 +212,9 @@ def main():
     ap.add_argument("--dir", required=True, help="processed dataset dir (AR v2 or parquet v1)")
     ap.add_argument("--split", default="auto",
                     help="split name; 'auto' = infer from shard filenames")
-    ap.add_argument("--expect", choices=["v2", "parquet", "auto"], default="auto",
-                    help="expected format: v2 (AR+image_embeds), parquet (v1), or auto-detect")
+    ap.add_argument("--expect", choices=["v2", "parquet", "pixels", "auto"], default="auto",
+                    help="expected format: v2 (AR+image_embeds), parquet (v1, no embeds), "
+                         "pixels (AR or parquet WITHOUT image_embeds), or auto-detect")
     ap.add_argument("--samples", type=int, default=32,
                     help="# deterministic records to deep-check (dtype/shape/cross-field)")
     ap.add_argument("--strict", action="store_true",
@@ -250,12 +258,14 @@ def main():
     is_v2_format = (kind == "arrayrecord")
     print(f"# detected kind={kind} split={split} shards={len(paths)}")
 
-    # reconcile --expect with detected kind
+    # reconcile --expect with detected kind (container axis only; embeds axis handled below).
     if args.expect == "v2" and not is_v2_format:
         report("expect: v2 requires arrayrecord shards", False, f"got kind={kind}")
     elif args.expect == "parquet" and is_v2_format:
         report("expect: parquet requires .parquet shards", False, f"got kind={kind}")
     else:
+        # 'pixels' is container-agnostic (AR or parquet); its embeds-absent intent is asserted
+        # in the FIELD-PRESENCE reconciliation once has_embeds is known.
         report("expect: format matches --expect", True, f"kind={kind}")
 
     # --- build adapter ------------------------------------------------------------------
@@ -320,6 +330,9 @@ def main():
         elif args.expect == "parquet":
             report("fields: parquet (v1) expects NO image_embeds", not has_embeds,
                    f"has_embeds={has_embeds}")
+        elif args.expect == "pixels":
+            report("fields: pixels expects NO image_embeds (any container)", not has_embeds,
+                   f"has_embeds={has_embeds} kind={kind}")
         else:
             print(f"[INFO] auto: has_embeds={has_embeds} (kind={kind})")
     else:
@@ -337,6 +350,9 @@ def main():
     shape_bad = []       # (idx, field, got, want)
     nblocks_bad = []     # (idx, detail)
     Lmod_bad = []        # (idx, L)
+    Luniform_bad = []    # (idx, L, L_ref) -- L differs from first deep-checked record
+    Lscalar_bad = []     # (idx, scalar_L, L) -- sidecar scalar L != input_ids length
+    L_ref = None         # uniform per-record sequence length, captured from first record
     runs_bad = []        # (idx, detail)
     vmask_bad = []       # (idx,)
     assist_bad = []      # (idx, detail)
@@ -359,14 +375,27 @@ def main():
         if has_embeds and "image_embeds" in rec and rec["image_embeds"].dtype.name != bf16.name:
             dtype_bad.append((gi, "image_embeds", str(rec["image_embeds"].dtype), str(bf16)))
 
-        # ---- (4) SHAPES --------------------------------------------------------------
-        for f, want in EXPECT_SHAPES.items():
-            if f in rec and tuple(rec[f].shape) != want:
-                shape_bad.append((gi, f, tuple(rec[f].shape), want))
-        if has_embeds and "image_embeds" in rec and tuple(rec["image_embeds"].shape) != EMB_SHAPE:
-            shape_bad.append((gi, "image_embeds", tuple(rec["image_embeds"].shape), EMB_SHAPE))
+        # ---- (4) SHAPES (resolution-derived) -----------------------------------------
         ids = rec["input_ids"]
         L = int(ids.shape[0])
+        grid = rec["image_grid_thw"]
+        N = sum(int(t * h * w) for t, h, w in grid)   # pixel_values row count
+        n_tok = N // 4                                # image-token / image_pad count
+        if L_ref is None:
+            L_ref = L                                 # capture uniform L from the first record
+        # uniform-L guard: every record's L (and its sidecar scalar L) must equal L_ref.
+        if L != L_ref:
+            Luniform_bad.append((gi, L, L_ref))
+        scalar_L = int(rec["L"]) if "L" in rec else L
+        if scalar_L != L:
+            Lscalar_bad.append((gi, scalar_L, L))
+        exp_shapes = _expected_shapes(L, N)
+        for f, want in exp_shapes.items():
+            if f in rec and tuple(rec[f].shape) != want:
+                shape_bad.append((gi, f, tuple(rec[f].shape), want))
+        emb_shape = (n_tok, EMB_FEAT)
+        if has_embeds and "image_embeds" in rec and tuple(rec["image_embeds"].shape) != emb_shape:
+            shape_bad.append((gi, "image_embeds", tuple(rec["image_embeds"].shape), emb_shape))
         if L % 32 != 0:
             Lmod_bad.append((gi, L))
         # n_blocks scalar == len(block_alpha) == len(block_beta)
@@ -375,21 +404,20 @@ def main():
         if not (ba.shape == bb.shape == (nb,)):
             nblocks_bad.append((gi, f"n_blocks={nb} alpha={ba.shape} beta={bb.shape}"))
 
-        # ---- (5) CROSS-FIELD ---------------------------------------------------------
-        grid = rec["image_grid_thw"]
-        # image_pad runs
+        # ---- (5) CROSS-FIELD (resolution-derived) ------------------------------------
+        # image_pad runs: one run per grid image, length (t*h*w)//4, summing to n_tok == N//4.
         pad_runs = [(s, ln) for t, s, ln in _runs(list(ids)) if t == IMAGE_PAD]
-        exp_runs = [int(t * h * w) // 4 for (t, h, w) in grid]
+        per_img = [int(t * h * w) // 4 for (t, h, w) in grid]
         sum_runs = sum(ln for _, ln in pad_runs)
         n_pix = int(rec["pixel_values"].shape[0])
         run_ok = (
             len(pad_runs) == len(grid) == 3
-            and [ln for _, ln in pad_runs] == exp_runs
-            and sum_runs == n_pix // 4 == N_IMG_TOKENS
+            and [ln for _, ln in pad_runs] == per_img
+            and sum_runs == n_pix // 4 == n_tok
         )
         if not run_ok:
             runs_bad.append((gi, f"n_runs={len(pad_runs)} run_lens={[ln for _, ln in pad_runs]} "
-                                 f"exp={exp_runs} sum={sum_runs} pix//4={n_pix // 4}"))
+                                 f"exp={per_img} sum={sum_runs} pix//4={n_pix // 4} n_tok={n_tok}"))
         # vision_mask == isin(ids, {image_pad, vision_start, vision_pad})
         vm_ref = np.isin(ids, [IMAGE_PAD, VISION_START, VISION_PAD])
         if not np.array_equal(rec["vision_mask"], vm_ref):
@@ -431,9 +459,14 @@ def main():
            not shape_bad, "" if not shape_bad else f"{len(shape_bad)} bad e.g. {shape_bad[0]}")
     report(f"shape: L%32==0 over {n_deep} records",
            not Lmod_bad, "" if not Lmod_bad else f"{len(Lmod_bad)} bad e.g. {Lmod_bad[0]}")
+    report(f"shape: L uniform (==L_ref={L_ref}) across {n_deep} records",
+           not Luniform_bad, "" if not Luniform_bad else
+           f"{len(Luniform_bad)} bad e.g. {Luniform_bad[0]} (mixed L => FAIL)")
+    report(f"shape: sidecar scalar L == input_ids length over {n_deep} records",
+           not Lscalar_bad, "" if not Lscalar_bad else f"{len(Lscalar_bad)} bad e.g. {Lscalar_bad[0]}")
     report(f"shape: n_blocks==len(block_alpha/beta) over {n_deep} records",
            not nblocks_bad, "" if not nblocks_bad else f"{len(nblocks_bad)} bad e.g. {nblocks_bad[0]}")
-    report(f"cross: image_pad 3 runs, len==(t*h*w)/4, sum==pix/4==168 over {n_deep}",
+    report(f"cross: image_pad 3 runs, len==(t*h*w)/4, sum==pix/4==N//4 (derived) over {n_deep}",
            not runs_bad, "" if not runs_bad else f"{len(runs_bad)} bad e.g. {runs_bad[0]}")
     report(f"cross: vision_mask==isin(ids,{{pad,vstart,vpad}}) over {n_deep}",
            not vmask_bad, "" if not vmask_bad else f"{len(vmask_bad)} bad e.g. {vmask_bad[0]}")
@@ -441,7 +474,8 @@ def main():
            not assist_bad, "" if not assist_bad else f"{len(assist_bad)} bad e.g. {assist_bad[0]}")
     report(f"cross: weight_vec subset of {{1.0,1.5,2.0,3.0}} over {n_deep}",
            not wvocab_bad, "" if not wvocab_bad else f"{len(wvocab_bad)} bad e.g. {wvocab_bad[0]}")
-    report(f"finite: pixel_values{'+image_embeds' if has_embeds else ''} all finite over {n_deep}",
+    report(f"finite: pixel_values{' + image_embeds (bf16)' if has_embeds else ' (pixels-only)'} "
+           f"all finite over {n_deep}",
            not finite_bad, "" if not finite_bad else f"{len(finite_bad)} bad e.g. {finite_bad[0]}")
     report(f"finite: sample_id non-empty over {n_deep}",
            not sid_bad, "" if not sid_bad else f"{len(sid_bad)} bad e.g. {sid_bad[0]}")

@@ -21,7 +21,7 @@
 |---|---|---|
 | **读懂 / 修改代码** | [`01_codebase_map.md`](01_codebase_map.md)（地图+阅读顺序）+ [`02_gotchas.md`](02_gotchas.md)（易误读组件） | 算法真值 [`../2implementation-details/01_pytorch_reference_algorithm.md`](../2implementation-details/01_pytorch_reference_algorithm.md) |
 | **部署到 TPU** | [`../../to-host-chn.md`](../../to-host-chn.md)（交接文档，含验收标准） | [`../2implementation-details/INFERENCE_DEPLOY.md`](../2implementation-details/INFERENCE_DEPLOY.md)（B1 导出 / B2 采样器） |
-| **内部 Google TPU：训练 + 数据** | owner 先 [`../6for_internal/00_owner_publish.md`](../6for_internal/00_owner_publish.md)（STEP 0 发布到 GCS）→ 内部 [`../6for_internal/transfer-codebase.md`](../6for_internal/transfer-codebase.md)（STEP 1）→ [`../6for_internal/test_training.md`](../6for_internal/test_training.md)（STEP 2 训练）/ [`../6for_internal/03_data_processing.md`](../6for_internal/03_data_processing.md)（STEP 3 数据处理） | blocker/红线 [`../5blockers/0612-blocker-v0.md`](../5blockers/0612-blocker-v0.md) |
+| **内部 Google TPU：训练 + 数据** | owner 先 [`../6for_internal/00_owner_publish.md`](../6for_internal/00_owner_publish.md)（STEP 0 发布到 GCS）→ 内部 [`../6for_internal/transfer-codebase.md`](../6for_internal/transfer-codebase.md)（STEP 1）→ [`../6for_internal/test_training.md`](../6for_internal/test_training.md)（STEP 2 训练）/ [`../6for_internal/sanitycheck_dataprocessing.md`](../6for_internal/sanitycheck_dataprocessing.md)（STEP 3 数据处理） | blocker/红线 [`../5blockers/0612-blocker-v0.md`](../5blockers/0612-blocker-v0.md) |
 | **内部 Google TPU 跑推理 / eval** | （STEP 0/1 同上 →）[`../7for_internal_inference/00_run_inference.md`](../7for_internal_inference/00_run_inference.md)（STEP I：B2 自包含部署 + 官方 ADE/RFS） | 设计 [`../2implementation-details/INFERENCE_DEPLOY.md`](../2implementation-details/INFERENCE_DEPLOY.md) |
 | **理解数据格式** | [`../2implementation-details/DATASET_V2.md`](../2implementation-details/DATASET_V2.md)（生产 v2 AR） | v1 源格式 [`../2implementation-details/DATASET.md`](../2implementation-details/DATASET.md)、标签 [`../2implementation-details/LABELING.md`](../2implementation-details/LABELING.md) |
 | **跑评测 / 复现指标** | [`../2implementation-details/EVAL_PIPELINE.md`](../2implementation-details/EVAL_PIPELINE.md)（两套栈一个 metric） | — |
@@ -63,7 +63,7 @@
 | [`../6for_internal/transfer-codebase.md`](../6for_internal/transfer-codebase.md) | **STEP 1**：内部 bootstrap（拉代码包进 google3、写 env） |
 | [`../6for_internal/test_training.md`](../6for_internal/test_training.md) | **STEP 2**：内部 TPU 从-base 训练 → B1 导出 → B2 推理 → 嵌入彩排 → 验证日志 |
 | [`../6for_internal/updates-latest-0616.md`](../6for_internal/updates-latest-0616.md) | 内部文档 changelog（滚动,最新在最上;agent 不必读；`6for_internal/history/` 是归档,含旧 0614） |
-| [`../6for_internal/03_data_processing.md`](../6for_internal/03_data_processing.md) | **STEP 3**：内部数据处理 sanity + 格式检查 + 新 split 处理（数据 track,独立于训练/推理） |
+| [`../6for_internal/sanitycheck_dataprocessing.md`](../6for_internal/sanitycheck_dataprocessing.md) | **STEP 3**：内部数据处理 sanity + 格式检查 + 新 split 处理（数据 track,独立于训练/推理） |
 | [`../7for_internal_inference/00_run_inference.md`](../7for_internal_inference/00_run_inference.md) | **STEP I**：内部 TPU 推理 / eval —— Track1 B2 自包含部署（`eval_sasd`,168-res,标量 vlog）+ Track2 官方 ADE/RFS；共享 STEP 0/1,是 STEP 2 的姊妹 track |
 | [`../7for_internal_inference/updates-latest-0617.md`](../7for_internal_inference/updates-latest-0617.md) | 7 的 changelog（滚动；agent 不必读） |
 

@@ -206,4 +206,4 @@ done
 - （跑了 Track 2）各精度的 `ADE_3s/ADE_5s/RFS/num_samples`
 
 > 全程在内部 TPU 内完成;除 `validation_log.jsonl` 的标量外无数据带出。
-> 相关:数据处理见 `../6for_internal/03_data_processing.md`;训练 + B1 导出闭环见 `../6for_internal/test_training.md`。
+> 相关:数据处理见 `../6for_internal/sanitycheck_dataprocessing.md`;训练 + B1 导出闭环见 `../6for_internal/test_training.md`。
