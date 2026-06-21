@@ -52,9 +52,13 @@ remat_policy: "full"
 
 # ── qwen2.5 numerics (mirror the verified lossdecrease test exactly) ──────────
 logits_via_embedding: true
-logits_dot_in_fp32: true
-cast_logits_to_fp32: true
-float32_logits: true
+# bf16 logits (NOT fp32): REQUIRED to fit the 720 train step on one v5e chip alongside the vocab-tiled
+# CE (sasd.py:_ce_per_token still upcasts each [N,V_tile] to fp32 internally, so the CE math stays fp32).
+# Also faithful to the original PyTorch (--bf16 + HF CrossEntropyLoss fp32-upcast). NOTE: the JAX<->NNX
+# bitwise PARITY tests need fp32 logits and set their own config — do NOT copy these two flags there.
+logits_dot_in_fp32: false
+cast_logits_to_fp32: false
+float32_logits: true        # attention-softmax precision (NOT the vocab-logit flag, per Codex) — keep fp32
 float32_qk_product: true
 matmul_precision: "default"
 normalize_embedding_logits: false
