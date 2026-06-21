@@ -432,7 +432,10 @@ def main():
             contiguous = (re_ - rs) == resp.size  # the response span is a single contiguous run
             head_ok = (rs >= 3 and int(ids[rs - 3]) == IM_START
                        and int(ids[rs - 2]) == ASSIST_TAG and int(ids[rs - 1]) == NEWLINE)
-            tail_ok = int(ids[re_ - 1]) == IM_END
+            # tail: faithful prep labels <|im_end|> AND the trailing \n (original +=2). Accept the
+            # legacy +1 convention (tail == IM_END) too, so this checker validates both old/new data.
+            tail_ok = (int(ids[re_ - 1]) == IM_END
+                       or (int(ids[re_ - 1]) == NEWLINE and int(ids[re_ - 2]) == IM_END))
             eq_ok = np.array_equal(labels[rs:re_], ids[rs:re_])
             if not (contiguous and head_ok and tail_ok and eq_ok):
                 assist_bad.append((gi, f"contig={contiguous} head={head_ok} "

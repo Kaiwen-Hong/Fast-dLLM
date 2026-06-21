@@ -1,3 +1,12 @@
+# ════════════════════════════════════════════════════════════════════════════════
+#  ROLE: SANITY / SMOKE config (single-GPU quick checks). NOT the canonical recipe.
+#  For faithful large-scale training use `sasd_waymo_canonical.yml` (720 res, trainable
+#  ViT, AdamW lr 1e-5, constant_with_warmup, grad_accum 4). This file intentionally
+#  differs for fast local iteration: retired 168-res shapes (sasd_seq_len 1184 /
+#  sasd_num_image_tokens 336), frozen ViT, adafactor, lr 1e-4, cosine. Do NOT launch a
+#  real run from this file without the canonical overrides.
+# ════════════════════════════════════════════════════════════════════════════════
+#
 # SASD (Fast-dDrive Section-Aware Stochastic Diffusion) training config.
 #
 # The DEPLOYABLE entry that runs the verified MaxText SASD pieces through MaxText's STANDARD

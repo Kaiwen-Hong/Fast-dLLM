@@ -17,7 +17,7 @@ Fast-dDrive 逐字节忠实，并修掉了 `EXP_BUDGET=192`（block_length×6）
 peak 19.6 GB / step-0 ckpt 保存）——证明 fixes + wiring 在 720 下正确。但同一 720 trainable step 在
 **v5e-16（16G HBM/chip）compile 阶段 OOM**（HLO temporaries 17.11G > 可用 15.75G，`TRAINABLE_EXIT=1`）：这是
 **v5e 容量问题、非保真度问题**，需更大 HBM 的 TPU（v6e 32G）或 remat/FSDP 才能在 TPU 上跑 720；168-res 的
-trainable（run be47jjta8）此前在同款 v5e-16 是 PASS 的。** [订正 2026-06-20（同日）见 §9：OOM 根因其实是 loss 侧 fp32 全词表 log_softmax（随 2L 翻倍），**非** v5e 容量 / ViT；已用 chunked-CE 修复（bit-identical, loss 7.945），capped-GPU proxy 实测 step 真峰 ~12.66G < 15.75G，**v6e/remat/FSDP 非必需**；真实 v5e ~$5 确认仍 PENDING。] 衡量基准是原始 PyTorch dataloader（`CustomMultiModalDataset`）+
+trainable（run be47jjta8）此前在同款 v5e-16 是 PASS 的。** [订正 2026-06-20（同日）见 §9：OOM 根因其实是 loss 侧 fp32 全词表 log_softmax（随 2L 翻倍），**非** v5e 容量 / ViT；已用 chunked-CE 修复（bit-identical, loss 7.945），capped-GPU proxy 实测 step 真峰 ~12.66G < 15.75G，**v6e/remat/FSDP 非必需**；真实 v5e ~$5 确认仍 PENDING。] `[订正 2026-06-21: 真 v5e (vit720conf) 证伪——chunked-CE 在 TPU 反而 OOM 87.25G(>17.11G pre-fix)，"fits v5e / v6e·remat·FSDP 非必需"系 GPU-proxy 假象；lax.map+checkpoint 在 TPU XLA 病态；已改 fused logsumexp CE；详见 8doc_updates/2026-06-21_sasd-tpu-oom-fix.md]` 衡量基准是原始 PyTorch dataloader（`CustomMultiModalDataset`）+
 released ckpt 的 vision 分辨率。规范数字不在本文重述，见
 [`../0overview/02_gotchas.md#规范数字框-canonical-numbers`](../0overview/02_gotchas.md#规范数字框-canonical-numbers)；本文 §6 给出本次 720 测量值。
 
@@ -73,7 +73,7 @@ released ckpt 的 vision 分辨率。规范数字不在本文重述，见
 808.0、peak 19.6 GB、step-0 checkpoint 已保存、无 traceback；见 §6）。`sasd_vit_grid_thw=1,32,30` 在 GPU
 config 中生效。**NOT yet run：** (a) `validate_prep_consistency.py` 的 `PREP_CONSISTENCY_PASS` 哨兵尚未在
 本记录中跑出落账（脚本已就位，结果待补）；(b) 720 trainable 路径在 v5e-16 上**已跑、但 compile 阶段 OOM**（HLO temporaries 17.11G > v5e 单芯 15.75G HBM，
-`TRAINABLE_EXIT=1`，见 §6.3）——**TPU 容量问题，非保真度问题** [订正 2026-06-20（同日）见 §9：根因是 loss 侧 fp32 `[N,V]` log_softmax，已用 chunked-CE 修复，v6e/remat/FSDP **非必需**；真实 v5e ~$5 确认仍 PENDING]；(c) GPU log **没有**显式 `GPU_EXIT` token —
+`TRAINABLE_EXIT=1`，见 §6.3）——**TPU 容量问题，非保真度问题** [订正 2026-06-20（同日）见 §9：根因是 loss 侧 fp32 `[N,V]` log_softmax，已用 chunked-CE 修复，v6e/remat/FSDP **非必需**；真实 v5e ~$5 确认仍 PENDING] `[订正 2026-06-21: 真 v5e (vit720conf) 证伪——chunked-CE 在 TPU 反而 OOM 87.25G(>17.11G pre-fix)，"v6e/remat/FSDP 非必需"系 GPU-proxy 假象；lax.map+checkpoint 在 TPU XLA 病态；已改 fused logsumexp CE；详见 8doc_updates/2026-06-21_sasd-tpu-oom-fix.md]`；(c) GPU log **没有**显式 `GPU_EXIT` token —
 日志在 step-0 metrics + ckpt save 后即结束，task-wrapper 的 `GPU_EXIT` 行未被这个 log 文件捕获（无 error + 干净
 step-0 save ⇒ success，但 honest gap：缺显式 exit 哨兵）。bundle 未 re-pack / 未 republish 到 GCS LATEST（DEFERRED）。
 
@@ -163,7 +163,7 @@ step-0 save ⇒ success，但 honest gap：缺显式 exit 哨兵）。bundle 未
   **PASS**——因为 168 的 ViT patches（672 vs 2880）+ L（928 vs 1856）小得多，临时量远低于 16G。
 - 次要：output ckpt manager 对 `gs://ddrive-sasd-ussouth1-8a53f5ab/.../checkpoints` 报了两次 RAB
   `Precondition check failed`（400 FAILED_PRECONDITION），但**非致命**（found 0 steps 后继续）；致命的是上面的 HBM OOM。
-- **`TPU_VIT_720: OOM (v5e-16, 17.11G>15.75G)`**。补救见 §7。 [订正 2026-06-20（同日）: 根因已查清 + 已修复 —— OOM 的真正大头不是 ViT/sharding，而是 loss 侧 `diffusion/sasd.py:_ce_per_token` 里那块 fp32 全词表 `[N,V]` log_softmax（N=2L=3712 随分辨率线性翻倍）；已用 chunked-CE 修掉，bit-identical（loss 7.945 不变），capped-GPU proxy 实测 step 真峰值降到 ~12.66G < 15.75G v5e 预算。详见同日追加的 §9。本段当时把 OOM 归到「v5e 容量 / ViT activation 没切片」的诊断**保留为历史记录**，但已被 §9 的根因订正。]
+- **`TPU_VIT_720: OOM (v5e-16, 17.11G>15.75G)`**。补救见 §7。 [订正 2026-06-20（同日）: 根因已查清 + 已修复 —— OOM 的真正大头不是 ViT/sharding，而是 loss 侧 `diffusion/sasd.py:_ce_per_token` 里那块 fp32 全词表 `[N,V]` log_softmax（N=2L=3712 随分辨率线性翻倍）；已用 chunked-CE 修掉，bit-identical（loss 7.945 不变），capped-GPU proxy 实测 step 真峰值降到 ~12.66G < 15.75G v5e 预算。详见同日追加的 §9。本段当时把 OOM 归到「v5e 容量 / ViT activation 没切片」的诊断**保留为历史记录**，但已被 §9 的根因订正。] `[订正 2026-06-21: 真 v5e (vit720conf) 证伪——chunked-CE 在 TPU 不是 ~12.66G 而是 OOM 87.25G(>17.11G pre-fix，5×)，"step 装得下 v5e" 系 GPU-proxy 假象；lax.map+checkpoint 在 TPU XLA 病态；已改 fused logsumexp CE；详见 8doc_updates/2026-06-21_sasd-tpu-oom-fix.md]`
 
 ### 6.4 Reproduce
 
@@ -183,7 +183,7 @@ step-0 save ⇒ success，但 honest gap：缺显式 exit 哨兵）。bundle 未
   大规模重建 runbook。
 - ⏳ **TODO：跑 `validate_prep_consistency.py` 并落 `PREP_CONSISTENCY_PASS` 哨兵**（@ 200704 train-res 与 50176
   对照各一次），把结果回填本记录 §6 作为 prep 不漂移的 grep-able 证据。脚本已就位，结果未落账。
-- ⏳ **TODO：让 720 trainable 在 TPU 上跑通（当前 v5e-16 compile OOM 17.11G>15.75G，见 §6.3）。** [订正 2026-06-20（同日）: OOM 根因已定位（loss 侧 fp32 `[N,V]` log_softmax，非 ViT/sharding）并以 chunked-CE 修复，capped-GPU proxy 预示 step 在 v5e 装得下（真峰 ~12.66G < 15.75G），见 §9；下面三条路是当时记录的候选补救，现已被「先修 CE 大头」取代——v6e/FSDP 不再是前置条件，仅真实 v5e ~$5 run 确认仍 PENDING（§9）。] 三条路（按优先级）：
+- ⏳ **TODO：让 720 trainable 在 TPU 上跑通（当前 v5e-16 compile OOM 17.11G>15.75G，见 §6.3）。** [订正 2026-06-20（同日）: OOM 根因已定位（loss 侧 fp32 `[N,V]` log_softmax，非 ViT/sharding）并以 chunked-CE 修复，capped-GPU proxy 预示 step 在 v5e 装得下（真峰 ~12.66G < 15.75G），见 §9；下面三条路是当时记录的候选补救，现已被「先修 CE 大头」取代——v6e/FSDP 不再是前置条件，仅真实 v5e ~$5 run 确认仍 PENDING（§9）。] `[订正 2026-06-21: 真 v5e (vit720conf) 证伪——chunked-CE 在 TPU 反而 OOM 87.25G(>17.11G pre-fix)，"step 在 v5e 装得下 / v6e·FSDP 非前置" 系 GPU-proxy 假象；lax.map+checkpoint 在 TPU XLA 病态；已改 fused logsumexp CE；详见 8doc_updates/2026-06-21_sasd-tpu-oom-fix.md]` 三条路（按优先级）：
   (1) 换更大 HBM 的 TPU——**v6e（32G/chip）** 最直接（GPU 32G 已证 19.6G peak 装得下）；(2) **activation remat /
   gradient checkpointing** 砍 compile-time 临时量；(3) **FSDP**（params+optimizer+activation 切到 fsdp 轴，而非纯
   data-parallel replicate）。这是 06 §0.1 "trainable step DOES execute on TPU" 在 720 下的复核——168 已 PASS
@@ -234,13 +234,14 @@ step-0 save ⇒ success，但 honest gap：缺显式 exit 哨兵）。bundle 未
 - **capped-15.7G proxy 结果（THE proxy，`preallocate=true`，`/tmp/toy720_gpu_cap16b.log`）：** BFC `Limit 15.68GiB`，
   step 真实峰 **`MaxInUse 12.66GiB` < 15.75G v5e 预算**（`preallocate=false` 的 cap16 给 12.82G），step 内**无 RESOURCE_EXHAUSTED**。
   对比 un-chunked 720 在 32G 上 HLO 临时量 17.11G > 15.75G —— chunking 拿掉了那 ~4.5G fp32-softmax 峰。
-- **`TPU_VIT_720_FIX: CHUNKED_CE (peak 17.11G→~12.66G < 15.75G, loss 7.945 bit-identical)`**。
+  `[订正 2026-06-21: 真 v5e (vit720conf) 证伪——这个 "12.66G < v5e 预算 / chunking 拿掉峰值" 是 GPU-proxy 假象；真 TPU 上 chunked-CE 反而 OOM 87.25G(>17.11G pre-fix，5×)，lax.map+checkpoint 在 TPU XLA lower 成病态(+70G temporaries)、GPU 的 hlo_rematerialization 救了它而 TPU 没有；已改 fused logsumexp CE；详见 8doc_updates/2026-06-21_sasd-tpu-oom-fix.md]`
+- **`TPU_VIT_720_FIX: CHUNKED_CE (peak 17.11G→~12.66G < 15.75G, loss 7.945 bit-identical)`**。 `[订正 2026-06-21: 此 sentinel 仅 GPU-proxy 成立、TPU 证伪——真 v5e (vit720conf) chunked-CE OOM 87.25G(>17.11G pre-fix)；新 sentinel: CHUNKED_CE_TPU: FAIL(87.25G) / FUSED_CE_GPU: PASS(0.983→0.637)；已改 fused logsumexp CE；详见 8doc_updates/2026-06-21_sasd-tpu-oom-fix.md]`
 
 ### 9.3 改动的代码（同日落地）
 
 | file | change |
 |---|---|
-| `maxtext-dlm-fork/src/maxtext/diffusion/sasd.py` | **THE fix**：`_ce_per_token` 由一次性 fp32 `[N,V]` log_softmax 改成 `jax.lax.map(batch_size=_CE_ROW_CHUNK=512)` 逐行分块 + 内层 `@jax.checkpoint` remat（`sasd.py:29-53`）；峰值 fp32 张量 `[N,V]→[512,V]`，bit-identical |
+| `maxtext-dlm-fork/src/maxtext/diffusion/sasd.py` | **THE fix**：`_ce_per_token` 由一次性 fp32 `[N,V]` log_softmax 改成 `jax.lax.map(batch_size=_CE_ROW_CHUNK=512)` 逐行分块 + 内层 `@jax.checkpoint` remat（`sasd.py:29-53`）；峰值 fp32 张量 `[N,V]→[512,V]`，bit-identical `[订正 2026-06-21: 此 "THE fix" 在 TPU 证伪——chunked-CE 真 v5e OOM 87.25G(>17.11G pre-fix)，lax.map+per-row checkpoint 在 TPU XLA 病态；已删 `_CE_ROW_CHUNK`、改 fused logsumexp CE（`nll=logsumexp(logits.f32)-take_along_axis(logits.f32,target)`，无 lax.map/无 per-row checkpoint）；详见 8doc_updates/2026-06-21_sasd-tpu-oom-fix.md]` |
 | `ddrive_jax/models/vision_qwen25vl.py` + `sasd_vit_ingraph.py` + `decoders.py` + `types.py` | ViT per-block remat 基础设施（`VisionConfig.remat`、`body()` 用 `nnx.remat` gate、`sasd_vision_config(remat=)` 透传、`sasd_vit_remat` config 字段）—— **默认 OFF**，因实测 720 下 ~0 train-step memory 效果（大头在 loss 不在 ViT，见 §9.1），仅作休眠 knob |
 | `types.py:sasd_vit_remat` Field | 默认 `False`，docstring 明记「measured ~0 train-step memory effect at 720 …addressed by chunked CE in diffusion/sasd.py:_ce_per_token」—— 把真正的 OOM 修复指回 CE，而非 ViT remat |
 | backup lever（**未启用**） | 若 v5e run 偏紧，可切 **TRUE bf16 logits**：须**同时**翻 `logits_dot_in_fp32=False` 且 `cast_logits_to_fp32=False`（单翻一个无效——见 §9.4 死路三），把 dominant fp32 logits/softmax 块腰斩到 bf16，约释放整块 ~4.5G；代价是 loss 的 bf16 数值，仅作 fallback |
@@ -248,14 +249,14 @@ step-0 save ⇒ success，但 honest gap：缺显式 exit 哨兵）。bundle 未
 ### 9.4 诚实的残留 / 死路
 
 - **真实 v5e 确认仍 PENDING。** 9.2 的 proxy 是 **GPU BFC 实测峰值**，而原始 17.11G>15.75G 是 **v5e XLA compile-time HLO
-  估计**——二者不等价。capped-GPU 证据**必要但不充分**；真正的一次 ~$5 v5e run 仍未跑，是唯一的硬确认。
+  估计**——二者不等价。capped-GPU 证据**必要但不充分**；真正的一次 ~$5 v5e run 仍未跑，是唯一的硬确认。 `[订正 2026-06-21: 这个硬确认已跑（run vit720conf, ~$5）——结果证伪 proxy：chunked-CE 真 v5e OOM 87.25G(>17.11G pre-fix，5×)，"必要但不充分" 的担忧成真；已改 fused logsumexp CE，其 TPU 验证仍 IN_PROGRESS（待确认）；详见 8doc_updates/2026-06-21_sasd-tpu-oom-fix.md]`
 - **「preempted」是 ckpt-save 碎片伪影，不是 step OOM。** capped proxy 里 step 本身**跑完了**
   （`jax.block_until_ready(state)` 通过 → `checkpointing.py:841` 'Waiting for step 0 …'），~26s 后才在 **checkpoint-SAVE**
   路径申请 13.58GiB 撞进**碎片化**的 capped pool（available 0B / LargestFreeBlock 0B）OOM，被 `except JaxRuntimeError`
-  捕获并重抛成 `StopTraining('Job is preempted.')`（`train.py:758`）。即 v5e step 装得下，「preempted」是 save 路径碎片，**非前向/反向**。
+  捕获并重抛成 `StopTraining('Job is preempted.')`（`train.py:758`）。即 v5e step 装得下，「preempted」是 save 路径碎片，**非前向/反向**。 `[订正 2026-06-21: "v5e step 装得下" 是 GPU-proxy 结论、TPU 证伪——真 v5e (vit720conf) chunked-CE step 本身就 OOM 87.25G(>17.11G pre-fix)，不是 save 碎片；根因是 lax.map+checkpoint 在 TPU XLA 病态；已改 fused logsumexp CE；详见 8doc_updates/2026-06-21_sasd-tpu-oom-fix.md]`
 - **死路三：bf16 logits 单翻无效。** 只设 `cast_logits_to_fp32=False`、留 `logits_dot_in_fp32=True`：Temp 仍 13.6G、loss
   7.945，fp32 `[N,V]` 块原封不动（matmul 仍被强制 fp32，`/tmp/toy720_gpu_bf16logit.log:72,367`）。两个 knob 必须**同时**翻（§9.3 backup lever）。
 - **死路四：关 checkpointing 绕 save-OOM 被拒。** 试 `enable_checkpointing=False` 隔离 step，pydantic 在 device init 前
   报 `ValueError: You must set enable_checkpointing=True to load a checkpoint`（我们 restore base Qwen2.5-3B params，
   `/tmp/toy720_gpu_cap16c.log:52-53`）—— 反证 OOM 在 save 路径且无法这样回避。
-- **`TPU_VIT_720_REAL_V5E: PENDING (~$5 run)`**。
+- **`TPU_VIT_720_REAL_V5E: PENDING (~$5 run)`**。 `[订正 2026-06-21: 此 ~$5 v5e run 已跑（vit720conf）——chunked-CE 证伪：CHUNKED_CE_TPU: FAIL(87.25G>17.11G pre-fix，5×)；根因 = lax.map+checkpoint 在 TPU XLA 病态(+70G)，无正确性 bug；已改 fused logsumexp CE 并 GPU 验证 FUSED_CE_GPU: PASS(0.983→0.637, 数学一致)，但修复后的 TPU 验证 TPU_VALIDATION: IN_PROGRESS（待确认，用修复 bundle 重跑中）；详见 8doc_updates/2026-06-21_sasd-tpu-oom-fix.md]` `[追加 2026-06-21（修复 bundle 真 v5e 复跑收尾）: 已跑完——TPU_VALIDATION: PARTIAL。fused CE + sasd_vit_remat=true 真 v5e-16 复跑：HLO temporaries 87.25G→17.11G（fused CE 移除了 chunked-CE 的 +70G 回归，正好退回 plain-log_softmax 基线），但 17.11G 仍超 15.75G/chip 预算 1.36G（回到原始 bnu1tt5e9 floor，仍 RESOURCE_EXHAUSTED/TRAINABLE_EXIT=1）。sasd_vit_remat=on 对该数字 ~0 效果（floor 在 loss 侧 fp32 [N,V]+logits，不在 ViT）；fused CE 期望避开 [N,V] log_softmax 的额外省显存在 TPU 未兑现（XLA logsumexp 反向仍需 [N,V] softmax）。即 fused CE = 必要但不充分。下一杠杆（决策 pending）：(a) bf16 logits（关 logits_dot_in_fp32+cast_logits_to_fp32，~−4.5G→~12.6G FITS，最便宜）/(b) vocab-tiled/选中位置从 hidden 算 loss（不物化 fp32 [2B,2L,V] logits，省最多、无保真度代价）/(c) ici_tensor_parallelism=4/(d) v6e 32G。证据 /tmp/sanity_fix/tpu_720_confirm2.log；详见 8doc_updates/2026-06-21_sasd-tpu-oom-fix.md §5.2]` `[追加 2026-06-21（OOM 收口）: 上一条「下一杠杆」已决并落地——**(a) bf16-logits-ALONE 被 Codex 字节核算否掉 (NO-GO)**：让 [2B,2L,V] logits 变 bf16(4.2→2.1G)，但 `_ce_per_token` 紧接着 `.astype(fp32)` 又造出 2.1G fp32 [N,V]，净省 ~0.001G、非 1.36G（赌 XLA 把 convert 融进 logsumexp）。**正解 = (b) 的精神：vocab-tiled online-logsumexp `_ce_per_token`**（`_CE_VOCAB_TILES=8`，分 V 维做 streaming logsumexp，fp32 峰锁在 [N,V_tile] 而非 [N,V]，**无 lax.map / 无 per-row checkpoint**，普通静态 for；标准大词表-CE 做法，MaxText `num_vocab_tiling` 同类）+ bf16 logits 配合。GPU re-verify lossdecrease `0.981→0.636` PASS（与 fused/chunked 一致，数学不变）。**真 v5e (run vit720conf, bundle …065405-d627036-dirty) COMPILE + STEP0 PASSED，无 RESOURCE_EXHAUSTED ⇒ OOM 已解决**（vocab-tiled CE + bf16 logits 把 720 trainable step 装进 v5e 单芯 15.75G）；前三次（17.11G / 87.25G / 17.11G）都 OOM 的那步这次过了。**仍 pending: loss-decrease 数字**（step-0 GCS 存档后才打印，run in flight，loss 轨迹待回填）。证据 /tmp/sanity_fix/{gpu_lossdecrease_vtile.log,tpu_720_vtile.log}；详见 8doc_updates/2026-06-21_sasd-tpu-oom-fix.md]`

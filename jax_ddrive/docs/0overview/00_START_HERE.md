@@ -29,14 +29,14 @@
 
 ---
 
-## 3. 现状一览（截至 2026-06-20，**只链出证据，不复制数字**）
+## 3. 现状一览（截至 2026-06-21，**只链出证据，不复制数字**）
 
 | 阶段 | 状态 | 证据出处 |
 |---|---|---|
 | 算法 port（loss/mask/M-RoPE/ViT/权重转换） | ✅ parity-gated | [`../3summary/REPORT.md`](../3summary/REPORT.md)、`run_all_verification.sh`（**10 个 gate**） |
 | 数据 v2（AR + 预算 bf16 ViT embeds，415,663 帧） | ✅ byte-audit + TPU 验证 | [`../2implementation-details/DATASET_V2.md`](../2implementation-details/DATASET_V2.md) §6 |
 | 训练（NNX 单机 + MaxText 真实 v6e-1 单芯） | ✅ 单芯真权重 loss 下降 | [`../4collect/OVERNIGHT_TPU_PROGRESS.md`](../4collect/OVERNIGHT_TPU_PROGRESS.md)（TPU SSOT） |
-| 可训练 in-graph ViT（`sasd_vit_trainable=true`：每步吃 pixels，ViT 进 train state） | ✅ GPU 3-step PASS + 真实 v5e-16 多节点 3-step loss 下降、ckpt 落 GCS、EXIT 0；✅ **720 保真度修正** GPU toy PASS；✅ **720-OOM 已定位+修复**：瓶颈是 loss 里的 fp32 全词表 `log_softmax`（`sasd.py:_ce_per_token`），**不是** ViT / sharding（ViT-remat = 零内存变化）；改为 chunked-CE（按行分块 + remat，数值 bit-identical）后，720 train step 在 capped-GPU v5e proxy 下放得进、step 内无 OOM（残留 OOM 是 ckpt-save 路径）；⚠️ 真实 v5e 确认仍 pending（~$5）；168 已在 v5e PASS | [`../1plans/06_trainable_vit_plan.md`](../1plans/06_trainable_vit_plan.md)（滚动日志）、[`../1plans/07_fidelity_fixes_2026-06-20.md`](../1plans/07_fidelity_fixes_2026-06-20.md)（720 保真度 + EXP_BUDGET=192）、[`../4collect/08_trainable_vit_progress.md`](../4collect/08_trainable_vit_progress.md)、ViT 坑 [`02_gotchas.md`](02_gotchas.md) |
+| 可训练 in-graph ViT（`sasd_vit_trainable=true`：每步吃 pixels，ViT 进 train state） | ✅ GPU 3-step PASS + 真实 v5e-16 多节点 3-step loss 下降、ckpt 落 GCS、EXIT 0；✅ **720 保真度修正** GPU toy PASS；✅ **720-OOM 已解决 [2026-06-21]**：瓶颈是 loss 里的 fp32 全词表 CE（`sasd.py:_ce_per_token`），**不是** ViT / sharding；修法 = **vocab-tiled online-logsumexp CE（`_CE_VOCAB_TILES=8`）+ bf16 logits**（chunked-CE 是 TPU 回归被弃、光 fused CE 必要但不充分）；GPU 已重验数学一致（`SASD_TRAIN_LOSSDECREASE_PASS`）；**真 v5e-16 复跑（run `vit720conf`）= `TPU_OOM: SOLVED`**：train step **编译通过、无 `RESOURCE_EXHAUSTED`、step 0 已执行**（前三次全卡在这步）；⏳ **loss-decrease 数字 pending（run in flight，未声称训练已完整验证）**；168 早已在 v5e PASS。细节/数字见 [`02_gotchas.md`](02_gotchas.md)（数值/gotcha SSOT）+ [`../1plans/07_fidelity_fixes_2026-06-20.md`](../1plans/07_fidelity_fixes_2026-06-20.md) | [`../1plans/06_trainable_vit_plan.md`](../1plans/06_trainable_vit_plan.md)（滚动日志）、[`../1plans/07_fidelity_fixes_2026-06-20.md`](../1plans/07_fidelity_fixes_2026-06-20.md)（720 保真度 + EXP_BUDGET=192）、[`../4collect/08_trainable_vit_progress.md`](../4collect/08_trainable_vit_progress.md)、ViT 坑 [`02_gotchas.md`](02_gotchas.md) |
 | 导出 B1（MaxText→HF bf16） | ✅ 本地 round-trip | [`../2implementation-details/INFERENCE_DEPLOY.md`](../2implementation-details/INFERENCE_DEPLOY.md) |
 | 推理 B2（自包含 section-diffusion 采样器） | ✅ 本地 GPU；🧪 TPU 数值彩排未做 | 同上 |
 | 评测（WOD-E2E ADE/RFS + 嵌入 parity） | ✅ 全 479 帧 on-par | [`../3summary/REPORT.md`](../3summary/REPORT.md) |

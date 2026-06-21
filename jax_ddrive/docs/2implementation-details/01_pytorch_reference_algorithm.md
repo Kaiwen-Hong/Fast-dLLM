@@ -22,8 +22,13 @@ This is the ground truth the JAX port must reproduce. Section numbers map to the
   **No explicit 1/t term** (differs from reference `mdlm_loss`). Section weights {critical_objects 1.5,
   explanation 1.0, future_meta_behavior 2.0, trajectory 3.0} applied per-token via block→section map —
   `_build_section_weight_tensor` `modeling.py:2104-2121`.
-- **Complementary loss**: a second CE on the clean/causal `causal_logits` over complementary tokens,
-  added to the mdm loss — `modeling.py:2764-2766`. Port must include both terms.
+- **Two added loss terms (both required)** [订正 2026-06-20: 原文 "causal CE over complementary tokens" 有误]:
+  (1) the section-weighted MDM CE above is computed over the **doubled batch** `[main-noisy ; complementary-noisy]`
+  (the complementary row re-masks the response tokens the main row left *unmasked*) — `modeling.py:2327-2346`
+  (batch doubling) + `:2740-2749` (weighted CE); so the complementary predictions are already covered there.
+  (2) a plain **causal CE** (`loss_function`, *unweighted*) on the **clean half of the main row** against
+  `original_labels` (the FULL clean response, **not** complementary-only) — `modeling.py:2759-2766`.
+  Denominator for both terms = `2 * num_items_in_batch` — `modeling.py:2727`.
 - **Per-section Beta noise** — `_sample_section_aware_noise` `modeling.py:2085-2102`:
   `t[block] = Beta(α,β).sample()` per section (schedule string "α,β"), else `U(0,1)`.
   `p_mask_per_block = (1-eps)*t + eps`, eps=`minimum_noise_level`=1e-3 — `modeling.py:2273`.
@@ -72,7 +77,7 @@ plain RoPE. Multimodal builds 3D (t,h,w) ids from `image_grid_thw` `:1456-1556`.
 Fast_dDriveForConditionalGeneration
 ├── model.visual.{patch_embed, rotary_pos_emb, blocks.N.{norm1,attn.qkv,attn.proj,norm2,mlp...}, merger}
 ├── model.language_model.embed_tokens
-├── model.language_model.layers.N.self_attn.{q,k,v,o}_proj  (+ rotary_emb.inv_freq)
+├── model.language_model.layers.N.self_attn.{q,k,v,o}_proj
 ├── model.language_model.layers.N.mlp.{gate,up,down}_proj
 ├── model.language_model.layers.N.{input_layernorm, post_attention_layernorm}
 ├── model.language_model.norm
@@ -80,3 +85,5 @@ Fast_dDriveForConditionalGeneration
 ```
 Conversion regex `modeling.py:1862-1865`: `^visual→model.visual`, `^model(?!\.(language_model|visual))→model.language_model`.
 PyTorch Linear (out,in) → JAX kernel (in,out) transpose; norms/embeddings no transpose (per `a2d.py`).
+[订正 2026-06-20: `rotary_emb.inv_freq` 不是 safetensors key —— 它是 `register_buffer(..., persistent=False)`
+的非持久 buffer（`modeling.py:780`，language-model 级 `self.rotary_emb` `:1213`），不在 checkpoint 里，转换时按 theta 重建即可。]

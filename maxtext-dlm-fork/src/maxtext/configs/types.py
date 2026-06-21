@@ -543,7 +543,7 @@ class DiffusionObjective(BaseModel):
   # (the WOD-E2E subset is uniform: L=1184, N=336). 0 => derive from the first batch.
   sasd_seq_len: int = Field(0, description="SASD per-sample sequence length L (doubled to 2L in the batch).")
   sasd_num_image_tokens: int = Field(
-      0, description="SASD per-sample IMAGE_TOK count N (doubled to 2N). 0 => text-only SASD (no image path)."
+      0, description="SASD DOUBLED per-sample IMAGE_TOK count (2N) in each [2L] doubled row; e.g. 1440 for canonical 720. 0 => text-only SASD (no image path)."
   )
   sasd_vit_grid_thw: str = Field(
       "1,32,30", description="Per-image ViT patch grid 't,h,w' for the TRAINABLE in-graph ViT's structural"
@@ -552,10 +552,9 @@ class DiffusionObjective(BaseModel):
       " 2*sasd_num_image_tokens; only the trainable path reads this."
   )
   sasd_vit_remat: bool = Field(
-      False, description="If True, per-block activation checkpointing (nnx.remat) inside the TRAINABLE in-graph ViT"
-      " body. Numerically identical. NOTE: measured ~0 train-step memory effect at 720 (the dominant memory is the"
-      " fp32 vocab log_softmax in the loss, addressed by chunked CE in diffusion/sasd.py:_ce_per_token, not the ViT"
-      " activations) -- kept as an off-by-default knob. Only the trainable path reads it."
+      True, description="If True, per-block activation checkpointing (nnx.remat) inside the TRAINABLE in-graph ViT"
+      " body. Numerically identical and on by default for activation-memory headroom on the tight v5e budget. Only"
+      " the trainable path reads it."
   )
   sasd_data_dir: str = Field(
       "", description="Directory of SASD Parquet shards for dataset_type='waymo_sasd' (local path or gs://...)."

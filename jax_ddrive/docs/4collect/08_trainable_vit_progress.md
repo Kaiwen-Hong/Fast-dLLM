@@ -144,3 +144,50 @@ trainable passed on v5e-16 earlier, run be47jjta8). The 168/784 downscale is now
 * **`CHUNKED_CE_720: GPU PASS`**——chunked CE 移除 ~4.5G fp32-softmax 峰值、数值不变（loss 7.945），capped-proxy 强烈预测 720 step 能塞进 v5e。
 * **Caveat / PENDING**：proxy 是 GPU BFC 实测，不等于 TPU 的 XLA 编译期估计（原 `17.11G>15.75G` 是 v5e HLO-temporary 估值）；GPU 证据**必要但不充分**，真正确认仍需一次实际 ~$5 的 **v5e run（PENDING）**。
 * 代码改动：`sasd.py`（chunked CE，THE fix）、`vision_qwen25vl.py` / `sasd_vit_ingraph.py` / `decoders.py` / `configs/types.py`（`sasd_vit_remat` 开关 + `sasd_vit_grid_thw` 分辨率配置化，默认 720 grid `(1,32,30)`）。规范数字勿在此重述；见 [`../1plans/07_fidelity_fixes_2026-06-20.md`](../1plans/07_fidelity_fixes_2026-06-20.md) §9（及其 §6.3 的 720-OOM 记录，本条 root-cause 是其延续）与 `../0overview/02_gotchas.md#规范数字框-canonical-numbers`。
+
+## 2026-06-21 — chunked-CE 真 v5e 证伪 + fused logsumexp CE 修复
+
+承接上面的 `CHUNKED_CE_720: GPU PASS` / `PENDING` entry：那个「capped-proxy 强烈预测 720 step 能塞进 v5e」的结论，**这轮在真 v5e 上被证伪 (falsified)**——GPU 显存 proxy 对 TPU 是 necessary-not-sufficient，甚至误导。
+
+### 真 v5e 复跑 → chunked-CE STILL OOM（GPU-proxy 结论被证伪）
+* 跑了真 v5e-16 确认（run `vit720conf`，~$5）：chunked-CE 的 bundle **仍然 OOM、而且更糟**——`HLO temporaries 87.25G > 15.75G`，对比 pre-fix 的 17.11G **大 5 倍**。两次唯一差别就是 chunked-CE bundle。→ 上个 session「fits v5e / v6e·remat·FSDP 非必需」纯是 GPU-proxy 假象。
+* **`CHUNKED_CE_TPU: FAIL(87.25G)`**（>17.11G pre-fix，5×）。证据：`/tmp/sanity_fix/tpu_720_confirm.log`。
+
+### 根因（Codex 3-agent 审查 + 交叉验证）
+* Codex 3 个并行 agent（memory / correctness / sharding）+ 交叉验证定位根因：**chunked-CE 的 `jax.lax.map(batch_size=512)` + per-row `@jax.checkpoint` 在 TPU XLA 上 lower 成病态**——保留多个完整行空间 fp32 `[~5565,V]=3.15G` 缓冲（≈22 个 → +70G temporaries）。GPU 的 `hlo_rematerialization` 救了它，TPU 不同。
+* **FSDP 是开着的**（`base.yml ici_fsdp_parallelism=-1` 未被覆盖）→ params+优化器已分片 → 87.25G 是**纯 temporaries**，不是 persistent。
+* **无正确性 bug**：doubled-row / noisy-clean 切片 / causal shift / 分母 / M-RoPE / mask 朝向 / ViT scatter 全部与原版 `modeling.py` 一致。证据：`/tmp/review2/out{1,2,3}.md`。
+
+### 5 个修复（applied + GPU-verified）
+* **FIX 1（CRITICAL，关键）** `diffusion/sasd.py:_ce_per_token` → **fused logsumexp CE**：`nll = logsumexp(logits.f32,-1) - take_along_axis(logits.f32, target)`（== `-log_softmax[target]`，无 lax.map、无 per-row checkpoint、不 materialize `[N,V]` log_softmax），删除 `_CE_ROW_CHUNK`，数学等价。
+* FIX 2 `trainers/pre_train/train.py:382` → `if not is_sasd:` 才把 logits 塞进 `intermediate_outputs`（grad-accum liveness 隐患）。
+* FIX 3 `configs/types.py:554` → `sasd_vit_remat` 默认 `False`→`True`（与 decoders.py getattr 默认对齐）。
+* FIX 4 `configs/sasd_waymo_canonical.yml` → optimizer 加 `mu_dtype: "float32"`（AdamW 一阶矩 fp32，HF/DeepSpeed-faithful）。
+* FIX 5 `configs/types.py:545` → `sasd_num_image_tokens` docstring 改成「已 double 的 2N 计数」与代码一致。
+* **GPU 复验（免费，已完成）**：fused CE 重跑 `sasd_lossdecrease_test` → loss `0.983→0.637`、`SASD_TRAIN_LOSSDECREASE_PASS`、全 finite、peak 18.54G，与 pre-fix chunked 的 `0.980→0.637` 实质一致（差 ~0.002，bf16 噪声）→ loss 数学保持不变。87.25G 是 temporaries（FSDP 已开）。证据：`/tmp/sanity_fix/gpu_lossdecrease_fused.log`。
+* **`FUSED_CE_GPU: PASS(0.983→0.637)`**。
+
+### 结论与待办
+* **`TPU_VALIDATION: IN_PROGRESS`（待确认）**——用修复后的 bundle（`fastddrive-20260621_060306-d627036-dirty`）在真 v5e-16 重跑同一 720 setup，**此刻仍在跑、结果未定**；不得预先声称 OOM 已在 TPU 解决。预期：无 `RESOURCE_EXHAUSTED`（87.25G→~12-15G）+ loss 下降，结果待补。
+* **[回填 2026-06-21] `FUSED_CE_TPU: OOM(17.11G) — regression removed (was 87.25G) but floor 1.36G over`**（`TPU_VALIDATION: PARTIAL`）——修复 bundle（fused CE + `sasd_vit_remat=true`）真 v5e-16 复跑（run `vit720conf`）：`RESOURCE_EXHAUSTED: HLO temporaries 17.11G > 15.75G`、`TRAINABLE_EXIT=1`、pod 自动 clean 拆除。解读（PARTIAL，既非 fixed 亦非 failed）：fused CE **如期移除 chunked-CE 的 +70G TPU 回归**（87.25G→17.11G，正好退回 plain-log_softmax 基线），但 17.11G 仍**超 15.75G/chip 预算 1.36G**——回到原始 `bnu1tt5e9` 的 floor。`sasd_vit_remat=on` 对该数字 **~0 效果**（floor 是 loss 侧 fp32 `[N,V]`+logits，**不是** ViT）；fused CE 期望的「避开 `[N,V]` log_softmax」额外省显存在 TPU **未兑现**（XLA logsumexp 反向仍需 `[N,V]` softmax）。即 fused CE = **必要但不充分**。收尾最后 1.36G 的下一杠杆（决策 pending）：(a) bf16 logits（关 `logits_dot_in_fp32`+`cast_logits_to_fp32`，~−4.5G→~12.6G FITS，最便宜）/ (b) vocab-tiled / 选中位置从 hidden 算 loss（不物化 fp32 `[2B,2L,V]` logits，省最多、无保真度代价）/ (c) `ici_tensor_parallelism=4` / (d) v6e 32G。证据：`/tmp/sanity_fix/tpu_720_confirm2.log`。详见 [`../8doc_updates/2026-06-21_sasd-tpu-oom-fix.md`](../8doc_updates/2026-06-21_sasd-tpu-oom-fix.md) §5.2。
+* 关键教训：**只在 GPU 验过的显存优化必须在真 TPU 复核**——XLA 对同一图在 GPU/TPU 上 lower 差异巨大（GPU 有 `hlo_rematerialization`，TPU 不同）；chunked-CE 是反例（GPU 19.6→13.6G，TPU 17→87G）。
+* 详见 [`../8doc_updates/2026-06-21_sasd-tpu-oom-fix.md`](../8doc_updates/2026-06-21_sasd-tpu-oom-fix.md)；规范数字勿在此重述，见 `../0overview/02_gotchas.md#规范数字框-canonical-numbers`。
+
+## 2026-06-21 (cont.) — bf16-alone NO-GO → vocab-tiled CE → 真 v5e OOM 已解决
+
+承接上面的 `FUSED_CE_TPU: OOM(17.11G)` / `PARTIAL` entry：fused CE 把 chunked 的 +70G 回归移掉、退回 17.11G plain-log_softmax 基线，但仍超 15.75G/chip **1.36G**。本轮收尾这最后 1.36G。
+
+### bf16-logits-ALONE 被否（NO-GO）
+* 上一条列的「下一杠杆 (a) bf16 logits」经 **Codex 字节核算否掉**：关 `logits_dot_in_fp32`+`cast_logits_to_fp32` 让 `[2B,2L,V]` logits 变 bf16（4.2→2.1G），**但** `_ce_per_token` 紧接着对 shifted slice `.astype(fp32)` 又造出一块 2.1G fp32 `[N,V]` → **净省 ~0.001G，不是 1.36G**；只有 XLA 恰好把 convert 融进 logsumexp 才装得下——赌 XLA lowering（同 chunked-CE 翻车那类风险）。另：`float32_logits` 控的是**注意力** softmax 精度，不控词表 logits。证据：`/tmp/review2/decision_review.out`。
+* **`BF16_LOGITS_ALONE: NO-GO`**（CE 的 `.astype(fp32)` 上转抵消了 logits 的 bf16 省显存）。
+
+### 修复 — vocab-tiled online-logsumexp CE（标准大词表-CE 做法）
+* `diffusion/sasd.py:_ce_per_token` → **vocab-tiled streaming logsumexp**：对 V 维分 `_CE_VOCAB_TILES=8` 块做 online logsumexp（逐块累积 running max `m` + running sum `s`，`m+log(s)-tgt == -log_softmax[target]`），fp32 峰值锁在 `[N, V_tile]` 而非 `[N,V]`，**无 `jax.lax.map`、无 per-row `jax.checkpoint`**（普通 Python 静态 for，XLA 友好）。签名 `(nll, valid)` 契约不变；配合 bf16 logits（`[2B,2L,V]` 也降 bf16）。这是 **LLM 训练教科书的大词表-CE 头号标准解**（MaxText 内置 `num_vocab_tiling`+`logits_from_hidden_states`；T5X/PaxML/Levanter 同；SOTA 变体 Cut Cross-Entropy）——我们只是 SASD 自定义 loss 路径之前绕过了内置 tiling。之前 chunked-CE 翻车是**实现错（分 row 维 + lax.map + per-row checkpoint，TPU 病态），不是思路错**；正解是分 vocab 维 + online-logsumexp + 不用 lax.map。
+* **GPU re-verify（免费）**：vocab-tiled CE → loss `0.981→0.636`、`SASD_TRAIN_LOSSDECREASE_PASS`、全 finite、peak 18.54G——与 fused(`0.983→0.637`)/chunked(`0.981→0.637`) 实质一致（差 ~0.002 bf16 噪声）→ 数学保持不变。证据：`/tmp/sanity_fix/gpu_lossdecrease_vtile.log`。
+* **`FUSED_VTILE_CE_GPU: PASS(0.981→0.636)`**。
+
+### 真 v5e — OOM 已解决（loss-decrease 待回填）
+* 真 v5e-16 复跑（run `vit720conf`，bundle `fastddrive-20260621_065405-d627036-dirty` = vocab-tiled CE，启动加 `logits_dot_in_fp32=false cast_logits_to_fp32=false`）：**编译通过，无 `RESOURCE_EXHAUSTED`**——这正是前三次（bnu1tt5e9 17.11G / vit720conf#1 chunked 87.25G / vit720conf#2 fused 17.11G）全 OOM 的那一步，这次**过了**；**step 0 已执行**（日志到 `checkpointing.py:841 Waiting for step 0 …`，在 train loop 里 train_step 之后）。⇒ vocab-tiled CE + bf16 logits 把 720 trainable step 装进 v5e 单芯 15.75G。
+* **`TPU_OOM: SOLVED`**（vocab-tiled CE + bf16 logits → compile + step0 passed, no RESOURCE_EXHAUSTED）。证据：`/tmp/sanity_fix/tpu_720_vtile.log`。
+* **`LOSS_DECREASE: pending`（run in flight）**——`completed step: N, loss:` 的下降数字在 step-0 GCS 存档之后才打印，run 仍在飞，loss 轨迹待回填；**不得**声称「训练已完整验证」，仅「OOM 已解决；loss-decrease 确认 pending」。
+* 详见 [`../8doc_updates/2026-06-21_sasd-tpu-oom-fix.md`](../8doc_updates/2026-06-21_sasd-tpu-oom-fix.md)；规范数字勿在此重述，见 `../0overview/02_gotchas.md#规范数字框-canonical-numbers`。

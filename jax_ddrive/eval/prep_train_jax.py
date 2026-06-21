@@ -114,7 +114,10 @@ def main():
                 rs = i + 3; re_ = rs
                 while re_ < L and ids[re_] != IM_END:
                     re_ += 1
-                re_ = min(re_ + 1, L)
+                # FIDELITY: original collator does `response_end += 2` to include BOTH <|im_end|>
+                # AND the following \n in the learning span (multi_modal_dataset_fast_ddrive.py:408).
+                # `re_` is now AT the <|im_end|> index, so +2 labels <|im_end|> and the trailing \n.
+                re_ = min(re_ + 2, L)
                 for j in range(rs, re_):
                     labels[j] = ids[j]
                 break

@@ -1,0 +1,96 @@
+# ════════════════════════════════════════════════════════════════════════════════
+#  SASD CANONICAL training config — faithful to the released Fast-dDrive recipe.
+#
+#  This is the LARGE-SCALE / fidelity config. It mirrors the PyTorch launcher
+#  `fast_ddrive/train_scripts/train_waymo_sasd.sh` (the paper recipe) as closely as
+#  MaxText allows. For quick single-GPU smoke runs use `sasd_waymo.yml` instead.
+#
+#  Diff vs the SANITY config `sasd_waymo.yml` (see that file's header):
+#    - resolution: 720 image tokens / 200704 px (released-model res), NOT retired 168.
+#    - ViT TRAINABLE in-graph (the original does NOT freeze the vision encoder).
+#    - optimizer AdamW with HF-matching betas/weight_decay (NOT adafactor).
+#    - learning_rate 1e-5 + constant_with_warmup (NOT 1e-4 + cosine).
+#    - gradient_accumulation_steps 4.
+#
+#  MUST override at launch (data/cluster dependent):
+#    load_parameters_path=<BASE params ckpt>  sasd_data_dir=<720 AR dataset>
+#    base_output_directory=gs://...  run_name=...  steps=<2 epochs over your data>
+#    sasd_vit_snapshot=<ViT init>   (and mesh/FSDP knobs on a TPU pod)
+#  2-epoch target: steps ≈ 2 * num_train_samples / (per_device_batch_size *
+#  num_devices * gradient_accumulation_steps).
+#
+#  REQUIRED for SASD (base.yml documents this): attention=dot_product,
+#  attention_type=full, use_mrope=false, scan_layers=false.
+# ════════════════════════════════════════════════════════════════════════════════
+
+base_config: "base.yml"
+
+model_name: "qwen2.5-3b"   # dims (2048/16/2/11008/36, head_dim 128, vocab 151936)
+
+# ── objective ───────────────────────────────────────────────────────────────
+objective: "sasd"
+sasd_mrope_section: [16, 24, 24]   # 2*(16+24+24) == 128 == head_dim (Fast-dDrive 3B)
+sasd_rope_theta: 1000000.0
+# CANONICAL 720-res shapes (200704 px → 720 image tokens). L=1856, 2L=3712, 2N=1440.
+sasd_seq_len: 1856
+sasd_num_image_tokens: 1440        # doubled config @720 (2 × 720); retired was 336 (2×168)
+
+# ── data ────────────────────────────────────────────────────────────────────
+dataset_type: "waymo_sasd"
+sasd_data_dir: "/home/kaiwen/data/fast-ddrive/hf/wod_e2e_sasd"   # OVERRIDE with the 720 AR dataset
+sasd_vit_snapshot: "/home/kaiwen/data/huggingface/hub/models--Efficient-Large-Model--Fast-dDrive/snapshots/0fda81009f4efa58a2debbb48c0c09818e45341f"
+# CANONICAL: the original does NOT freeze the ViT → train it in-graph on pixels each step.
+sasd_vit_trainable: true
+eval_interval: 0
+
+# ── SASD-required attention / rope wiring ─────────────────────────────────────
+attention: "dot_product"
+attention_type: "full"
+use_mrope: false
+scan_layers: false
+remat_policy: "full"
+
+# ── qwen2.5 numerics (mirror the verified lossdecrease test exactly) ──────────
+logits_via_embedding: true
+logits_dot_in_fp32: true
+cast_logits_to_fp32: true
+float32_logits: true
+float32_qk_product: true
+matmul_precision: "default"
+normalize_embedding_logits: false
+use_qk_norm: false
+attention_bias: true
+normalization_layer_epsilon: 1.0e-6
+rope_max_timescale: 1000000.0
+enable_dropout: false
+
+# ── dtype (bf16 compute+params; loss/softmax stay fp32 inside sasd.py) ────────
+dtype: "bfloat16"
+weight_dtype: "bfloat16"
+grad_dtype: "bfloat16"
+
+# ── batch / length ────────────────────────────────────────────────────────────
+per_device_batch_size: 1.0
+gradient_accumulation_steps: 4     # original launcher: --gradient_accumulation_steps 4
+max_target_length: 3712            # == 2L @720
+
+# ── optimizer: AdamW matching the original HF Trainer / DeepSpeed ZeRO-2 path ──
+#    (original launcher uses DeepSpeed ZeRO-2 = AdamW; HF TrainingArguments defaults
+#     adam_b2=0.999 and weight_decay=0.0 — MaxText defaults 0.95/0.1, so override.)
+opt_type: "adamw"
+learning_rate: 1.0e-5              # original default 1e-5 (NOT the smoke 1e-4)
+adam_b1: 0.9
+adam_b2: 0.999                     # HF default (MaxText default 0.95 would drift)
+adam_eps: 1.0e-8
+mu_dtype: "float32"                # Keep AdamW first moment fp32 like HF/DeepSpeed.
+adam_weight_decay: 0.0            # original launcher sets no weight_decay → HF default 0.0
+gradient_clipping_threshold: 1.0
+# constant_with_warmup (warmup_ratio 0.03): warmup then HOLD (final_fraction=1.0 ⇒ no decay).
+warmup_steps_fraction: 0.03
+learning_rate_final_fraction: 1.0
+
+# ── checkpointing (full state: params+opt+step) ──────────────────────────────
+enable_checkpointing: true
+async_checkpointing: false
+
+# steps: set at launch (data/cluster dependent — see header 2-epoch formula).

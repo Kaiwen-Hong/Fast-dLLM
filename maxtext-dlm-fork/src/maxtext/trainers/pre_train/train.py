@@ -379,7 +379,8 @@ def loss_fn(model, config, data, dropout_rng, params, sparsity_state=None, is_tr
 
   # Add the model's primary output to the intermediates dict so it can be used
   # by the acceptance rate calculation in eval_step.
-  intermediate_outputs["logits"] = logits
+  if not is_sasd:
+    intermediate_outputs["logits"] = logits
 
   aux = {
       "intermediate_outputs": intermediate_outputs,
