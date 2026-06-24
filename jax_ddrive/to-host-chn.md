@@ -3,10 +3,15 @@
 给在 Waymo TPU 基础设施上跑这个项目的人的自包含交接文档。覆盖:做了什么、验证了什么(带数字)、
 怎么复现、怎么在 TPU 上部署、以及验收标准。分支 `jax-ddrive-port`,未推到 GitHub。
 
-> **最后更新:2026-06-13**(from-base overfit 管线 + B1 导出 + B2 自包含推理)。**想读懂代码而非部署？→ `docs/0overview/00_START_HERE.md`(文档总入口 + 代码阅读指南)**。文档维护规则见
+> **最后更新:2026-06-22**(mm-SASD-步三方 parity:GPU/CPU + 真 TPU 全 PASS;此前 from-base overfit 管线 + B1 导出 + B2 自包含推理)。**想读懂代码而非部署？→ `docs/0overview/00_START_HERE.md`(文档总入口 + 代码阅读指南)**。文档维护规则见
 > `docs/README.md`;数据格式权威规格见 `docs/2implementation-details/DATASET_V2.md`(v1 细节与
 > Round-2 语义验证见 `DATASET.md`);**内部 TPU 推理部署权威规格见
 > `docs/2implementation-details/INFERENCE_DEPLOY.md`**。
+> 📌 **状态(2026-06-22,mm-SASD-步三方 parity,当前真相):** 多模态 SASD **训练步**在**完全相同输入**下三方数值一致——
+> PyTorch oracle ↔ ddrive_jax NNX ↔ maxtext-fork(含 **MaxText 真·3B 完整前向** logits/loss vs PyTorch ~1e-4/1e-6)
+> + 数据 prep→parquet→AR round-trip bit-exact;**GPU/CPU 一键 `SASD_MM_STEP_PARITY_PASS`(10/10)** + **真 v6e-1 TPU 复核**
+> (data + NNX impl 两样本 PASS)。**独立 harness、未改任何现有代码**;数字/设计/容差/ViT-cuDNN-seed 根因(对照实验 Layer1-CTRL)
+> 见 `jax_ddrive/scripts/mm_step_parity/README.md`。
 > 📌 **历史基线(2026-06-08):** Phase 7(MaxText port)完成并在真实 v6e-1 上用真实权重跑通
 > (loss 0.31/0.56)。详见 `docs/4collect/OVERNIGHT_TPU_PROGRESS{,-chn}.md`。
 > 📌 **数据集(2026-06-12 白天):** 全量 **415,663 帧** parquet 构建完成;**Round-2 语义验证:10/10

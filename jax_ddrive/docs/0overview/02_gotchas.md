@@ -120,8 +120,9 @@
 注：
 - `phase3_lora_train` 在连跑套件里**会偶发 flake**（LoRA 在近最优 trained ckpt 上 30 步只动 ~0.001）；单跑稳过。`run_all_verification.sh:42-46`。
 - `tests/test_harness_fsdp.py` 与 `tests/test_multihost_datafeed.py` **不在** `run_all_verification.sh` 里（需特定 CPU device-count / 多进程环境，单独跑）。
+- **多模态 SASD-步三方 parity（独立 harness，未并入 `run_all_verification.sh`）**：`jax_ddrive/scripts/mm_step_parity/`（一键 `run_overnight_parity.sh` → `SASD_MM_STEP_PARITY_PASS`）在**完全相同输入**下验证 PyTorch oracle ↔ NNX ↔ MaxText 在多模态 SASD 训练步上数值一致（含 **MaxText 真·3B 完整前向** logits/loss vs PyTorch ~1e-4/1e-6）+ 数据 prep→parquet→AR round-trip bit-exact；GPU/CPU + **真 v6e-1 TPU** 复核全 PASS。数字/设计/容差/ViT-seed 根因见 [`../../scripts/mm_step_parity/README.md`](../../scripts/mm_step_parity/README.md)。**新增文件、未改任何现有代码。**
 
-其它 grep-able pass marker：`WAYMO_SASD_JAX_TRAIN_PASS`、`V2_TPU_VALIDATION_PASS`、`AR_WITH_EMBEDS_DONE`、`SASD_{TRAIN_STEP,WEIGHT_PARITY,VLA_PARITY,TRAIN_LOSSDECREASE}_PASS`、`B1_ROUNDTRIP_PASS`(824/824)、`EVAL_SASD_SELFCONTAINED_PASS`、`SASD_EVAL_PASS`、`B2_BF16_LOAD_PASS`、`EMBED_PARITY_PASS/FAIL`、`MULTIHOST_DATAFEED_TEST_PASS`。
+其它 grep-able pass marker：`WAYMO_SASD_JAX_TRAIN_PASS`、`V2_TPU_VALIDATION_PASS`、`AR_WITH_EMBEDS_DONE`、`SASD_{TRAIN_STEP,WEIGHT_PARITY,VLA_PARITY,TRAIN_LOSSDECREASE}_PASS`、`B1_ROUNDTRIP_PASS`(824/824)、`EVAL_SASD_SELFCONTAINED_PASS`、`SASD_EVAL_PASS`、`B2_BF16_LOAD_PASS`、`EMBED_PARITY_PASS/FAIL`、`MULTIHOST_DATAFEED_TEST_PASS`、`SASD_MM_STEP_PARITY_PASS`（mm-步三方 parity；子 sentinel：`SASD_MM_{NNX,MAXTEXT_MATH,MAXTEXT_FULLFWD}_PARITY_PASS`、`SASD_MM_DATASET_ROUNDTRIP_PASS`）。
 
 ---
 

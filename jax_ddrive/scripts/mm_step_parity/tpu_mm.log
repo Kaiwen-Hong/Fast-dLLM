@@ -1,0 +1,65 @@
+08:43:19 provision retry: zones=us-east5-a us-east5-b us-east5-c us-central1-a us-south1-a accel=v6e-1 until +3h
+08:43:19 === round 1 ===
+08:43:19  try us-east5-a
+Create request issued for: [mmstep-parity]
+Waiting for operation [projects/project-8a53f5ab-2ea2-4892-a78/locations/us-east5-a/operations/operation-1782135799822-654d7d34a37c9-35ae96e5-55435b75] to complete...
+......done.
+Created queued_resource [mmstep-parity].
+08:46:10   [us-east5-a] WAITING_FOR_RESOURCES (~180s, still waiting)
+08:49:15   [us-east5-a] WAITING_FOR_RESOURCES (~360s, still waiting)
+08:52:19   [us-east5-a] WAITING_FOR_RESOURCES (~540s, still waiting)
+08:55:24   [us-east5-a] WAITING_FOR_RESOURCES (~720s, still waiting)
+08:58:29   [us-east5-a] WAITING_FOR_RESOURCES (~900s, still waiting)
+09:01:34   [us-east5-a] WAITING_FOR_RESOURCES (~1080s, still waiting)
+09:03:57   [us-east5-a] still WAITING_FOR_RESOURCES after ~20m -> release + next zone
+09:03:59  try us-east5-b
+Create request issued for: [mmstep-parity]
+Waiting for operation [projects/project-8a53f5ab-2ea2-4892-a78/locations/us-east5-b/operations/operation-1782137040171-654d81d387055-31502ea3-0e09fa0a] to complete...
+......done.
+Created queued_resource [mmstep-parity].
+09:06:49   [us-east5-b] WAITING_FOR_RESOURCES (~180s, still waiting)
+09:09:54   [us-east5-b] WAITING_FOR_RESOURCES (~360s, still waiting)
+09:12:59   [us-east5-b] PROVISIONING (~540s, still waiting)
+09:15:23   [us-east5-b] ACTIVE (after ~680s)
+09:15:23 reaper armed (+3h) zone us-east5-b (pid 1145079)
+09:15:23 stage on VM @ us-east5-b (code+bundle+snapshot+venv, timeout 40m) ...
+Propagating SSH public key to all TPU workers...
+..........................................................done.
+Using ssh batch size of 1. Attempting to SSH into 1 nodes with a total of 1 workers.
+SSH: Attempting to connect to worker 0...
+Warning: Permanently added 'tpu.515064197386467065-0-pvqnkl' (ED25519) to the list of known hosts.
+
+WARNING: gsutil rsync uses hashes when modification time is not available at
+both the source and destination. Your crcmod installation isn't using the
+module's C extension, so checksumming will run very slowly. If this is your
+first rsync since updating gsutil, this rsync can take significantly longer than
+usual. For help installing the extension, please see "gsutil help crcmod".
+
+downloading uv 0.11.23 x86_64-unknown-linux-gnu
+installing to /home/kaiwen/.local/bin
+  uv
+  uvx
+everything's installed!
+
+To add $HOME/.local/bin to your PATH, either restart your shell or run:
+
+    source $HOME/.local/bin/env (sh, bash, zsh)
+    source $HOME/.local/bin/env.fish (fish)
+Using CPython 3.11.13 interpreter at: /usr/bin/python3.11
+Creating virtual environment at: venv
+Activate with: source venv/bin/activate
+TPU_DEVICES [TpuDevice(id=0, process_index=0, coords=(0,0,0), core_on_chip=0)]
+WORKER_STAGE_OK
+09:17:46 RUN validation on TPU @ us-east5-b (timeout 40m) ...
+Using ssh batch size of 1. Attempting to SSH into 1 nodes with a total of 1 workers.
+SSH: Attempting to connect to worker 0...
+===== TPU DATA MATCH =====
+[D] prep samples: 2
+[D] sample 0 (104252_0ccbcc47f5d0920f6): parquet=OK  (no AR shard)
+[D] sample 1 (114317_c086330168a335e27): parquet=OK  (no AR shard)
+[D] report -> /home/kaiwen/mmdata/tpu_verify_dataset.json
+SASD_MM_DATASET_ROUNDTRIP_PASS (parquet + arrayrecord bit-exact vs prep npz, 2 samples, 12 fields)
+===== TPU NNX IMPL MATCH 00000 =====
+===== TPU NNX IMPL MATCH 00001 =====
+TPU_VALIDATE_RAN
+09:17:55 TPU_MM_VALIDATE_DONE zone=us-east5-b (reports -> /home/kaiwen/data/parity_overnight/tpu ; reaper will delete in +3h, or run tpu_down.sh)

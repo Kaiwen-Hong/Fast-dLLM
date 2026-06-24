@@ -48,6 +48,8 @@
 
 之后按任务分支：推理 → `eval/mm_sampler.py` + `eval_sasd/sampler_sasd.py`；权重 → `convert/hf_to_jax.py` + `param_mapping.py`；FSDP → `train/train_tpu.py` + `sharding.py`。
 
+> **验证多模态 SASD 训练步三方一致** → 独立 harness `scripts/mm_step_parity/`（一键 `run_overnight_parity.sh`；TPU `tpu_mm_validate.sh`）：在相同冻结输入上跑 PyTorch oracle ↔ NNX ↔ MaxText（含真·3B 完整前向）+ 数据 round-trip，GPU/CPU + 真 v6e-1 全 PASS。**新增文件，不改现有代码。** SSOT = [`../../scripts/mm_step_parity/README.md`](../../scripts/mm_step_parity/README.md)。
+
 ---
 
 ## 3. 子系统地图（概念 → 文件 → 关键符号）

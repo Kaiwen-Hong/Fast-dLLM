@@ -132,6 +132,12 @@ Then I gsutil-pull the WOD-E2E train/val tfrecords into `/home/kaiwen/data/fast-
 tfrecord→Fast-dDrive-JSON converter (repo's is "coming soon"), and stand up the separate `autovla`
 metrics env (tensorflow 2.12 + waymo-open-dataset-tf-2-12-0) for ADE/RFS.
 
+*[订正 2026-06-23: tfrecord→Fast-dDrive-JSON converter 已落地（`fast_ddrive/data/convert_wod_e2e.py`）。
+但据 Waymo 内部 agent 反馈，整条 **WOD-E2E → ArrayRecord** 数据流水线将重构为 google3 钦定的
+**2-job split**（Flume ETL 只产 raw msgpack 的 ArrayRecord + tokenize/SASD 结构搬进训练期 Grain `MapTransform`），
+取代现行 JSON→npz→parquet→tf.Example 链路。设计已定稿（option A：全-raw AR + tokenize-in-Grain，2026-06-23），
+**尚未实现**。完整实现蓝图 + 经验记录单独立卷 [`09_internal_flume_data_pipeline.md`](09_internal_flume_data_pipeline.md)。]*
+
 ## 9. Open risks
 
 - Hybrid mask + complementary loss exact reproduction (Phase 2 gate) — primary risk.
