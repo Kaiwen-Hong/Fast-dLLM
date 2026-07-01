@@ -67,3 +67,25 @@ harness. To fold VQA into that harness you'd still thread `images` through
 `WrappedDiffusionGemmaNetwork.encoder_call` + `sft_encode` + an `images` kontext key on
 `SFTDiffusion`, and build a ChartQA kauldron data pipeline — but the modeling blocker (the NaN) is
 solved and the training objective + metric-improvement are demonstrated here.
+
+## ⚠️ Verification: does the vision encoder actually contribute? (ablations)
+A decreasing loss does NOT prove the image is used — the model could just overfit text/answer-prior.
+Controlled ablations on ckpt_100 (`vqa_ablation.py`, `vqa_textonly.py`):
+
+| condition (held-out diffusion loss @ step100) | loss |
+|---|---|
+| VQA, **correct** image | 2.94 |
+| VQA, **wrong** image (swap another chart) | **2.94** (≈identical) |
+| VQA, **zero** image (degenerate) | 3.30 |
+| **text-only** baseline (no image) | 3.01 |
+| gradient norm: vision params 1.4e-2 vs text params 1.1e+1 (≈800× smaller) | |
+
+**Verdict:** the vision pipeline is **functional & differentiable** (finite forward, non-zero vision
+grads, real-vs-zero image changes the output logits, RMS 0.93) — the NaN fix and wiring are real.
+BUT the model **does NOT use image content**: swapping the correct chart for a wrong one gives an
+identical loss (2.9378 vs 2.9379; correct<wrong on only 12/20), and a text-only model reaches nearly
+the same loss (3.01). So the loss drop is ~95% text/answer-prior, exactly the overfitting concern.
+This is expected for a 35M random-init model trained 100 steps on 100 examples (same reason sudoku
+accuracy is 0%) — real visual grounding needs pretrained weights + far more training (TPU).
+**Correct metric for "vision works":** the counterfactual gap `loss(wrong image) - loss(correct image)`
+(currently ≈0; should be ≫0 once the model reads charts), NOT raw loss decrease.
