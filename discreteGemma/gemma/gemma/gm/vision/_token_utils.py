@@ -363,7 +363,7 @@ def remove_mm_logits(
       offset_by=num_tokens_per_image + 3,
   )
 
-  return jnp.take_along_axis(logits, new_text_tokens_pos[..., None], axis=1)
+  return logits  # PATCH: identity (Gemma4 multimodal path hardcodes Gemma3 tokens -> gather NaN). Mask image positions in the loss instead.
 
 
 def get_num_variable_mm_tokens(
