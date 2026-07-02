@@ -33,6 +33,7 @@ with kd.konfig.imports():
   from kauldron import kd as kd_cfg  # pylint: disable=reimported
   from gemma.diffusion.hackable_diffusion_adapter.eval import sudoku_eval as sudoku_eval_cfg
   from gemma.diffusion.hackable_diffusion_adapter.eval import pubmedqa_eval as pubmedqa_eval_cfg
+  from gemma.diffusion.hackable_diffusion_adapter.eval import chartqa_eval as chartqa_eval_cfg
 # pylint: enable=g-import-not-at-top
 
 ################################################################################
@@ -49,7 +50,7 @@ _CONFIG = kd.konfig.DEFINE_config_file(
 _TASK = flags.DEFINE_enum(
     "task",
     None,
-    ["sudoku", "pubmedqa"],
+    ["sudoku", "pubmedqa", "chartqa"],
     "Task to evaluate.  Determines which metrics are reported.",
 )
 
@@ -112,9 +113,24 @@ def _pubmedqa_metrics():
   }
 
 
+def _chartqa_metrics():
+  """Return task-specific metrics for the ChartQA config."""
+  return {
+      "chartqa_relaxed_accuracy": chartqa_eval_cfg.ChartQARelaxedAccuracy(
+          tokens="samples",
+          ground_truth="batch.answer_tokens",
+      ),
+      "chartqa_exact_match": chartqa_eval_cfg.ChartQAExactMatch(
+          tokens="samples",
+          ground_truth="batch.answer_tokens",
+      ),
+  }
+
+
 _TASK_METRICS = {
     "sudoku": _sudoku_metrics,
     "pubmedqa": _pubmedqa_metrics,
+    "chartqa": _chartqa_metrics,
 }
 
 

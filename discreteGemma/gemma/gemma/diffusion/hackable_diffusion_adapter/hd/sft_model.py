@@ -22,6 +22,7 @@ import flax.linen as nn
 from gemma.diffusion.hackable_diffusion_adapter.hd import hd_gemma_ar_state_handler
 from gemma.diffusion.hackable_diffusion_adapter.hd import hd_gemma_network
 from gemma.diffusion.hackable_diffusion_adapter.hd import mask_helpers
+from gemma.gm.nn.gemma4._transformer import PreprocessedVisionInput
 from hackable_diffusion.lib import hd_typing
 from hackable_diffusion.lib import inference
 from hackable_diffusion.lib import sampling
@@ -35,6 +36,35 @@ CheckpointedEvaluator = _checkpointed_evaluator.CheckpointedEvaluator
 
 
 PAD_TOKEN = 0
+
+
+def _build_vision_input(patches, positions_xy, n_soft):
+  """Pack batched per-example patches into a single ``PreprocessedVisionInput``.
+
+  grain yields ``patches`` ``[B, MAX_PATCHES, P]`` and ``positions_xy``
+  ``[B, MAX_PATCHES, 2]``. The Gemma4 vision merge (``_encode_vision``) expects a
+  single meta-batch ``[1, n_images*MAX_PATCHES, P]`` with ``soft_token_counts``
+  enumerating the images. The vendored ``merge_flat_embeddings`` vmaps the text
+  batch against a size-1 vision batch, so it only reconciles when the per-call
+  text batch is 1 — hence the multimodal SFT configs use ``batch_size=1``. The
+  reshape below is the identity for ``B==1`` and matches the canonical packing in
+  ``gm/text/_gemma4_sampler.py``. Returns ``None`` for text-only (no patches).
+  """
+  if patches is None:
+    return None
+  n_images = patches.shape[0]
+  max_patches = patches.shape[1]
+  flat_patches = jnp.reshape(
+      patches, (1, n_images * max_patches, patches.shape[2])
+  )
+  flat_positions = jnp.reshape(
+      positions_xy, (1, n_images * max_patches, positions_xy.shape[2])
+  )
+  return PreprocessedVisionInput(
+      patches=flat_patches,
+      positions_xy=flat_positions,
+      soft_token_counts=(n_soft,) * n_images,
+  )
 
 
 @dataclasses.dataclass(kw_only=True, frozen=True)
@@ -167,6 +197,7 @@ def sft_encode(
     total_canvas_len: int,
     canvas_size: int,
     pad_token: int = PAD_TOKEN,
+    images: Any = None,
 ) -> tuple[jnp.ndarray, Any, jnp.ndarray, jnp.ndarray]:
   """Runs the SFT encoder pass: prefill KV cache and compute encoder logits.
 
@@ -205,6 +236,9 @@ def sft_encode(
           input_mask=full_seq_mask,
           init_cache_fn=gemma_network.init_cache,
           encoder_fn=gemma_network.encoder_call,
+          # IMAGE: merge vision soft tokens at the -2 placeholders in `prompt`
+          # during the (prompt+clean-canvas) prefill. None => text-only.
+          images=images,
       )
   )
 
@@ -268,6 +302,12 @@ class SFTDiffusion(nn.Module):
   pad_token: int = PAD_TOKEN
   stop_gradient_from_denoiser_to_encoder: bool = False
   self_cond_prob: float = 0.5
+  # Optional multimodal keys. None => text-only (sudoku/pubmedqa unchanged).
+  # `patches`/`positions_xy` come from the data pipeline; `n_soft` is the number
+  # of vision soft tokens per image (== count of -2 placeholders in the prompt).
+  patches: kd.kontext.Key | None = None
+  positions_xy: kd.kontext.Key | None = None
+  n_soft: int = 0
 
   @property
   def total_canvas_len(self) -> int:
@@ -282,6 +322,8 @@ class SFTDiffusion(nn.Module):
       canvas_mask: jnp.ndarray,
       encoder_target: jnp.ndarray,
       encoder_target_mask: jnp.ndarray,
+      patches: jnp.ndarray | None = None,
+      positions_xy: jnp.ndarray | None = None,
       is_training: bool = True,
   ):
     """Computes model losses and forward predictions during training or eval.
@@ -340,6 +382,10 @@ class SFTDiffusion(nn.Module):
     # Create KV cache and encoder logits
     ############################################################################
 
+    # IMAGE: build the vision input from batched patches (None => text-only) and
+    # merge it into the encoder prefill at the -2 placeholders in `prompt`.
+    images = _build_vision_input(patches, positions_xy, self.n_soft)
+
     encoder_logits, kv_cache, positions, prompt_mask = sft_encode(
         gemma_network=self.gemma_network,
         prompt=prompt,
@@ -350,6 +396,7 @@ class SFTDiffusion(nn.Module):
         total_canvas_len=self.total_canvas_len,
         canvas_size=self.canvas_size,
         pad_token=self.pad_token,
+        images=images,
     )
 
     if self.stop_gradient_from_denoiser_to_encoder:
@@ -539,6 +586,14 @@ class GemmaSamplingEvaluator(CheckpointedEvaluator):
         'prompt_tokens': prompt_tokens,
         'prompt_lengths': prompt_lengths,
     }
+    # IMAGE: if the model is multimodal, image-condition the AR sampler's encoder
+    # prefill by packing patches -> PreprocessedVisionInput into the conditioning
+    # (consumed by GemmaARStateHandler.init_ar_state). Text-only tasks omit it.
+    patches = kwargs.get('patches', None)
+    if patches is not None:
+      cond['images'] = _build_vision_input(
+          patches, kwargs.get('positions_xy'), getattr(self.model, 'n_soft', 0)
+      )
 
     # Run the sampling loop
     final, final_state = self.ar_diffusion_sampler(
