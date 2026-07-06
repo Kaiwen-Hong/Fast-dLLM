@@ -48,13 +48,15 @@ diffusion loss + encoder AR loss) runs and is differentiable on GPU. Full-parame
 LoRA (`lora.LoRA`, the sudoku default) is an additional wrapper not exercised here.
 Last verified: `103,106 params | total 10.98->9.92 (diffusion+encoder both decrease) | PASS`.
 
-## Expected (last verified 2026-07-01)
+## Expected (re-verified 2026-07-06 on the clean `discreteGemma/` baseline)
 ```
 gpu_check.py       -> backend gpu | CudaDevice(id=0) | device_kind NVIDIA GeForce RTX 5090 | PASS
 tiny_dgemma_smoke  -> 103,106 params | self_conditioner present: True
                       inference OK (base AR forward)   : (2,16,256) on CudaDevice(id=0)
                       inference OK (diffusion forward) : (2,16,256) on CudaDevice(id=0)
                       training OK: loss 5.1967 -> 4.4060 (decreased) | PASS
+sft_smoke.py       -> 103,106 params | official SFTDiffusion + hackable_diffusion
+                      total 10.9788 -> 9.9232 (diffusion 5.4349->5.0202, encoder 5.5439->4.9030) | PASS
 ```
 
 ## What the tiny config exercises (real gemma code, shrunk)
