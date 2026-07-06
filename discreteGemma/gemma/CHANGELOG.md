@@ -1,0 +1,46 @@
+# Changelog
+
+<!--
+
+Changelog follow the https://keepachangelog.com/ standard (at least the headers)
+
+This allow to:
+
+* auto-parsing release notes during the automated releases from github-action:
+  https://github.com/marketplace/actions/pypi-github-auto-release
+* Have clickable headers in the rendered markdown
+
+To release a new version (e.g. from `1.0.0` -> `2.0.0`):
+
+* Create a new `# [2.0.0] - YYYY-MM-DD` header and add the current
+  `[Unreleased]` notes.
+* At the end of the file:
+  * Define the new link url:
+  `[2.0.0]: https://github.com/google-deepmind/gemma/compare/v1.0.0...v2.0.0`
+  * Update the `[Unreleased]` url: `v1.0.0...HEAD` -> `v2.0.0...HEAD`
+
+-->
+
+## [Unreleased]
+
+## [4.1.0] - 2026-06-11
+
+- Release Diffusion Gemma
+
+## [4.0.1] - 2026-05-20
+
+- Fix `dialog` dependency requirement to be `>= 1.1.0`.
+
+## [4.0.0] - 2026-04-17
+
+* Add Gemma 4.
+
+## [1.0.0] - 2022-01-01
+
+* Initial release
+
+[Unreleased]: https://github.com/google-deepmind/gemma/compare/v4.1.0...HEAD
+[4.1.0]: https://github.com/google-deepmind/gemma/compare/v4.0.1...v4.1.0
+[4.0.1]: https://github.com/google-deepmind/gemma/compare/v4.0.0...v4.0.1
+[4.0.0]: https://github.com/google-deepmind/gemma/compare/v0.1.0...v4.0.0
+[1.0.0]: https://github.com/google-deepmind/gemma/releases/tag/v0.1.0
