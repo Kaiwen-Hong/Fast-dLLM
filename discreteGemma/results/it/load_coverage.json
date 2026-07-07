@@ -38,5 +38,5 @@
     "audio_encoder/conformer/stacked_layers_0/fflayer_start/ffn_layer2/clip_input_min",
     "audio_encoder/conformer/stacked_layers_0/fflayer_start/ffn_layer2/clip_output_max"
   ],
-  "checkpoint_path": "/home/kaiwen/data/dgemma_e2b/ckpts/gemma4-e2b-pt"
+  "checkpoint_path": "/home/kaiwen/data/dgemma_e2b/ckpts/gemma4-e2b-it"
 }

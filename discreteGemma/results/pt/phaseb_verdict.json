@@ -1,0 +1,36 @@
+{
+  "variant": "pt",
+  "coverage": {
+    "n_model": 567,
+    "n_loaded": 564,
+    "n_expected_missing": 3,
+    "expected_missing_subtrees": [
+      "self_conditioner"
+    ],
+    "n_ckpt_only_discarded": 754,
+    "ckpt_only_subtrees": [
+      "audio_encoder",
+      "embedder"
+    ]
+  },
+  "C1a_coverage_ok": true,
+  "C2_sc_keys": [
+    "self_conditioner/ffw/gating_einsum",
+    "self_conditioner/ffw/linear",
+    "self_conditioner/pre_norm/scale"
+  ],
+  "C2_lin_norm": 0.0,
+  "C2_gate_norm": 150528.0,
+  "C2_zero_ok": true,
+  "C1b_bit_equality": {
+    "n_equal": 564,
+    "n_not_equal": 0,
+    "n_unmatched": 0,
+    "samples": []
+  },
+  "C1b_ok": true,
+  "C1c_ar_logits_max_abs_diff": 0.0,
+  "C1c_ok": true,
+  "C2_noop_bitwise": true,
+  "PASS": true
+}

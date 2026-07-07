@@ -125,14 +125,28 @@ def mode_diff(variant: str):
   # encode_vision — i.e. only when images are passed. (Found via the coverage
   # report: ckpt embedder/mm_* keys were being discarded.)
   from gemma.gm.nn.gemma4 import _transformer as g4t
-  n_soft = 256
-  n_patches = 2520  # budget 280 * pooling 3**2 (matches the data pipeline)
-  patch_dim = 16 * 16 * 3
+  # Two-step init: (a) REAL text-only init (cheap, proven; provides real
+  # self_conditioner values — the only leaves the loader keeps); (b) FULL
+  # multimodal trace via jax.eval_shape (zero device memory) for the mm-only
+  # param STRUCTURE (vision tower / embedder mm_*), filled with zeros — every
+  # one of them is replaced from the checkpoint by the loader, so values are
+  # irrelevant; only shapes/dtypes matter.
+  init_kwargs = dict(
+      sc_embeddings=sc0, positions=positions, attention_mask=attn,
+      sliding_attention_mask=attn,
+      method=dm.DiffusionGemma_E2B.call_with_self_conditioning,
+  )
+  t = time.time()
+  variables = model.init(
+      {"params": jax.random.PRNGKey(0), "sampling": jax.random.PRNGKey(1)},
+      tokens, **init_kwargs,
+  )
+  text_flat = flax.traverse_util.flatten_dict(variables["params"], sep="/")
+
+  n_soft, n_patches, patch_dim = 256, 2520, 16 * 16 * 3
   mm_block = [108, 255999] + [-2] * n_soft + [258882, 108]
-  # Tail long enough that l_no_mm = Lmm - (num_tokens_per_image(280)+3) > 0
-  # inside remove_mm_logits (the images path strips MM logits at the end).
-  tail = list(range(1000, 1030))
-  mm_tokens = jnp.asarray([[2] + mm_block + tail], jnp.int32)  # [1, Lmm]
+  tail = list(range(1000, 1030))  # Lmm=291 > 283 so l_no_mm stays positive
+  mm_tokens = jnp.asarray([[2] + mm_block + tail], jnp.int32)
   Lmm = mm_tokens.shape[1]
   pvi = g4t.PreprocessedVisionInput(
       patches=jnp.zeros((1, n_patches, patch_dim), jnp.float32),
@@ -141,18 +155,27 @@ def mode_diff(variant: str):
   )
   mm_pos = jnp.broadcast_to(jnp.arange(Lmm), (1, Lmm))
   mm_attn = jnp.ones((1, Lmm, Lmm), dtype=bool)
-  t = time.time()
-  variables = model.init(
-      {"params": jax.random.PRNGKey(0), "sampling": jax.random.PRNGKey(1)},
-      mm_tokens,
-      sc_embeddings=jnp.zeros((1, Lmm, model.config.embed_dim), jnp.bfloat16),
-      images=pvi,
-      positions=mm_pos,
-      attention_mask=mm_attn,
-      sliding_attention_mask=mm_attn,
-      method=dm.DiffusionGemma_E2B.call_with_self_conditioning,
+  spec = jax.eval_shape(
+      lambda: model.init(
+          {"params": jax.random.PRNGKey(0), "sampling": jax.random.PRNGKey(1)},
+          mm_tokens,
+          sc_embeddings=jnp.zeros((1, Lmm, model.config.embed_dim), jnp.bfloat16),
+          images=pvi,
+          positions=mm_pos,
+          attention_mask=mm_attn,
+          sliding_attention_mask=mm_attn,
+          method=dm.DiffusionGemma_E2B.call_with_self_conditioning,
+      )
   )
-  print(f"DIFF[{variant}]: init (multimodal trace) in {time.time()-t:.0f}s")
+  spec_flat = flax.traverse_util.flatten_dict(spec["params"], sep="/")
+  full_flat = {
+      k: text_flat[k] if k in text_flat else jnp.zeros(s.shape, s.dtype)
+      for k, s in spec_flat.items()
+  }
+  n_mm_only = len(spec_flat) - len(text_flat)
+  variables = {"params": flax.traverse_util.unflatten_dict(full_flat, sep="/")}
+  print(f"DIFF[{variant}]: init in {time.time()-t:.0f}s"
+        f" (text leaves {len(text_flat)}, +{n_mm_only} mm-only zero leaves)")
 
   # ---- OUR loader: expected_missing + coverage report ----
   t = time.time()
@@ -194,35 +217,48 @@ def mode_diff(variant: str):
   verdict["C2_gate_norm"] = gate_norm
   verdict["C2_zero_ok"] = bool(lin_norm == 0.0 and gate_norm > 0.0)
 
-  # ---- C1b bit-equality vs raw-ckpt hashes ('/w' remap rule) ----
-  with open(f"{out_dir}/ref_hashes.json") as f:
-    ref_hashes = json.load(f)
+  # ---- C1b bit-equality vs the RAW ckpt (ocp ground truth), respecting the
+  # ---- per-leaf MODEL dtype (vision/mm params are intentionally fp32 via the
+  # ---- _dtype_params exclude list; text params bf16). Path matching uses the
+  # ---- simple '/w' rule, independent of the loader internals. ----
+  raw = restore_raw_cpu(CKPTS[variant])
+  raw_flat = flax.traverse_util.flatten_dict(raw, sep="/")
   n_eq = n_neq = n_unmatched = 0
   neq_sample = []
   for k, v in flat.items():
     if "self_conditioner" in k:
       continue
-    rh = ref_hashes.get(k) or ref_hashes.get(k + "/w")
-    if rh is None:
+    rv = raw_flat.get(k)
+    if rv is None:
+      rv = raw_flat.get(k + "/w")
+    if rv is None:
       n_unmatched += 1
       neq_sample.append(("UNMATCHED", k))
       continue
-    if leaf_hash(v) == rh:
+    expected = np.asarray(jax.device_get(jnp.asarray(rv).astype(v.dtype)))
+    got = np.asarray(jax.device_get(v))
+    if got.tobytes() == expected.tobytes():
       n_eq += 1
     else:
       n_neq += 1
       if len(neq_sample) < 10:
-        neq_sample.append(("HASH_NEQ", k))
+        neq_sample.append(("NEQ", k, str(v.dtype)))
+  del raw, raw_flat
   verdict["C1b_bit_equality"] = {
       "n_equal": n_eq, "n_not_equal": n_neq, "n_unmatched": n_unmatched,
       "samples": neq_sample[:10],
   }
   verdict["C1b_ok"] = bool(n_neq == 0 and n_unmatched == 0)
 
-  # ---- C1c AR-forward equivalence ----
+  # ---- C1c AR-forward class-equivalence: the SAME loaded params through the
+  # ---- plain Gemma4_E2B vs DiffusionGemma_E2B plain __call__ (extra sc
+  # ---- subtree is unused by either). Catches any diffusion-class drift of
+  # ---- the AR path; weight correctness is covered by C1b above. ----
   logits = model.apply({"params": merged}, tokens).logits
-  ref_logits = np.load(f"{out_dir}/ref_logits.npy")
-  max_diff = float(np.max(np.abs(np.asarray(jax.device_get(logits), np.float32) - ref_logits)))
+  ref_model = _gemma4.Gemma4_E2B(text_only=False, config=cfg, dtype=jnp.bfloat16)
+  ref_logits = ref_model.apply({"params": merged}, tokens).logits
+  max_diff = float(jnp.max(jnp.abs(
+      logits.astype(jnp.float32) - ref_logits.astype(jnp.float32))))
   verdict["C1c_ar_logits_max_abs_diff"] = max_diff
   verdict["C1c_ok"] = bool(max_diff <= 1e-2)
 
