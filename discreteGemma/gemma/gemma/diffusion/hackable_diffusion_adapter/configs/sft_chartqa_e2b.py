@@ -128,10 +128,16 @@ def get_config():
           save_on_steps=save_steps,
           max_to_keep=10,
       ),
-      # FSDP strategy — no-op on one GPU, keeps the config internal-portable.
-      sharding=kd.sharding.ShardingStrategy(
-          params=kd.sharding.FSDPSharding(),
-          opt_state=kd.sharding.FSDPSharding(),
+      # FSDP strategy: OFF by default on the single-GPU PC (suspected cause of
+      # a ~43GB replication/gather buffer in the kauldron step — BLOCKERS.md);
+      # the internal multi-host run sets DGEMMA_E2B_FSDP=1.
+      sharding=(
+          kd.sharding.ShardingStrategy(
+              params=kd.sharding.FSDPSharding(),
+              opt_state=kd.sharding.FSDPSharding(),
+          )
+          if _os.environ.get("DGEMMA_E2B_FSDP", "0") == "1"
+          else None
       ),
       init_transform=init_transform,
       evals={},  # offline eval via eval_main --task=chartqa

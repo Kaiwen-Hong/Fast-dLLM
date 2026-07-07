@@ -5,7 +5,7 @@
 set -u
 V=${1:?variant pt|it}
 STEP=${2:?ckpt step}
-B=${3:-4}
+B=${3:-1}   # batch 1: MM sampler prefill hits the same batch-dim wrapper limit
 NAMES=${4:-sample_ar_steps32}
 source /home/kaiwen/miniconda3/etc/profile.d/conda.sh && conda activate dgemma-jax
 cd /home/kaiwen/Desktop/research/Fast-dLLM/discreteGemma/gemma

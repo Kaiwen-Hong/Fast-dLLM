@@ -21,3 +21,14 @@
 4. **sliding-mask assert-equal-length unit test** (ALIGNMENT_NOTES row 10):
    not written; no mismatch can arise in the pre-expanded flow, test is
    belt-and-braces.
+5. **optax.MultiSteps memory blowup (kauldron step):** batch=1 + accum=8
+   OOMed on a single 41.4GB allocation inside `trainstep.step` — consistent
+   with the MultiSteps `lax.cond` duplicating a full fp32 update tree
+   (~2x18.7GB). Overnight fallback: NO MultiSteps; sample-count-matched
+   training (batch 1 x 1600 steps = 200 opt steps x global batch 8 in
+   examples). C3's "global batch 8" is therefore met in samples, not in
+   optimizer semantics — deviation recorded. Fix path: kauldron-native
+   accumulation or donate-friendly MultiSteps config.
+6. **Native batch>1 multimodal (see ALIGNMENT_NOTES row 6):** blocked by the
+   gemma batch-dim wrapper on packed vision input; internal solves it with
+   tree-map shielding (their patch #4). Deferred.

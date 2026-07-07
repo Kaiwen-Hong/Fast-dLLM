@@ -41,17 +41,20 @@ def build_model_and_batch():
   cfg = sft_chartqa_e2b.get_config()
   model = konfig.resolve(cfg.model)
 
+  # batch_size=1: the MM path is single-sequence per forward (batch-dim
+  # wrapper constraint). Counterfactuals swap IMAGES between two separate
+  # batch-1 examples instead of between rows.
   ds_cfg = cq.make_chartqa_records_ds(
-      training=False, batch_size=2,
+      training=False, batch_size=1,
       paths=(f"{DATA}/chartqa/chartqa_toy.bagz",), fmt="bagz",
       answer_len=32, num_workers=0)
-  with konfig.imports():  # resolve needs the konfig context for kd objects
-    pass
   ds = konfig.resolve(ds_cfg)
-  batch = next(iter(ds))
-  batch = {k: jnp.asarray(np.asarray(v)) for k, v in batch.items()
-           if k != "answer_tokens"}
-  return model, batch
+  it = iter(ds)
+  b0 = next(it)
+  b1 = next(it)
+  clean = lambda b: {k: jnp.asarray(np.asarray(v)) for k, v in b.items()
+                     if k != "answer_tokens"}
+  return model, clean(b0), clean(b1)
 
 
 def load_params(model, batch, variant: str, params_dir: str | None):
@@ -119,7 +122,7 @@ def main():
   ap.add_argument("--params_dir", default=None)
   a = ap.parse_args()
 
-  model, batch = build_model_and_batch()
+  model, batch, other = build_model_and_batch()
   params = load_params(model, batch, a.variant, a.params_dir)
   out = {"check": a.check, "variant": a.variant, "params_dir": a.params_dir}
 
@@ -128,8 +131,8 @@ def main():
 
   if a.check == "plumbing":
     b2 = dict(batch)
-    b2["patches"] = batch["patches"][::-1]        # swap images between rows
-    b2["positions_xy"] = batch["positions_xy"][::-1]
+    b2["patches"] = other["patches"]              # swap in the OTHER example's image
+    b2["positions_xy"] = other["positions_xy"]
     swapped = total_loss(model, params, b2)
     out["loss_swapped"] = swapped
     out["PASS"] = bool(abs(swapped - base) > 1e-6)
@@ -140,13 +143,6 @@ def main():
     patches = np.asarray(batch["patches"]).copy()
     rng = np.random.RandomState(0)
     patches[pad_rows] = rng.normal(size=patches[pad_rows].shape).astype(np.float32)
-    prompt = np.asarray(batch["prompt"]).copy()
-    pad_tail = prompt == 0                                  # PAD id 0
-    prompt[pad_tail] = rng.randint(3, 200000, size=int(pad_tail.sum()))
-    # NOTE: masks derive from the ORIGINAL prompt inside the model via
-    # (tokens != PAD); replacing PAD ids would change the mask itself — so the
-    # prompt-tail leg only checks patch padding here; the PAD-tail invariance
-    # is asserted at the mask level (values documented).
     b2 = dict(batch)
     b2["patches"] = jnp.asarray(patches)
     perturbed = total_loss(model, params, b2)
@@ -156,8 +152,8 @@ def main():
 
   elif a.check == "gap":
     b2 = dict(batch)
-    b2["patches"] = batch["patches"][::-1]
-    b2["positions_xy"] = batch["positions_xy"][::-1]
+    b2["patches"] = other["patches"]              # wrong image for this example
+    b2["positions_xy"] = other["positions_xy"]
     wrong = total_loss(model, params, b2)
     out["loss_wrong_image"] = wrong
     out["gap_wrong_minus_correct"] = wrong - base

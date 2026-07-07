@@ -9,16 +9,12 @@ RES=/home/kaiwen/Desktop/research/Fast-dLLM/discreteGemma/results
 
 train_variant () {
   local V=$1
-  echo "=== TRAIN $V (b2/accum4) ==="
-  bash run_chartqa_e2b_train.sh "$V" 2 200 4
-  if ! grep -q 'train_complete' /home/kaiwen/data/dgemma_e2b/xp_chartqa_$V/train_complete.txt 2>/dev/null \
-     && ! tail -5 "$LOGD/train_$V.log" | grep -q '\[800\]'; then
-    if grep -qE 'RESOURCE_EXHAUSTED|Out of memory' "$LOGD/train_$V.log"; then
-      echo "=== TRAIN $V OOM -> fallback b1/accum8 ==="
-      rm -rf /home/kaiwen/data/dgemma_e2b/xp_chartqa_$V
-      bash run_chartqa_e2b_train.sh "$V" 1 200 8
-    fi
-  fi
+  # batch=1 native (MM batch-dim wrapper rejects packed vision at B>1) and NO
+  # MultiSteps (41GB fp32 blowup inside the kauldron step — BLOCKERS.md).
+  # Sample-count-matched fallback: 1600 steps x batch 1 = 200 opt steps x
+  # global batch 8 in examples seen; ckpts at micro {400,800,1600}.
+  echo "=== TRAIN $V (b1/accum1/steps1600) ==="
+  bash run_chartqa_e2b_train.sh "$V" 1 1600 1
 }
 
 steps_of () {  # final micro-step = 200 * accum actually used
