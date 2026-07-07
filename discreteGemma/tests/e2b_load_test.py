@@ -118,17 +118,41 @@ def mode_diff(variant: str):
   positions = jnp.broadcast_to(jnp.arange(L), (B, L))
   attn = jnp.ones((B, L, L), dtype=bool)
   sc0 = jnp.zeros((B, L, model.config.embed_dim), jnp.bfloat16)
-  init_kwargs = dict(
-      sc_embeddings=sc0, positions=positions, attention_mask=attn,
-      sliding_attention_mask=attn,
-      method=dm.DiffusionGemma_E2B.call_with_self_conditioning,
+
+  # Init must trace the FULL multimodal path: without images, only the vision
+  # TOWER params are created (dummy call at _encode_and_get_inputs), while the
+  # embedder's mm_input_projection / mm_*_norm are created inside
+  # encode_vision — i.e. only when images are passed. (Found via the coverage
+  # report: ckpt embedder/mm_* keys were being discarded.)
+  from gemma.gm.nn.gemma4 import _transformer as g4t
+  n_soft = 256
+  n_patches = 2520  # budget 280 * pooling 3**2 (matches the data pipeline)
+  patch_dim = 16 * 16 * 3
+  mm_block = [108, 255999] + [-2] * n_soft + [258882, 108]
+  # Tail long enough that l_no_mm = Lmm - (num_tokens_per_image(280)+3) > 0
+  # inside remove_mm_logits (the images path strips MM logits at the end).
+  tail = list(range(1000, 1030))
+  mm_tokens = jnp.asarray([[2] + mm_block + tail], jnp.int32)  # [1, Lmm]
+  Lmm = mm_tokens.shape[1]
+  pvi = g4t.PreprocessedVisionInput(
+      patches=jnp.zeros((1, n_patches, patch_dim), jnp.float32),
+      positions_xy=jnp.zeros((1, n_patches, 2), jnp.int32),
+      soft_token_counts=(n_soft,),
   )
+  mm_pos = jnp.broadcast_to(jnp.arange(Lmm), (1, Lmm))
+  mm_attn = jnp.ones((1, Lmm, Lmm), dtype=bool)
   t = time.time()
   variables = model.init(
       {"params": jax.random.PRNGKey(0), "sampling": jax.random.PRNGKey(1)},
-      tokens, **init_kwargs,
+      mm_tokens,
+      sc_embeddings=jnp.zeros((1, Lmm, model.config.embed_dim), jnp.bfloat16),
+      images=pvi,
+      positions=mm_pos,
+      attention_mask=mm_attn,
+      sliding_attention_mask=mm_attn,
+      method=dm.DiffusionGemma_E2B.call_with_self_conditioning,
   )
-  print(f"DIFF[{variant}]: init in {time.time()-t:.0f}s")
+  print(f"DIFF[{variant}]: init (multimodal trace) in {time.time()-t:.0f}s")
 
   # ---- OUR loader: expected_missing + coverage report ----
   t = time.time()

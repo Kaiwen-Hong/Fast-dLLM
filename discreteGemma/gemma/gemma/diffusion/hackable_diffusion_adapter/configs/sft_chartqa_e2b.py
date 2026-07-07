@@ -10,8 +10,9 @@ checkpoint (self_conditioner fresh, FFW output projection zero-init).
 
 Runtime knobs (env vars, read at get_config time):
   DGEMMA_E2B_VARIANT  = pt | it            (default it)
-  DGEMMA_E2B_BATCH    = per-process batch  (default 4; set from the T2 sweep)
-  DGEMMA_E2B_STEPS    = train steps        (default 200)
+  DGEMMA_E2B_BATCH    = per-process batch  (default 2; from the T2 feasibility)
+  DGEMMA_E2B_ACCUM    = grad-accum k       (default 4 -> global batch 8 = C3)
+  DGEMMA_E2B_STEPS    = OPTIMIZER steps    (default 200; micro-steps = 200*k)
 
 Launch:
   DGEMMA_E2B_VARIANT=it python -m kauldron.main \
@@ -30,6 +31,7 @@ with konfig.imports():
   from gemma.diffusion.hackable_diffusion_adapter.hd import gemma_checkpointer
   from kauldron import kd
   import jax.numpy as jnp
+  import optax
 # pylint: enable=g-import-not-at-top
 
 from gemma.diffusion.hackable_diffusion_adapter.configs import sft_chartqa as _base
@@ -50,8 +52,10 @@ def get_config():
   """E2B ChartQA SFT (variant/batch/steps via env — see module docstring)."""
   variant = _os.environ.get("DGEMMA_E2B_VARIANT", "it")
   assert variant in ("pt", "it"), variant
-  batch = int(_os.environ.get("DGEMMA_E2B_BATCH", "4"))
-  steps = int(_os.environ.get("DGEMMA_E2B_STEPS", "200"))
+  batch = int(_os.environ.get("DGEMMA_E2B_BATCH", "2"))
+  accum = int(_os.environ.get("DGEMMA_E2B_ACCUM", "4"))
+  opt_steps = int(_os.environ.get("DGEMMA_E2B_STEPS", "200"))
+  steps = opt_steps * accum  # kauldron counts micro-steps under MultiSteps
   save_steps = sorted({max(1, steps // 4), max(1, steps // 2), steps})
 
   # Gradient checkpointing — required for the full-scale train step on 32GB
@@ -133,4 +137,9 @@ def get_config():
       evals={},  # offline eval via eval_main --task=chartqa
       eval_num_batches=4,
   )
+  if accum > 1:
+    # Global batch = batch * accum (C3: 8). num_train_steps above already
+    # counts micro-steps (opt_steps * accum); saves land on optimizer steps
+    # {50,100,200} * accum.
+    cfg.optimizer = optax.MultiSteps(cfg.optimizer, every_k_schedule=accum)
   return cfg

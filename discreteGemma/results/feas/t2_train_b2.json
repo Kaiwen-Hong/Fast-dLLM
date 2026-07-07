@@ -1,0 +1,13 @@
+{
+  "batch": 2,
+  "remat": false,
+  "init_s": 210.0,
+  "n_params": 4675762979,
+  "mem_after_init": {
+    "peak_gb": 15.37,
+    "in_use_gb": 8.75,
+    "limit_gb": 29.16
+  },
+  "status": "oom",
+  "error": "XlaRuntimeError('RESOURCE_EXHAUSTED: Out of memory while trying to allocate 17304682432 bytes.')"
+}

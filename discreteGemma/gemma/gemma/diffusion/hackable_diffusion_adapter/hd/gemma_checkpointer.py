@@ -226,12 +226,18 @@ def cheaply_load_params(
   existing = params_from_state
   model_param_spec = _convert_to_element_spec_with_sharding(existing)
 
-  # Preserve LoRA param values before releasing memory — these won't be
-  # in the checkpoint and must keep their init values.
+  # Preserve LoRA + expected-missing param values before releasing memory —
+  # these won't be in the checkpoint and must keep their init values (as REAL
+  # arrays; leaving them as specs crashes the final dtype/device_put step).
   _existing_flat_arrays = flax.traverse_util.flatten_dict(existing, sep='/')
   _lora_init_values = {
       k: v for k, v in _existing_flat_arrays.items() if '/lora/' in k
   }
+  _lora_init_values.update({
+      k: v
+      for k, v in _existing_flat_arrays.items()
+      if any(sub in k for sub in expected_missing)
+  })
 
   for k, v in _existing_flat_arrays.items():
     if k not in _lora_init_values and isinstance(v, jax.Array):
