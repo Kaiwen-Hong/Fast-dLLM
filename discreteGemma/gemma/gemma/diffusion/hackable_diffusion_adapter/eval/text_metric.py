@@ -22,6 +22,7 @@ import flax.struct
 from gemma.diffusion.hackable_diffusion_adapter.eval import base_metric
 from kauldron import kd
 from kauldron.ktyping import Int, typechecked  # pylint: disable=g-multiple-import,g-importing-member
+import numpy as np
 
 ################################################################################
 # MARK: DetokenizePromptAndResponse
@@ -51,6 +52,10 @@ class DetokenizePromptAndResponse(base_metric.BaseTokenizerMetric):
       """Detokenizes collected prompts and responses, pairing them together."""
       results = []
       for p, r in zip(self.prompt, self.response):
+        # IMAGE: multimodal prompts carry negative vision placeholders (-2),
+        # which are not real vocab ids; drop them before detokenizing so the
+        # sampling summary does not crash. Text-only prompts are unaffected.
+        p = np.where(np.asarray(p) < 0, 0, np.asarray(p))
         prompt_text = self.parent.tokenizer.decode(p)
         response_text = self.parent.tokenizer.decode(r)
         results.append(prompt_text + self.parent.separator + response_text)

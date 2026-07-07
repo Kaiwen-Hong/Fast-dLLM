@@ -1,0 +1,24 @@
+{
+  "batch": 1,
+  "remat": true,
+  "init_s": 175.2,
+  "n_params": 4675762979,
+  "mem_after_init": {
+    "peak_gb": 12.64,
+    "in_use_gb": 8.81,
+    "limit_gb": 29.16
+  },
+  "compile_step_s": 270.77,
+  "steady_step_s": 0.3,
+  "losses": [
+    24.247,
+    24.768,
+    24.8875
+  ],
+  "mem_peak": {
+    "peak_gb": 17.87,
+    "in_use_gb": 8.84,
+    "limit_gb": 29.16
+  },
+  "status": "pass"
+}

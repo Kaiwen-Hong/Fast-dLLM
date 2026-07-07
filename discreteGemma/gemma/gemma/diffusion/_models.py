@@ -40,3 +40,32 @@ class DiffusionGemma_26B_A4B(  # pylint: disable=invalid-name
           hidden_dim=self.config.hidden_dim,
       )
     self.self_conditioner = sc_config.make()
+
+
+class DiffusionGemma_E2B(  # pylint: disable=invalid-name
+    _gemma4.Gemma4_E2B, _diffusion_transformer.DiffusionMixin
+):
+  """Gemma4 E2B + diffusion mixin (same structure as DiffusionGemma_26B_A4B).
+
+  Initialized from the GEMMA4_E2B AR checkpoints; only `self_conditioner` is
+  new (its FFW output projection is zero-initialized by the loader chain so the
+  first forward is a no-op w.r.t. self-conditioning while staying trainable).
+  """
+
+  self_conditioning_config: (
+      _diffusion_transformer.SelfConditioningConfig | None
+  ) = None
+
+  # So the last prefill KV is kept. Otherwise, indexes will be off by 1.
+  keep_last_prefill_kv: bool = True
+
+  def setup(self):
+    super().setup()
+
+    sc_config = self.self_conditioning_config
+    if sc_config is None:
+      sc_config = _diffusion_transformer.SelfConditioningConfig(
+          features=self.config.embed_dim,
+          hidden_dim=self.config.hidden_dim,
+      )
+    self.self_conditioner = sc_config.make()

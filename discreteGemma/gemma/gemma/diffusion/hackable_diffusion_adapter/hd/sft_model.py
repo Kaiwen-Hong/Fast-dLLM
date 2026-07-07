@@ -22,6 +22,8 @@ import flax.linen as nn
 from gemma.diffusion.hackable_diffusion_adapter.hd import hd_gemma_ar_state_handler
 from gemma.diffusion.hackable_diffusion_adapter.hd import hd_gemma_network
 from gemma.diffusion.hackable_diffusion_adapter.hd import mask_helpers
+from gemma.gm.nn.gemma4._transformer import PreprocessedVisionInput
+from gemma.gm.vision import _token_utils
 from hackable_diffusion.lib import hd_typing
 from hackable_diffusion.lib import inference
 from hackable_diffusion.lib import sampling
@@ -35,6 +37,80 @@ CheckpointedEvaluator = _checkpointed_evaluator.CheckpointedEvaluator
 
 
 PAD_TOKEN = 0
+
+
+def _build_vision_input(patches, positions_xy, n_soft):
+  """Pack batched per-example patches into a single ``PreprocessedVisionInput``.
+
+  grain yields ``patches`` ``[B, MAX_PATCHES, P]`` and ``positions_xy``
+  ``[B, MAX_PATCHES, 2]``. The Gemma4 vision merge (``_encode_vision``) expects a
+  single meta-batch ``[1, n_images*MAX_PATCHES, P]`` with ``soft_token_counts``
+  enumerating the images. The vendored ``merge_flat_embeddings`` vmaps the text
+  batch against a size-1 vision batch, so it only reconciles when the per-call
+  text batch is 1 — hence the multimodal SFT configs use ``batch_size=1``. The
+  reshape below is the identity for ``B==1`` and matches the canonical packing in
+  ``gm/text/_gemma4_sampler.py``. Returns ``None`` for text-only (no patches).
+  """
+  if patches is None:
+    return None
+  n_images = patches.shape[0]
+  max_patches = patches.shape[1]
+  flat_patches = jnp.reshape(
+      patches, (1, n_images * max_patches, patches.shape[2])
+  )
+  flat_positions = jnp.reshape(
+      positions_xy, (1, n_images * max_patches, positions_xy.shape[2])
+  )
+  return PreprocessedVisionInput(
+      patches=flat_patches,
+      positions_xy=flat_positions,
+      soft_token_counts=(n_soft,) * n_images,
+  )
+
+
+def shift_encoder_targets_for_multimodal(
+    *,
+    encoder_target: jnp.ndarray,
+    encoder_target_mask: jnp.ndarray,
+    prompt: jnp.ndarray,
+    x0_tokens: jnp.ndarray,
+    l_no_mm: int,
+    num_tokens_per_image: int,
+) -> tuple[jnp.ndarray, jnp.ndarray]:
+  """Shifts encoder targets to align with non-multimodal token indices.
+
+  Internal-parity implementation (verbatim from the internal SFT stack — see
+  discreteGemma/response-from-jestki.md Doc 2 §6b). The encoder logits come
+  back MM-stripped ([B, L_no_mm, V] via ``remove_mm_logits``); this gathers the
+  full-length targets onto the SAME no-MM indexing (both use
+  ``_token_utils.get_no_mm_indices``), so the AR CE is computed on text
+  positions only.
+
+  Args:
+    encoder_target: Original targets, shape [B, L].
+    encoder_target_mask: Original target mask, shape [B, L].
+    prompt: Prompt tokens (expanded, containing the image block), [B, PromptLen].
+    x0_tokens: Clean canvas tokens, shape [B, TotalCanvasLen].
+    l_no_mm: Expected output length (after removing MM tokens).
+    num_tokens_per_image: Max tokens per image.
+
+  Returns:
+    A tuple of (shifted_encoder_target, shifted_encoder_target_mask).
+  """
+  full_seq = jnp.concatenate([prompt, x0_tokens], axis=1)
+  new_positions = _token_utils.get_no_mm_indices(
+      tokens=full_seq,
+      l_no_mm=l_no_mm,
+      num_tokens_per_image=num_tokens_per_image,
+  )
+
+  shifted_encoder_target = jnp.take_along_axis(
+      encoder_target, new_positions, axis=1
+  )
+  shifted_encoder_target_mask = jnp.take_along_axis(
+      encoder_target_mask, new_positions, axis=1
+  )
+  return shifted_encoder_target, shifted_encoder_target_mask
 
 
 @dataclasses.dataclass(kw_only=True, frozen=True)
@@ -167,6 +243,7 @@ def sft_encode(
     total_canvas_len: int,
     canvas_size: int,
     pad_token: int = PAD_TOKEN,
+    images: Any = None,
 ) -> tuple[jnp.ndarray, Any, jnp.ndarray, jnp.ndarray]:
   """Runs the SFT encoder pass: prefill KV cache and compute encoder logits.
 
@@ -205,6 +282,9 @@ def sft_encode(
           input_mask=full_seq_mask,
           init_cache_fn=gemma_network.init_cache,
           encoder_fn=gemma_network.encoder_call,
+          # IMAGE: merge vision soft tokens at the -2 placeholders in `prompt`
+          # during the (prompt+clean-canvas) prefill. None => text-only.
+          images=images,
       )
   )
 
@@ -268,6 +348,12 @@ class SFTDiffusion(nn.Module):
   pad_token: int = PAD_TOKEN
   stop_gradient_from_denoiser_to_encoder: bool = False
   self_cond_prob: float = 0.5
+  # Optional multimodal keys. None => text-only (sudoku/pubmedqa unchanged).
+  # `patches`/`positions_xy` come from the data pipeline; `n_soft` is the number
+  # of vision soft tokens per image (== count of -2 placeholders in the prompt).
+  patches: kd.kontext.Key | None = None
+  positions_xy: kd.kontext.Key | None = None
+  n_soft: int = 0
 
   @property
   def total_canvas_len(self) -> int:
@@ -282,6 +368,8 @@ class SFTDiffusion(nn.Module):
       canvas_mask: jnp.ndarray,
       encoder_target: jnp.ndarray,
       encoder_target_mask: jnp.ndarray,
+      patches: jnp.ndarray | None = None,
+      positions_xy: jnp.ndarray | None = None,
       is_training: bool = True,
   ):
     """Computes model losses and forward predictions during training or eval.
@@ -340,6 +428,10 @@ class SFTDiffusion(nn.Module):
     # Create KV cache and encoder logits
     ############################################################################
 
+    # IMAGE: build the vision input from batched patches (None => text-only) and
+    # merge it into the encoder prefill at the -2 placeholders in `prompt`.
+    images = _build_vision_input(patches, positions_xy, self.n_soft)
+
     encoder_logits, kv_cache, positions, prompt_mask = sft_encode(
         gemma_network=self.gemma_network,
         prompt=prompt,
@@ -350,6 +442,7 @@ class SFTDiffusion(nn.Module):
         total_canvas_len=self.total_canvas_len,
         canvas_size=self.canvas_size,
         pad_token=self.pad_token,
+        images=images,
     )
 
     if self.stop_gradient_from_denoiser_to_encoder:
@@ -419,6 +512,21 @@ class SFTDiffusion(nn.Module):
 
     # Get noise info
     noise_info = self.corruption_process.get_schedule_info(time)
+
+    # IMAGE (internal parity): with images, encoder_logits come back MM-stripped
+    # to [B, L_no_mm, V] (remove_mm_logits inside the gemma forward); gather the
+    # full-length targets onto the same no-MM indexing before the AR CE.
+    if images is not None:
+      encoder_target, encoder_target_mask = (
+          shift_encoder_targets_for_multimodal(
+              encoder_target=encoder_target,
+              encoder_target_mask=encoder_target_mask,
+              prompt=prompt,
+              x0_tokens=x0_tokens,
+              l_no_mm=encoder_logits.shape[1],
+              num_tokens_per_image=self.n_soft,
+          )
+      )
 
     return {
         'output': converted,
@@ -539,6 +647,14 @@ class GemmaSamplingEvaluator(CheckpointedEvaluator):
         'prompt_tokens': prompt_tokens,
         'prompt_lengths': prompt_lengths,
     }
+    # IMAGE: if the model is multimodal, image-condition the AR sampler's encoder
+    # prefill by packing patches -> PreprocessedVisionInput into the conditioning
+    # (consumed by GemmaARStateHandler.init_ar_state). Text-only tasks omit it.
+    patches = kwargs.get('patches', None)
+    if patches is not None:
+      cond['images'] = _build_vision_input(
+          patches, kwargs.get('positions_xy'), getattr(self.model, 'n_soft', 0)
+      )
 
     # Run the sampling loop
     final, final_state = self.ar_diffusion_sampler(

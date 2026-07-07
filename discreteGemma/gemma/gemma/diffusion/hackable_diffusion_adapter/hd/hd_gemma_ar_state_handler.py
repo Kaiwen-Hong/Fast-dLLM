@@ -193,6 +193,9 @@ class GemmaARStateHandler(ar_diffusion_sampler.ARStateHandler):
     prompt_lengths = conditioning["prompt_lengths"]
     max_prompt_len = prompt_tokens.shape[1]
     cache_length = max_prompt_len + max_num_canvases * canvas_length
+    # IMAGE: optional PreprocessedVisionInput for multimodal prompts (built by
+    # GemmaSamplingEvaluator._ar_diffusion_step). None => text-only prefill.
+    images = conditioning.get("images", None)
     ##########################################################################
     # Derive batch dimensions and input mask.
     ##########################################################################
@@ -204,6 +207,7 @@ class GemmaARStateHandler(ar_diffusion_sampler.ARStateHandler):
         init_cache_fn=self.init_cache_fn,
         encoder_fn=self.encoder_fn,
         cache_length=cache_length,
+        images=images,
     )
 
     ##########################################################################

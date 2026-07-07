@@ -70,7 +70,7 @@ def factorized_posemb(
   # Padding positions are valid, so remove them from the mask
   nan = jnp.logical_and(nan, positions_xy[..., None] != -1)
   # Compute the final one-hot encoding by replacing any invalid positions w/ NaN
-  pos_oh = jnp.where(nan, jnp.nan, one_hot)
+  pos_oh = jnp.where(nan, jnp.zeros_like(one_hot), one_hot)  # PATCH: 0 not NaN (invalid posns masked anyway)
   # Compute the XY position embedding for each valid position
   # Note: jnp.einsum() will preserve the NaNs
   pe_seq = jnp.einsum('blis,sid->ibld', pos_oh, posemb).astype(posemb.dtype)

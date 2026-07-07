@@ -88,7 +88,16 @@ class DiffusionMixin:
       tokens: Int['*B L'],
       *,
       sc_embeddings: Embeddings,
-      images: UInt8['*B N H W C'] | UInt8['*B H W C'] | None = None,
+      # NOTE: PreprocessedVisionInput added to the union — the previous
+      # UInt8-only annotation was stale and rejected the preprocessed-patches
+      # path under ktyping (design doc §4.2 row 9: fix the annotation, do not
+      # shield the typechecker).
+      images: (
+          UInt8['*B N H W C']
+          | UInt8['*B H W C']
+          | _transformer.PreprocessedVisionInput
+          | None
+      ) = None,
       positions: Int['*B L_with_mm'] | None = None,
       cache: _config.Cache | None = None,
       attention_mask: Bool['*B L_with_mm cache_length'] | None = None,

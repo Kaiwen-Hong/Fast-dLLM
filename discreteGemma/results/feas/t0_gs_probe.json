@@ -1,0 +1,164 @@
+{
+  "gs_pt": {
+    "exists": true,
+    "children": [
+      "_CHECKPOINT_METADATA",
+      "_METADATA",
+      "commit_success.txt",
+      "d",
+      "d_$folder$",
+      "descriptor",
+      "descriptor_$folder$",
+      "manifest.ocdbt",
+      "ocdbt.process_0",
+      "ocdbt.process_0_$folder$"
+    ]
+  },
+  "gs_it": {
+    "exists": true,
+    "children": [
+      "_CHECKPOINT_METADATA",
+      "_METADATA",
+      "commit_success.txt",
+      "d",
+      "d_$folder$",
+      "descriptor",
+      "descriptor_$folder$",
+      "manifest.ocdbt",
+      "ocdbt.process_0",
+      "ocdbt.process_0_$folder$"
+    ]
+  },
+  "gs_tokenizer": {
+    "exists": true
+  },
+  "tree_pt_path": "gs://gemma-data/checkpoints/gemma4-e2b-pt",
+  "tree_pt": {
+    "total_params": 5123473283,
+    "subtrees": {
+      "audio_encoder": 304824608,
+      "embedder": 2769060096,
+      "final_norm": 1536,
+      "layer_0": 36184065,
+      "layer_1": 36184065,
+      "layer_10": 36184065,
+      "layer_11": 36184065,
+      "layer_12": 36184065,
+      "layer_13": 36184065,
+      "layer_14": 43262465,
+      "layer_15": 64495617,
+      "layer_16": 64495617,
+      "layer_17": 64495617,
+      "layer_18": 64495617,
+      "layer_19": 71574017,
+      "layer_2": 36184065,
+      "layer_20": 64495617,
+      "layer_21": 64495617,
+      "layer_22": 64495617,
+      "layer_23": 64495617,
+      "layer_24": 71574017,
+      "layer_25": 64495617,
+      "layer_26": 64495617,
+      "layer_27": 64495617,
+      "layer_28": 64495617,
+      "layer_29": 71574017,
+      "layer_3": 36184065,
+      "layer_30": 64495617,
+      "layer_31": 64495617,
+      "layer_32": 64495617,
+      "layer_33": 64495617,
+      "layer_34": 71574017,
+      "layer_4": 43262465,
+      "layer_5": 36184065,
+      "layer_6": 36184065,
+      "layer_7": 36184065,
+      "layer_8": 36184065,
+      "layer_9": 43262465,
+      "vision_encoder": 167364928
+    },
+    "has_vision_tower": true,
+    "has_audio_tower": true,
+    "has_self_conditioner": false
+  },
+  "tree_it_path": "gs://gemma-data/checkpoints/gemma4-e2b-it",
+  "tree_it": {
+    "total_params": 5123473283,
+    "subtrees": {
+      "audio_encoder": 304824608,
+      "embedder": 2769060096,
+      "final_norm": 1536,
+      "layer_0": 36184065,
+      "layer_1": 36184065,
+      "layer_10": 36184065,
+      "layer_11": 36184065,
+      "layer_12": 36184065,
+      "layer_13": 36184065,
+      "layer_14": 43262465,
+      "layer_15": 64495617,
+      "layer_16": 64495617,
+      "layer_17": 64495617,
+      "layer_18": 64495617,
+      "layer_19": 71574017,
+      "layer_2": 36184065,
+      "layer_20": 64495617,
+      "layer_21": 64495617,
+      "layer_22": 64495617,
+      "layer_23": 64495617,
+      "layer_24": 71574017,
+      "layer_25": 64495617,
+      "layer_26": 64495617,
+      "layer_27": 64495617,
+      "layer_28": 64495617,
+      "layer_29": 71574017,
+      "layer_3": 36184065,
+      "layer_30": 64495617,
+      "layer_31": 64495617,
+      "layer_32": 64495617,
+      "layer_33": 64495617,
+      "layer_34": 71574017,
+      "layer_4": 43262465,
+      "layer_5": 36184065,
+      "layer_6": 36184065,
+      "layer_7": 36184065,
+      "layer_8": 36184065,
+      "layer_9": 43262465,
+      "vision_encoder": 167364928
+    },
+    "has_vision_tower": true,
+    "has_audio_tower": true,
+    "has_self_conditioner": false
+  },
+  "tokenizer_class_ids": {
+    "PAD": 0,
+    "EOS": 1,
+    "BOS": 2,
+    "START_OF_TURN": 105,
+    "END_OF_TURN": 106,
+    "IMAGE_PLACEHOLDER": 258880,
+    "START_OF_IMAGE": 255999,
+    "END_OF_IMAGE": 258882
+  },
+  "tokenizer_id_mismatches": {},
+  "tokenizer_literal_encodes": {
+    "'<|image|>'": [
+      258880
+    ],
+    "'<|image'": [
+      236820,
+      236909,
+      3304
+    ],
+    "'<image|>'": [
+      258882
+    ],
+    "'<|turn>'": [
+      105
+    ],
+    "'<turn|>'": [
+      106
+    ],
+    "'\\n\\n'": [
+      108
+    ]
+  }
+}

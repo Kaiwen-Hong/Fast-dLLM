@@ -529,6 +529,23 @@ class Transformer(nn.Module):
   ):
     """Update the embeddings to include the vision embeddings."""
     soft_embeddings = self._encode_vision(images)
+
+    # Batch>1 multimodal fix (internal parity — see the internal comparison
+    # doc §1.B2): with one image per example packed as a single meta-batch
+    # ([1, B*n_soft, D], soft_token_counts=(n_soft,)*B), reshape so each batch
+    # row merges its OWN image. Identity for B==1.
+    batch_size = tokens.shape[0]
+    if (
+        batch_size > 1
+        and soft_embeddings.shape[0] == 1
+        and soft_embeddings.shape[1] % batch_size == 0
+    ):
+      soft_embeddings = jnp.reshape(
+          soft_embeddings,
+          (batch_size, soft_embeddings.shape[1] // batch_size,
+           soft_embeddings.shape[2]),
+      )
+
     mask = tokens == gemma4_vision.TOKEN_PLACEHOLDER
 
     merged_embeddings = _token_utils.merge_flat_embeddings(

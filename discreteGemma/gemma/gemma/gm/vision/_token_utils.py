@@ -345,23 +345,77 @@ def _merge_flat_embeddings_inner(
 
 
 @typechecked
+def get_no_mm_indices(
+    *,
+    tokens: Int['B L'],
+    l_no_mm: int,
+    num_tokens_per_image: int,
+) -> Int['B L_no_mm']:
+  """Get the indices of the tokens which are not MM.
+
+  Internal-parity implementation (verbatim from the internal SFT stack — see
+  discreteGemma/response-from-jestki.md Doc 2 §6a): ``tokens`` is the EXPANDED
+  sequence (containing ``[\\n\\n, <|image, -2 x n, <image|>, \\n\\n]`` blocks);
+  the returned ``[B, l_no_mm]`` gather indices map the no-MM view (the image
+  block collapsed to a single ``\\n\\n``) onto the expanded axis. Offsets are
+  computed dynamically from the actual ``SOFT_TOKEN_PLACEHOLDER`` count.
+  Single-image assumption: only the first ``START_OF_IMAGE`` is used.
+  """
+  del num_tokens_per_image  # Unused, we use dynamic offsets from tokens.
+  special_tokens = _tokenizer.Gemma4Tokenizer.special_tokens
+
+  # Dynamic calculation of image token offsets
+  actual_soft_token_counts = jnp.sum(tokens == SOFT_TOKEN_PLACEHOLDER, axis=-1)
+  actual_offsets = actual_soft_token_counts + 3
+
+  p = jnp.argmax(tokens == special_tokens.START_OF_IMAGE, axis=-1)  # (B,)
+  has_image = jnp.any(tokens == special_tokens.START_OF_IMAGE, axis=-1)  # (B,)
+
+  j = jnp.arange(l_no_mm)
+  j = jnp.broadcast_to(j, (tokens.shape[0], l_no_mm))
+
+  is_after_image = j >= (p[..., None] - 1)
+  offset_by_conditional = has_image[..., None] * actual_offsets[..., None]
+  new_text_tokens_pos = j + is_after_image * offset_by_conditional
+  return new_text_tokens_pos
+
+
 def remove_mm_logits(
     *,
-    logits: Float['B L V'],
-    tokens: Int['B L_no_mm'],
+    logits,
+    tokens,
     num_tokens_per_image: int,
-) -> Float['B L_no_mm V']:
-  """Remove the logits which are not MM."""
+):
+  """Remove the logits which are not MM (Gemma4 ids; two supported flows).
 
-  # TODO(epot): This value should be propagated from the model.
-  special_tokens = _tokenizer.Gemma3Tokenizer.special_tokens
+  - **Pre-expanded flow** (hackable-diffusion adapter / internal twin):
+    ``tokens`` has the SAME length as ``logits`` and contains the expanded
+    image block. The gather indices come from :func:`get_no_mm_indices`
+    (dynamic offsets) so logit-stripping and encoder-target shifting share one
+    mapping by construction.
+  - **gm-native flow**: ``tokens`` is the UNEXPANDED sequence (each
+    ``IMAGE_PLACEHOLDER`` marks one image; the model expanded internally).
+    Legacy fixed-offset mapping — but with **Gemma4** special tokens (the
+    previous ``Gemma3Tokenizer`` hardcode mis-gathers on the Gemma4 vocab; for
+    Gemma3, ``IMAGE_PLACEHOLDER == START_OF_IMAGE`` so this keying is
+    backwards-compatible).
+  """
+  special_tokens = _tokenizer.Gemma4Tokenizer.special_tokens
 
-  # Shift the original tokens, to recover the original position.
-  new_text_tokens_pos = _get_new_text_tokens_positions(
-      offset_on=tokens == special_tokens.START_OF_IMAGE,
-      # `+3` as `<start_of_image>` is already present in the input tokens.
-      offset_by=num_tokens_per_image + 3,
-  )
+  if tokens.shape[1] == logits.shape[1]:
+    l_no_mm = logits.shape[1] - (num_tokens_per_image + 3)
+    new_text_tokens_pos = get_no_mm_indices(
+        tokens=tokens,
+        l_no_mm=l_no_mm,
+        num_tokens_per_image=num_tokens_per_image,
+    )
+  else:
+    # Shift the original tokens, to recover the original position.
+    new_text_tokens_pos = _get_new_text_tokens_positions(
+        offset_on=tokens == special_tokens.IMAGE_PLACEHOLDER,
+        # `+3` as the image marker is already present in the input tokens.
+        offset_by=num_tokens_per_image + 3,
+    )
 
   return jnp.take_along_axis(logits, new_text_tokens_pos[..., None], axis=1)
 

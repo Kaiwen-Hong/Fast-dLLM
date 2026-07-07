@@ -22,6 +22,7 @@ DiffusionGemma-format and lora format.
 
 import copy
 import dataclasses
+import json
 from typing import Any
 
 from absl import logging
@@ -53,6 +54,8 @@ def _remap_and_match_params(
     model_flat: dict[str, Any],
     ckpt_flat: dict[str, Any],
     lora_init_values: dict[str, Any] | None = None,
+    expected_missing_substrings: tuple[str, ...] = (),
+    coverage_out: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
   """Remaps checkpoint keys and merges them into the model param dict.
 
@@ -63,7 +66,9 @@ def _remap_and_match_params(
        ``MoERagged``'s ``_Weight``).
     2. Replace model values with matching checkpoint values.
     3. Restore any LoRA init values.
-    4. Validate that no non-LoRA model keys are missing from the checkpoint.
+    4. Keep expected-missing keys (e.g. ``self_conditioner`` when loading an AR
+       checkpoint into a diffusion model) at their initialized values.
+    5. Validate that no other model keys are missing from the checkpoint.
 
   Args:
     model_flat: Flattened model param dict ``{path: value}``.  Values are either
@@ -71,13 +76,19 @@ def _remap_and_match_params(
     ckpt_flat: Flattened checkpoint param dict ``{path: value}``.
     lora_init_values: Optional dict of LoRA param paths to their initialized
       values.  These are preserved as-is (not loaded from the checkpoint).
+    expected_missing_substrings: Model keys containing any of these substrings
+      are allowed to be absent from the checkpoint and keep their initialized
+      values (mirrors the LoRA carve-out).
+    coverage_out: Optional dict that gets populated with a machine-readable
+      coverage report (counts + key lists) for load-acceptance checks.
 
   Returns:
     The ``model_flat`` dict with values replaced by checkpoint values where
     paths match, and LoRA values restored.
 
   Raises:
-    KeyError: If any non-LoRA model keys have no matching checkpoint key.
+    KeyError: If any non-LoRA, non-expected-missing model keys have no matching
+      checkpoint key.
   """
   if lora_init_values is None:
     lora_init_values = {}
@@ -125,19 +136,47 @@ def _remap_and_match_params(
   # Separate LoRA-only keys (not expected in the checkpoint)
   model_only = set(model_flat) - set(remapped_ckpt)
   lora_keys = {k for k in model_only if '/lora/' in k}
-  non_lora_model_only = model_only - lora_keys
+
+  # Expected-missing keys keep their initialized values (LoRA-style carve-out).
+  expected_missing_keys = {
+      k
+      for k in (model_only - lora_keys)
+      if any(sub in k for sub in expected_missing_substrings)
+  }
+  non_lora_model_only = model_only - lora_keys - expected_missing_keys
 
   if lora_keys:
     logging.info(
         'Keeping %d LoRA key(s) with their initialized values.', len(lora_keys)
+    )
+  if expected_missing_keys:
+    logging.info(
+        'Keeping %d expected-missing key(s) with their initialized values: %s',
+        len(expected_missing_keys),
+        sorted(expected_missing_keys),
     )
 
   # Throw an exception for non-LoRA model_only keys
   if non_lora_model_only:
     raise KeyError(
         f'Found {len(non_lora_model_only)} model-only key(s) '
-        f'(excluding LoRA): {sorted(non_lora_model_only)}'
+        f'(excluding LoRA and expected-missing): {sorted(non_lora_model_only)}'
     )
+
+  if coverage_out is not None:
+    coverage_out.update({
+        'n_model': len(model_flat),
+        'n_loaded': loaded_count,
+        'n_lora_kept': len(lora_keys),
+        'n_expected_missing': len(expected_missing_keys),
+        'expected_missing_keys': sorted(expected_missing_keys),
+        'expected_missing_subtrees': sorted(
+            {k.split('/')[0] for k in expected_missing_keys}
+        ),
+        'n_ckpt_only_discarded': len(ckpt_only),
+        'ckpt_only_subtrees': sorted({k.split('/')[0] for k in ckpt_only}),
+        'ckpt_only_sample': sorted(ckpt_only)[:20],
+    })
 
   logging.info(
       'Checkpoint loading complete: %d params loaded, '
@@ -161,12 +200,23 @@ def _convert_to_element_spec_with_sharding(tree):
   )
 
 
-def cheaply_load_params(params_from_state, checkpoint_path: epath.PathLike):
+def cheaply_load_params(
+    params_from_state,
+    checkpoint_path: epath.PathLike,
+    expected_missing: tuple[str, ...] = (),
+    coverage_json_path: epath.PathLike | None = None,
+):
   """Loads params from a checkpoint into a model with LoRA layers.
 
   Args:
     params_from_state: Existing model parameter tree or spec.
     checkpoint_path: Path to the checkpoint directory.
+    expected_missing: Substrings of model param paths that are allowed to be
+      absent from the checkpoint (they keep their initialized values), e.g.
+      ``('self_conditioner',)`` when loading an AR checkpoint into a diffusion
+      model.
+    coverage_json_path: If set, write the machine-readable coverage report
+      (n_model / n_loaded / expected-missing keys / ckpt-only discards) there.
 
   Returns:
     A merged parameter dictionary matching the model's expected structure.
@@ -207,9 +257,20 @@ def cheaply_load_params(params_from_state, checkpoint_path: epath.PathLike):
   existing_flat = flax.traverse_util.flatten_dict(model_param_spec, sep='/')
   ckpt_flat = flax.traverse_util.flatten_dict(gemma_params, sep='/')
 
+  coverage: dict[str, Any] = {}
   existing_flat = _remap_and_match_params(
-      existing_flat, ckpt_flat, _lora_init_values
+      existing_flat,
+      ckpt_flat,
+      _lora_init_values,
+      expected_missing_substrings=expected_missing,
+      coverage_out=coverage,
   )
+  if coverage_json_path is not None:
+    coverage['checkpoint_path'] = str(checkpoint_path)
+    p = epath.Path(coverage_json_path)
+    p.parent.mkdir(parents=True, exist_ok=True)
+    p.write_text(json.dumps(coverage, indent=2))
+    logging.info('Wrote load-coverage report to %s', p)
 
   # Unflatten back to the model's original nested structure
   merged = flax.traverse_util.unflatten_dict(existing_flat, sep='/')
@@ -246,21 +307,72 @@ class GemmaDiffusionCheckpointLoader(kd.ckpts.InitTransform):
       weights.
     gemma_param_path: Sequence of keys from the state.params root to the
       gemma_model params. Adjust if the Flax module nesting differs.
+    expected_missing: Substrings of model param paths allowed to be absent from
+      the checkpoint (kept at init values), e.g. ``('self_conditioner',)`` when
+      loading an AR checkpoint into a diffusion model.
+    coverage_json_path: If set, write the machine-readable load-coverage report
+      there (load-acceptance artifact).
   """
 
   path: epath.PathLike
   gemma_param_path: str = 'gemma_network.gemma_model'
+  expected_missing: tuple[str, ...] = ()
+  coverage_json_path: str | None = None
 
   def transform(self, state):
     # Retrieve the model's existing (randomly initialized) params at the
     # gemma_param_path.
     existing = kd.kontext.get_by_path(state.params, self.gemma_param_path)
     merged = cheaply_load_params(
-        params_from_state=existing, checkpoint_path=self.path
+        params_from_state=existing,
+        checkpoint_path=self.path,
+        expected_missing=self.expected_missing,
+        coverage_json_path=self.coverage_json_path,
     )
     params = copy.copy(state.params)  # Shallow copy in case of FrozenDict.
     kd.kontext.set_by_path(params, self.gemma_param_path, merged)
     return dataclasses.replace(state, params=params)
+
+
+@dataclasses.dataclass(frozen=True)
+class ZeroInitLeaves(kd.ckpts.InitTransform):
+  """Zeroes every param leaf whose flattened path contains any substring.
+
+  Used to zero-init ONLY the self-conditioner FFW output projection after the
+  AR checkpoint load: the sc block becomes an exact no-op at step 0 while
+  staying trainable (an ALL-zero sc FFW would be a permanent zero-gradient
+  saddle — see the design doc §5 B2).
+  """
+
+  substrings: tuple[str, ...]
+
+  def transform(self, state):
+    flat = flax.traverse_util.flatten_dict(state.params, sep='/')
+    zeroed = []
+    for k, v in flat.items():
+      if any(sub in k for sub in self.substrings):
+        flat[k] = jnp.zeros_like(v)
+        zeroed.append(k)
+    if not zeroed:
+      raise KeyError(
+          f'ZeroInitLeaves matched no param leaves for {self.substrings};'
+          ' param naming may have changed.'
+      )
+    logging.info('ZeroInitLeaves: zeroed %d leaves: %s', len(zeroed), zeroed)
+    params = flax.traverse_util.unflatten_dict(flat, sep='/')
+    return dataclasses.replace(state, params=params)
+
+
+@dataclasses.dataclass(frozen=True)
+class SequentialInitTransform(kd.ckpts.InitTransform):
+  """Applies a sequence of InitTransforms in order (loader -> sc zeroing)."""
+
+  transforms: tuple[Any, ...]
+
+  def transform(self, state):
+    for t in self.transforms:
+      state = t.transform(state)
+    return state
 
 
 ###############################################################################

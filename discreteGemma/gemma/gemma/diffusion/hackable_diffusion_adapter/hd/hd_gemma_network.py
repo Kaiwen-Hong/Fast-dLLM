@@ -50,7 +50,7 @@ DiffusionGemmaModel = gemma_diffusion.DiffusionGemma_26B_A4B
 
 
 def prefill_kv_cache_with_encoder(
-    tokens, input_mask, init_cache_fn, encoder_fn, cache_length=None
+    tokens, input_mask, init_cache_fn, encoder_fn, cache_length=None, images=None
 ):
   """Prefills the KV cache with the encoder output.
 
@@ -60,6 +60,10 @@ def prefill_kv_cache_with_encoder(
     init_cache_fn: Function to initialize the KV cache.
     encoder_fn: Function to run the encoder forward pass.
     cache_length: Total allocated cache capacity (defaults to sequence length).
+    images: Optional ``PreprocessedVisionInput`` for multimodal prompts. When
+      provided, the prompt ``tokens`` must already contain the expanded ``-2``
+      (SOFT_TOKEN_PLACEHOLDER) slots; the encoder merges the vision soft tokens
+      into those positions. ``None`` => text-only (unchanged behaviour).
 
   Returns:
     A tuple of (initialized and prefilled cache, encoder logits, positions,
@@ -98,6 +102,9 @@ def prefill_kv_cache_with_encoder(
           'kv_cache': cache,
           'positions': positions,
           'attention_mask': attention_mask,
+          # IMAGE: routed to `encoder_call` -> gemma_model(images=...). None for
+          # text-only prompts (sudoku/pubmedqa) => merge is skipped downstream.
+          'images': images,
       },
   )
   kv_cache = encoder_out.cache
@@ -176,8 +183,15 @@ class WrappedDiffusionGemmaNetwork(nn.Module, BaseDiffusionNetwork):
     cache = conditioning_embeddings.get('kv_cache', None)
     positions = conditioning_embeddings.get('positions', None)
     attention_mask = conditioning_embeddings.get('attention_mask', None)
+    # IMAGE: a `PreprocessedVisionInput | None`. When not None, the Gemma4
+    # `Transformer.__call__` runs the vision encoder and merges the soft tokens
+    # at the `-2` placeholder positions (and derives the bidirectional-vision
+    # sliding mask internally). When None, the multimodal branch is skipped and
+    # behaviour is identical to the original text-only encoder pass.
+    images = conditioning_embeddings.get('images', None)
     return self.gemma_model(
         tokens=tokens,
+        images=images,
         cache=cache,
         positions=positions,
         attention_mask=attention_mask,
