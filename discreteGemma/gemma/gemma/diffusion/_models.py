@@ -14,6 +14,8 @@
 
 """Gemma 4 models with diffusion capabilities."""
 
+import dataclasses
+
 from gemma.diffusion import _transformer as _diffusion_transformer
 from gemma.gm.nn.gemma4 import _gemma4
 
@@ -40,6 +42,24 @@ class DiffusionGemma_26B_A4B(  # pylint: disable=invalid-name
           hidden_dim=self.config.hidden_dim,
       )
     self.self_conditioner = sc_config.make()
+
+
+def make_diffusion_e2b(
+    *,
+    text_only: bool = False,
+    with_audio: bool = False,
+    dtype=None,
+):
+  """Construction helper for DiffusionGemma_E2B (design doc §5 B0).
+
+  Handles the audio-tower removal explicitly (decision D2: audio OUT) —
+  ``text_only=False`` alone would resurrect BOTH towers.
+  """
+  cfg = _gemma4.Gemma4_E2B.config
+  if not with_audio:
+    cfg = dataclasses.replace(cfg, audio_encoder=None)
+  kwargs = {} if dtype is None else {'dtype': dtype}
+  return DiffusionGemma_E2B(text_only=text_only, config=cfg, **kwargs)
 
 
 class DiffusionGemma_E2B(  # pylint: disable=invalid-name

@@ -54,7 +54,9 @@ from typing import Any
 
 from gemma import gm
 from gemma.diffusion.hackable_diffusion_adapter.data import data as adapter_data
+from gemma.diffusion.hackable_diffusion_adapter.data.chartqa import schema
 from gemma.gm.nn.gemma4.vision import _encoder as vision_encoder
+from gemma.gm.vision import _token_utils
 import grain.python as grain
 import jax
 from kauldron import kd
@@ -351,6 +353,265 @@ class ChartQADataset(kd_base.DataSourceBase):
     if self.shuffle:
       ds = ds.shuffle(seed=rng.fold_in("shuffle").as_seed())
     return ds
+
+
+################################################################################
+# MARK: Internal-parity (V2) sources + transforms — tf.Example records
+################################################################################
+
+
+class ChartQAArrayRecordDataSource(grain.RandomAccessDataSource):
+  """Picklable ArrayRecord source (internal-parity; raw tf.Example bytes)."""
+
+  def __init__(self, paths: tuple[str, ...]):
+    self.paths = tuple(paths)
+    self._src = None
+
+  @property
+  def src(self):
+    if self._src is None:
+      self._src = grain.ArrayRecordDataSource(list(self.paths))
+    return self._src
+
+  def __len__(self):
+    return len(self.src)
+
+  def __getitem__(self, index):
+    return self.src[int(index)]
+
+  def __getstate__(self):
+    state = self.__dict__.copy()
+    state["_src"] = None
+    return state
+
+
+class ChartQABagzDataSource(grain.RandomAccessDataSource):
+  """Picklable Bagz source (toy set; exercises the trajectory-side reader)."""
+
+  def __init__(self, path: str):
+    self.path = path
+    self._reader = None
+
+  @property
+  def reader(self):
+    if self._reader is None:
+      import bagz  # pylint: disable=g-import-not-at-top
+
+      self._reader = bagz.Reader(self.path)
+    return self._reader
+
+  def __len__(self):
+    return len(self.reader)
+
+  def __getitem__(self, index):
+    return self.reader[int(index)]
+
+  def __getstate__(self):
+    state = self.__dict__.copy()
+    state["_reader"] = None
+    return state
+
+
+@dataclasses.dataclass(kw_only=True, frozen=True)
+class ParseChartQARecord(grain.MapTransform):
+  """Parses tf.train.Example from record bytes (verbatim internal parse)."""
+
+  def map(self, raw_bytes: bytes) -> dict[str, Any]:
+    import tensorflow as tf  # pylint: disable=g-import-not-at-top
+
+    example = tf.train.Example.FromString(bytes(raw_bytes))
+    feature = example.features.feature
+
+    image_bytes = feature[schema.FEATURE_IMAGE].bytes_list.value[0]
+    question = feature[schema.FEATURE_QUESTION].bytes_list.value[0].decode(
+        "utf-8"
+    )
+    answer = feature[schema.FEATURE_ANSWER].bytes_list.value[0].decode("utf-8")
+
+    return {
+        "raw_image": image_bytes,
+        "prompt": question,
+        "prompt_text": question,
+        "short_answer": answer,
+        "short_answer_text": answer,
+        "response_text": schema.CHARTQA_RESPONSE_TEMPLATE.format(answer=answer),
+    }
+
+
+@dataclasses.dataclass(kw_only=True, frozen=True)
+class BuildChartQAInputsV2(grain.MapTransform):
+  """Internal-parity input builder (template prompt + variable expansion).
+
+  * image: ``raw_image`` bytes -> fixed square (``image_size``) -> the RELEASE
+    preprocessing (``preprocess_and_patchify`` with the E2B tower params:
+    patch 16 / pooling 3 / budget 280 -> actual n_soft = 256 with padded patch
+    rows — the C6c padding precondition).
+  * prompt: ``CHARTQA_PROMPT_TEMPLATE.format(text=question)`` tokenized
+    (add_bos), then the single ``<|image|>`` expanded via the pristine
+    ``add_variable_extra_tokens_for_images`` ([\\n\\n, <|image, -2 x n_soft,
+    <image|>, \\n\\n]) and padded/truncated to ``prompt_len``.
+  * response: ``response_text`` ("The answer is: {answer}") tokenized — the
+    metric's extraction prefix, load-bearing.
+  """
+
+  tokenizer: Any
+  prompt_len: int
+  n_soft: int
+  image_size: int
+  patch_size: int
+  pooling_kernel_size: int
+  max_soft_tokens: int
+  pad_token: int
+  answer_len: int = 0  # >0 (eval): emit fixed-length GT `answer_tokens`.
+
+  def map(self, features):
+    # --- image -> fixed square -> release preprocessing ---
+    img = _to_rgb_uint8(features["raw_image"])
+    pil = Image.fromarray(img).resize(
+        (self.image_size, self.image_size), resample=Image.BICUBIC
+    )
+    from gemma.gm.nn.gemma4.vision import _preprocessing as _pp  # pylint: disable=g-import-not-at-top
+
+    p, pos, counts = _pp.preprocess_and_patchify(
+        [np.asarray(pil)],
+        patch_size=self.patch_size,
+        max_soft_tokens=self.max_soft_tokens,
+        pooling_kernel_size=self.pooling_kernel_size,
+    )
+    features["patches"] = np.asarray(p[0], dtype=np.float32)
+    features["positions_xy"] = np.asarray(pos[0], dtype=np.int32)
+    assert int(counts[0]) == self.n_soft, (
+        f"actual soft count {counts[0]} != configured n_soft {self.n_soft}"
+    )
+
+    # --- prompt: template -> tokenize -> expand <|image|> -> pad to 512 ---
+    text = schema.CHARTQA_PROMPT_TEMPLATE.format(text=str(features["prompt_text"]))
+    ids = self.tokenizer.encode(text, add_bos=True)
+    expanded = _token_utils.add_variable_extra_tokens_for_images(
+        tokens=np.asarray([ids], dtype=np.int32),
+        soft_token_counts=[self.n_soft],
+    )[0].tolist()
+    expanded = expanded[: self.prompt_len]
+    if len(expanded) < self.prompt_len:
+      expanded = expanded + [self.pad_token] * (self.prompt_len - len(expanded))
+    features["prompt"] = np.asarray(expanded, dtype=np.int32)
+
+    # --- response: "The answer is: {answer}" tokens (canvas content) ---
+    resp = self.tokenizer.encode(str(features["response_text"]), add_bos=False)
+    features["response"] = np.asarray(resp, dtype=np.int32)
+
+    # --- (eval) fixed-length ground-truth SHORT answer for the metric ---
+    if self.answer_len > 0:
+      ans = self.tokenizer.encode(str(features["short_answer_text"]), add_bos=False)
+      ans = ans[: self.answer_len]
+      ans = ans + [self.pad_token] * (self.answer_len - len(ans))
+      features["answer_tokens"] = np.asarray(ans, dtype=np.int32)
+    return features
+
+
+@dataclasses.dataclass(frozen=True)
+class ChartQARecordsDataset(kd_base.DataSourceBase):
+  """Kauldron data source over local ArrayRecord shards / a Bagz file."""
+
+  paths: tuple[str, ...] = ()
+  fmt: str = "arrayrecord"  # "arrayrecord" | "bagz"
+
+  @functools.cached_property
+  def data_source(self) -> grain.RandomAccessDataSource:
+    if self.fmt == "bagz":
+      assert len(self.paths) == 1
+      return ChartQABagzDataSource(self.paths[0])
+    return ChartQAArrayRecordDataSource(self.paths)
+
+  def ds_for_current_process(self, rng: random.PRNGKey) -> grain.MapDataset:
+    ds = grain.MapDataset.source(self.data_source)
+    ds = ds.seed(rng.as_seed())
+    if self.shard_by_process:
+      ds = ds[jax.process_index() :: jax.process_count()]
+    if self.shuffle:
+      ds = ds.shuffle(seed=rng.fold_in("shuffle").as_seed())
+    return ds
+
+
+def make_chartqa_records_ds(
+    *,
+    training: bool,
+    batch_size: int,
+    paths: tuple[str, ...],
+    fmt: str = "arrayrecord",
+    prompt_len: int = schema.CHARTQA_PROMPT_LEN,
+    num_canvases: int = schema.CHARTQA_NUM_CANVASES,
+    canvas_size: int = schema.CHARTQA_CANVAS_SIZE,
+    n_soft: int = schema.E2B_N_SOFT,
+    image_size: int = schema.E2B_IMAGE_SIZE,
+    patch_size: int = schema.E2B_PATCH_SIZE,
+    pooling_kernel_size: int = schema.E2B_POOLING_KERNEL_SIZE,
+    max_soft_tokens: int = schema.E2B_MAX_SOFT_TOKENS,
+    answer_len: int = 32,
+    num_workers: int = 0,
+) -> ChartQARecordsDataset:
+  """Internal-parity pipeline over tf.Example records (design doc §5 B4).
+
+  Unlike ``make_chartqa_ds``, batch_size > 1 is supported: the vision merge
+  reshapes the packed soft embeddings per batch row (internal batch fix in
+  ``_merge_mm_embeddings``). Encoder targets use the PLAIN shift — the image
+  block is handled downstream by ``shift_encoder_targets_for_multimodal``
+  (strip+gather; positions collapse cleanly, no invalid-id masking needed).
+  """
+  tokenizer = gm.text.Gemma4Tokenizer()
+  st = gm.text.Gemma4Tokenizer.special_tokens
+
+  transforms = [
+      ParseChartQARecord(),
+      BuildChartQAInputsV2(
+          tokenizer=tokenizer,
+          prompt_len=prompt_len,
+          n_soft=n_soft,
+          image_size=image_size,
+          patch_size=patch_size,
+          pooling_kernel_size=pooling_kernel_size,
+          max_soft_tokens=max_soft_tokens,
+          pad_token=int(st.PAD),
+          answer_len=0 if training else answer_len,
+      ),
+      adapter_data.CanvasChunker(
+          in_response="response",
+          out_canvas="canvas",
+          out_canvas_id="canvas_id",
+          out_canvas_mask="canvas_mask",
+          num_canvases=num_canvases,
+          canvas_size=canvas_size,
+          eos_token=int(st.EOS),
+          pad_token=int(st.PAD),
+      ),
+      # PLAIN next-token shift (internal parity — see docstring above).
+      ChartQAEncoderTargets(pad_token=int(st.PAD), invalid_ids=()),
+      kd.data.Rearrange(key="canvas", pattern="c -> c 1"),
+  ]
+
+  keep_fields = [
+      "patches",
+      "positions_xy",
+      "prompt",
+      "canvas",
+      "canvas_id",
+      "canvas_mask",
+      "encoder_target",
+      "encoder_target_mask",
+  ]
+  if not training:
+    keep_fields.append("answer_tokens")
+  transforms.append(kd.data.Elements(keep=keep_fields))
+
+  return ChartQARecordsDataset(
+      paths=tuple(paths),
+      fmt=fmt,
+      shuffle=training,
+      num_epochs=None if training else 1,
+      batch_size=batch_size,
+      num_workers=num_workers,
+      transforms=transforms,
+  )
 
 
 ################################################################################
