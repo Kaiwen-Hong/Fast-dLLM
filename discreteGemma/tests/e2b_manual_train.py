@@ -28,11 +28,24 @@ REPO = "/home/kaiwen/Desktop/research/Fast-dLLM/discreteGemma"
 sys.path.insert(0, f"{REPO}/gemma")
 DATA = "/home/kaiwen/data/dgemma_e2b"
 
+# TF must be imported and GPU-hidden BEFORE jax/kauldron pull it in — done any
+# later, TF initializes the GPU and spends 30+ min PTX-JIT'ing its kernel
+# library for sm_120 (burned 86 min of a prior run). Same pattern as eval_main.
+import tensorflow as _tf  # noqa: E402
+
+_tf.config.set_visible_devices([], "GPU")
+
+import faulthandler  # noqa: E402
+import signal  # noqa: E402
+
+faulthandler.register(signal.SIGUSR1)  # kill -USR1 <pid> dumps py stacks
+
 import jax  # noqa: E402
 import jax.numpy as jnp  # noqa: E402
 import numpy as np  # noqa: E402
 import optax  # noqa: E402
 from kauldron import konfig  # noqa: E402
+
 
 
 def main():
@@ -66,7 +79,9 @@ def main():
       __import__("glob").glob(f"{DATA}/chartqa/human_train-*.arrayrecord")))
   ds = konfig.resolve(cq.make_chartqa_records_ds(
       training=True, batch_size=1, paths=train_paths, fmt="arrayrecord",
-      num_workers=2))
+      # 0: grain worker processes trigger TF's 30-min sm_120 PTX JIT at
+      # startup (before the in-map GPU-hide guard can run); load in-process.
+      num_workers=0))
   it = iter(ds)
 
   def clean(b):

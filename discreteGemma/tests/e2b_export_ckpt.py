@@ -26,6 +26,17 @@ import jax  # noqa: E402
 import jax.numpy as jnp  # noqa: E402
 from kauldron import konfig  # noqa: E402
 
+def _hide_gpu_from_tf():
+  try:
+    import tensorflow as tf
+    tf.config.set_visible_devices([], "GPU")
+  except Exception:
+    pass
+
+
+_hide_gpu_from_tf()
+
+
 
 def main():
   ap = argparse.ArgumentParser()

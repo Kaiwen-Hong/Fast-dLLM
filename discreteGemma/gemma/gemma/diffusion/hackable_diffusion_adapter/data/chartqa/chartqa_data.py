@@ -412,21 +412,78 @@ class ChartQABagzDataSource(grain.RandomAccessDataSource):
     return state
 
 
+def _parse_tf_example_bytes(raw: bytes) -> dict[str, bytes]:
+  """Minimal pure-python tf.train.Example parser (bytes features only).
+
+  Avoids importing TensorFlow in the data hot path: on this sm_120 box, TF's
+  CUDA device init triggers a 30-minute PTX JIT of its kernel library (and a
+  killed JIT leaves a stale ~/.nv cache lock that blocks the next process).
+  The ON-DISK format stays exactly tf.train.Example (internal contract) — only
+  the reader is TF-free. Wire layout: Example{1: Features{1: repeated
+  MapEntry{1: key, 2: Feature{1: BytesList{1: repeated bytes}}}}}.
+  """
+
+  def read_varint(buf: bytes, i: int) -> tuple[int, int]:
+    result = shift = 0
+    while True:
+      b = buf[i]
+      i += 1
+      result |= (b & 0x7F) << shift
+      if not b & 0x80:
+        return result, i
+      shift += 7
+
+  def fields(buf: bytes):
+    i = 0
+    while i < len(buf):
+      tag, i = read_varint(buf, i)
+      field, wire = tag >> 3, tag & 7
+      if wire == 2:  # length-delimited
+        ln, i = read_varint(buf, i)
+        yield field, buf[i : i + ln]
+        i += ln
+      elif wire == 0:  # varint
+        _, i = read_varint(buf, i)
+      elif wire == 5:
+        i += 4
+      elif wire == 1:
+        i += 8
+      else:
+        raise ValueError(f"unsupported wire type {wire}")
+
+  out: dict[str, bytes] = {}
+  for f_ex, v_ex in fields(raw):
+    if f_ex != 1:  # Example.features
+      continue
+    for f_fs, v_fs in fields(v_ex):
+      if f_fs != 1:  # Features.feature (map entry)
+        continue
+      key = value = None
+      for f_me, v_me in fields(v_fs):
+        if f_me == 1:
+          key = v_me.decode("utf-8")
+        elif f_me == 2:  # Feature
+          for f_ft, v_ft in fields(v_me):
+            if f_ft == 1:  # BytesList
+              for f_bl, v_bl in fields(v_ft):
+                if f_bl == 1 and value is None:
+                  value = v_bl
+      if key is not None and value is not None:
+        out[key] = value
+  return out
+
+
 @dataclasses.dataclass(kw_only=True, frozen=True)
 class ParseChartQARecord(grain.MapTransform):
-  """Parses tf.train.Example from record bytes (verbatim internal parse)."""
+  """Parses tf.train.Example from record bytes (verbatim internal parse
+  semantics; TF-free wire decoding — see _parse_tf_example_bytes)."""
 
   def map(self, raw_bytes: bytes) -> dict[str, Any]:
-    import tensorflow as tf  # pylint: disable=g-import-not-at-top
+    feature = _parse_tf_example_bytes(bytes(raw_bytes))
 
-    example = tf.train.Example.FromString(bytes(raw_bytes))
-    feature = example.features.feature
-
-    image_bytes = feature[schema.FEATURE_IMAGE].bytes_list.value[0]
-    question = feature[schema.FEATURE_QUESTION].bytes_list.value[0].decode(
-        "utf-8"
-    )
-    answer = feature[schema.FEATURE_ANSWER].bytes_list.value[0].decode("utf-8")
+    image_bytes = feature[schema.FEATURE_IMAGE]
+    question = feature[schema.FEATURE_QUESTION].decode("utf-8")
+    answer = feature[schema.FEATURE_ANSWER].decode("utf-8")
 
     return {
         "raw_image": image_bytes,

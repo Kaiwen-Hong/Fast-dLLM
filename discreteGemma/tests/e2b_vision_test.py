@@ -31,6 +31,17 @@ import jax.numpy as jnp  # noqa: E402
 import numpy as np  # noqa: E402
 from kauldron import konfig  # noqa: E402
 
+def _hide_gpu_from_tf():
+  try:
+    import tensorflow as tf
+    tf.config.set_visible_devices([], "GPU")
+  except Exception:
+    pass
+
+
+_hide_gpu_from_tf()
+
+
 
 def build_model_and_batch():
   """SFT model resolved from the production config + one pinned toy batch."""

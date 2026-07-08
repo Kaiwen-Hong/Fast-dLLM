@@ -1,0 +1,42 @@
+{
+  "n_model": 567,
+  "n_loaded": 564,
+  "n_lora_kept": 0,
+  "n_expected_missing": 3,
+  "expected_missing_keys": [
+    "self_conditioner/ffw/gating_einsum",
+    "self_conditioner/ffw/linear",
+    "self_conditioner/pre_norm/scale"
+  ],
+  "expected_missing_subtrees": [
+    "self_conditioner"
+  ],
+  "n_ckpt_only_discarded": 754,
+  "ckpt_only_subtrees": [
+    "audio_encoder",
+    "embedder"
+  ],
+  "ckpt_only_sample": [
+    "audio_encoder/conformer/stacked_layers_0/fflayer_end/ffn_layer1/clip_input_max",
+    "audio_encoder/conformer/stacked_layers_0/fflayer_end/ffn_layer1/clip_input_min",
+    "audio_encoder/conformer/stacked_layers_0/fflayer_end/ffn_layer1/clip_output_max",
+    "audio_encoder/conformer/stacked_layers_0/fflayer_end/ffn_layer1/clip_output_min",
+    "audio_encoder/conformer/stacked_layers_0/fflayer_end/ffn_layer1/kernel",
+    "audio_encoder/conformer/stacked_layers_0/fflayer_end/ffn_layer2/clip_input_max",
+    "audio_encoder/conformer/stacked_layers_0/fflayer_end/ffn_layer2/clip_input_min",
+    "audio_encoder/conformer/stacked_layers_0/fflayer_end/ffn_layer2/clip_output_max",
+    "audio_encoder/conformer/stacked_layers_0/fflayer_end/ffn_layer2/clip_output_min",
+    "audio_encoder/conformer/stacked_layers_0/fflayer_end/ffn_layer2/kernel",
+    "audio_encoder/conformer/stacked_layers_0/fflayer_end/post_layer_norm/scale",
+    "audio_encoder/conformer/stacked_layers_0/fflayer_end/pre_layer_norm/scale",
+    "audio_encoder/conformer/stacked_layers_0/fflayer_start/ffn_layer1/clip_input_max",
+    "audio_encoder/conformer/stacked_layers_0/fflayer_start/ffn_layer1/clip_input_min",
+    "audio_encoder/conformer/stacked_layers_0/fflayer_start/ffn_layer1/clip_output_max",
+    "audio_encoder/conformer/stacked_layers_0/fflayer_start/ffn_layer1/clip_output_min",
+    "audio_encoder/conformer/stacked_layers_0/fflayer_start/ffn_layer1/kernel",
+    "audio_encoder/conformer/stacked_layers_0/fflayer_start/ffn_layer2/clip_input_max",
+    "audio_encoder/conformer/stacked_layers_0/fflayer_start/ffn_layer2/clip_input_min",
+    "audio_encoder/conformer/stacked_layers_0/fflayer_start/ffn_layer2/clip_output_max"
+  ],
+  "checkpoint_path": "/home/kaiwen/data/dgemma_e2b/ckpts/gemma4-e2b-it"
+}
