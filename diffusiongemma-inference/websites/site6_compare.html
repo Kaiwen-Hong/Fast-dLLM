@@ -1,0 +1,162 @@
+<title>DiffusionGemma 推理原理 · 对比 LLaDA / Dream</title>
+<style>
+:root{--bg:#f4f3ee;--surface:#fffffe;--surface2:#efeee7;--ink:#17201f;--ink2:#465251;--muted:#6d7877;--line:#dcdbd2;--line2:#c9c8bd;--teal:#0f8f8f;--teal-ink:#0b6d6d;--amber:#bf8a1c;--rose:#d4526e;--violet:#7b6ce0;--shadow:0 1px 2px rgba(20,30,29,.06),0 8px 30px rgba(20,30,29,.06);--mono:ui-monospace,"SF Mono","JetBrains Mono","Cascadia Code",Menlo,Consolas,monospace;--sans:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",sans-serif;--maxw:1080px;}
+@media (prefers-color-scheme:dark){:root{--bg:#0a1211;--surface:#0f1a19;--surface2:#132322;--ink:#e6efee;--ink2:#a7b6b4;--muted:#7c8d8b;--line:#1e302e;--line2:#294240;--teal:#2bb0ac;--teal-ink:#4fd0cb;--amber:#d9a441;--rose:#e5748d;--violet:#9b8ef2;--shadow:0 1px 2px rgba(0,0,0,.4),0 10px 40px rgba(0,0,0,.35);}}
+:root[data-theme="dark"]{--bg:#0a1211;--surface:#0f1a19;--surface2:#132322;--ink:#e6efee;--ink2:#a7b6b4;--muted:#7c8d8b;--line:#1e302e;--line2:#294240;--teal:#2bb0ac;--teal-ink:#4fd0cb;--amber:#d9a441;--rose:#e5748d;--violet:#9b8ef2;--shadow:0 1px 2px rgba(0,0,0,.4),0 10px 40px rgba(0,0,0,.35);}
+:root[data-theme="light"]{--bg:#f4f3ee;--surface:#fffffe;--surface2:#efeee7;--ink:#17201f;--ink2:#465251;--muted:#6d7877;--line:#dcdbd2;--line2:#c9c8bd;--teal:#0f8f8f;--teal-ink:#0b6d6d;--amber:#bf8a1c;--rose:#d4526e;--violet:#7b6ce0;}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:16.5px;line-height:1.62;-webkit-font-smoothing:antialiased}
+.wrap{max-width:var(--maxw);margin:0 auto;padding:0 24px}
+h1,h2,h3{font-family:var(--mono);font-weight:650;letter-spacing:-.01em;text-wrap:balance;line-height:1.2}
+p{max-width:68ch}
+code{font-family:var(--mono);font-size:.86em;background:var(--surface2);padding:.1em .38em;border-radius:5px;border:1px solid var(--line)}
+.eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--teal-ink);font-weight:600}
+.muted{color:var(--muted)}a{color:var(--teal-ink)}
+.top{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.top .wrap{display:flex;align-items:center;gap:14px;height:56px}
+.brand{font-family:var(--mono);font-weight:700;font-size:15px}.brand b{color:var(--teal-ink)}
+.themebtn{margin-left:auto;font-family:var(--mono);font-size:12px;border:1px solid var(--line2);background:var(--surface2);color:var(--ink2);border-radius:7px;padding:5px 9px;cursor:pointer}
+.hd{padding:46px 0 8px}
+.kbd{display:inline-block;font-family:var(--mono);font-size:12.5px;color:var(--teal-ink);border:1px solid var(--line2);border-radius:999px;padding:4px 12px}
+.hd h1{font-size:clamp(28px,4.6vw,42px);margin:.35em 0 .25em}
+.hd .lede{max-width:66ch;color:var(--ink2);font-size:18px}
+section{padding:32px 0}
+section h2{font-size:clamp(23px,3.2vw,30px);margin:.1em 0 .35em}
+.lead{font-size:18px;color:var(--ink2);max-width:66ch}
+.vs{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:8px}@media(max-width:760px){.vs{grid-template-columns:1fr}}
+.pane{background:var(--surface);border:1px solid var(--line);border-radius:15px;box-shadow:var(--shadow);padding:20px}
+.pane h3{font-size:16px;margin:0 0 3px;display:flex;align-items:center;gap:8px}
+.pane .sub{font-family:var(--mono);font-size:12px;color:var(--muted);margin-bottom:14px}
+.dot{width:10px;height:10px;border-radius:3px;display:inline-block}
+.cells{display:flex;flex-wrap:wrap;gap:6px;min-height:96px;align-content:flex-start}
+.c{font-family:var(--mono);font-size:13px;padding:6px 9px;border-radius:7px;border:1px solid var(--line);background:var(--surface2);color:var(--ink2);min-width:30px;text-align:center;transition:background .2s,color .2s,border-color .2s}
+.c.mask{color:var(--violet);border-style:dashed;opacity:.8}
+.c.noise{color:var(--rose);border-style:dotted;opacity:.72}
+.c.lock{background:var(--teal);color:#fff;border-color:transparent}
+.playbar{display:flex;align-items:center;gap:12px;margin-top:16px}
+.playbar button{font-family:var(--mono);font-weight:600;font-size:14px;border:1px solid var(--line2);background:var(--surface2);color:var(--ink);border-radius:10px;padding:9px 16px;cursor:pointer}
+.playbar button:hover{border-color:var(--teal)}
+.stepdot{font-family:var(--mono);font-size:13px;color:var(--muted)}
+.tbl{width:100%;border-collapse:collapse;font-size:14.5px;margin-top:6px;overflow:hidden;border-radius:12px;border:1px solid var(--line)}
+.tbl th,.tbl td{text-align:left;padding:12px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+.tbl thead th{background:var(--surface2);font-family:var(--mono);font-size:12.5px;letter-spacing:.03em}
+.tbl th.k{font-family:var(--mono);font-size:13px;color:var(--muted);font-weight:500;width:26%}
+.tbl td.a{color:var(--violet)}.tbl td.b{color:var(--teal-ink)}
+.tbl tr:last-child td{border-bottom:0}
+.tblwrap{overflow-x:auto}
+.shared{background:var(--surface);border:1px solid var(--line);border-left:3px solid var(--amber);border-radius:0 12px 12px 0;padding:18px 22px;margin-top:14px}
+.shared b{color:var(--amber)}
+.xfer{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:12px}@media(max-width:640px){.xfer{grid-template-columns:1fr}}
+.xbox{background:var(--surface2);border:1px solid var(--line);border-radius:12px;padding:16px 18px}
+.xbox h4{margin:0 0 6px;font-family:var(--mono);font-size:13.5px;color:var(--teal-ink)}
+.xbox p{margin:0;font-size:13.5px;color:var(--ink2)}
+.xbox code{font-size:12px}
+footer{border-top:1px solid var(--line);margin-top:40px;padding:30px 0 60px;color:var(--muted);font-size:13.5px}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<header class="top"><div class="wrap"><span class="brand">Diffusion<b>Gemma</b> · 推理详解</span><button class="themebtn" id="tbtn">◐ 主题</button></div></header>
+
+<div class="wrap hd">
+  <span class="kbd">Part 6 / 6 · vs Mask Diffusion</span>
+  <h1>和 LLaDA / Dream 到底差在哪</h1>
+  <p class="lede">你在 Fast-dLLM 里熟悉的 LLaDA、Dream 是 <b>mask diffusion</b>:画布从全 <code>[MASK]</code> 开始,逐步 unmask。DiffusionGemma 是 <b>uniform / random-token diffusion</b>:画布从<b>随机词表 token</b> 开始,逐步 renoise。这一篇把两者并排讲清,并帮你把已有经验迁移过来。</p>
+</div>
+
+<div class="wrap">
+  <section>
+    <span class="eyebrow">Side by side · 并排看去噪</span>
+    <h2>同一句话,两种"噪声"</h2>
+    <p class="lead">点 ▶ 同时播放。左边:<span style="color:var(--violet);font-weight:600">灰色 [MASK]</span> 逐个被揭开、揭开后就不再变;右边:<span style="color:var(--rose);font-weight:600">红色随机 token</span> 一直在闪动,直到被"锁定"成青色。两者最终都得到同一句话。</p>
+    <div class="vs" style="margin-top:16px">
+      <div class="pane">
+        <h3><span class="dot" style="background:var(--violet)"></span>Mask diffusion(LLaDA / Dream)</h3>
+        <div class="sub">canvas = 全 [MASK] → 逐步 unmask</div>
+        <div class="cells" id="maskCells"></div>
+      </div>
+      <div class="pane">
+        <h3><span class="dot" style="background:var(--teal)"></span>DiffusionGemma(random-token)</h3>
+        <div class="sub">canvas = 随机 token → 逐步 accept + renoise</div>
+        <div class="cells" id="noiseCells"></div>
+      </div>
+    </div>
+    <div class="playbar">
+      <button id="play">▶ 同时播放</button>
+      <button id="reset">↻ 重置</button>
+      <span class="stepdot">step <b id="stepN">0</b></span>
+    </div>
+    <p class="muted" style="font-size:14px;margin-top:12px">关键差别:mask diffusion 用一个<b>特殊吸收态 <code>[MASK]</code></b> 当噪声,揭开即定;DiffusionGemma 用<b>真实随机 token</b> 当噪声,没锁定的每步都重新随机 —— 所以它每一步都在"真实分布的样本"上工作。</p>
+  </section>
+
+  <section>
+    <span class="eyebrow">The table · 逐项对照</span>
+    <h2>机制对照表</h2>
+    <div class="tblwrap"><table class="tbl">
+      <thead><tr><th class="k">维度</th><th>Mask diffusion · LLaDA / Dream</th><th>DiffusionGemma</th></tr></thead>
+      <tbody>
+        <tr><th class="k">噪声形式 noise</th><td class="a"><code>[MASK]</code> 吸收态 token</td><td class="b">随机词表 token(uniform)</td></tr>
+        <tr><th class="k">初始画布</th><td class="a">全 <code>[MASK]</code></td><td class="b">全随机 token</td></tr>
+        <tr><th class="k">每步操作</th><td class="a">预测被 mask 的位置,unmask 一批</td><td class="b">预测全部,accept 低熵的,其余 renoise</td></tr>
+        <tr><th class="k">未选中的位置</th><td class="a">保持 <code>[MASK]</code></td><td class="b">重新采成随机 token</td></tr>
+        <tr><th class="k">选择准则</th><td class="a">confidence 阈值 / top-k(Fast-dLLM 的核心)</td><td class="b">entropy-bound,互信息界 ≤ 0.1</td></tr>
+        <tr><th class="k">块结构</th><td class="a">semi-AR block(Fast-dLLM v2)</td><td class="b">block diffusion,canvas=256</td></tr>
+        <tr><th class="k">self-conditioning</th><td class="a">一般无</td><td class="b">有(上一步 logits 回喂)</td></tr>
+        <tr><th class="k">停止</th><td class="a">通常固定步数</td><td class="b">自适应(stable + confident)</td></tr>
+        <tr><th class="k">KV cache</th><td class="a">Fast-dLLM 加 prefix / dual cache</td><td class="b">block-causal KV cache(前块入 cache)</td></tr>
+      </tbody>
+    </table></div>
+    <div class="shared"><b>共同的 DNA</b> · 两者都是 dLLM:非从左到右、迭代精修、并行解码。Fast-dLLM 的核心贡献 —— <b>基于置信度的并行 unmask + KV cache</b> —— 在 DiffusionGemma 里以 <code>entropy-bound accept</code> + <code>block-causal cache</code> 的形式同样成立。你对"置信度决定解码顺序"的直觉可以<b>直接迁移</b>。</div>
+  </section>
+
+  <section>
+    <span class="eyebrow">Knowledge transfer · 迁移到你的数据集</span>
+    <h2>把 Fast-dLLM 的经验搬过来</h2>
+    <p class="lead">你说"想知道中间步骤好 debug"。下面是从 LLaDA/Dream 心智模型到 DiffusionGemma 的对应关系 —— 你原来在哪 hook,现在就在哪 hook。</p>
+    <div class="xfer">
+      <div class="xbox"><h4>抓中间态的 hook 点</h4><p>LLaDA 里你看 <code>get_transfer_index</code> 的 <code>x</code> / <code>confidence</code>;这里 monkeypatch <code>EntropyBoundSampler.accept_canvas</code>,拿 <code>current_canvas</code> / <code>argmax</code> / <code>token_entropy</code> / <code>accepted_mask</code>。</p></div>
+      <div class="xbox"><h4>"解码顺序"信号</h4><p>LLaDA 用 max-prob / margin / neg-entropy 排序;DiffusionGemma 用<b>纯熵</b>升序 + 互信息界。想改并行度,调 <code>entropy_bound</code>(类比你调 <code>threshold</code>)。</p></div>
+      <div class="xbox"><h4>block / 半自回归</h4><p>Fast-dLLM v2 的 nested block 对应这里的 <code>canvas_length=256</code> 外层块循环;每块内部做完整去噪后进 KV cache,再做下一块。</p></div>
+      <div class="xbox"><h4>评测 harness</h4><p>lm-eval 那套答案提取仍适用,但注意 DiffusionGemma 的输出有 <code>&lt;|channel&gt;thought…&lt;channel|&gt;</code> 结构 —— 取最后一个 <code>&lt;channel|&gt;</code> 之后为最终答案(见 Part 5)。</p></div>
+    </div>
+    <div class="shared" style="border-left-color:var(--teal)"><b style="color:var(--teal-ink)">一句话迁移</b> · 把"<span style="color:var(--violet)">哪些位置还是 MASK</span>"换成"<span style="color:var(--rose)">哪些位置还是随机噪声</span>",把"<span style="color:var(--violet)">按 confidence unmask</span>"换成"<span style="color:var(--teal-ink)">按 entropy accept</span>",你在 Fast-dLLM 里的调试直觉几乎原样成立。</div>
+  </section>
+</div>
+
+<footer><div class="wrap">DiffusionGemma 推理原理系列 · Part 6/6 · 对照基于 Fast-dLLM(LLaDA/Dream/v2)源码与 DiffusionGemma <code>generation_diffusion_gemma.py</code> 实测。</div></footer>
+
+<script>
+document.getElementById('tbtn').onclick=()=>{const d=document.documentElement;const c=d.getAttribute('data-theme')||(matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light');d.setAttribute('data-theme',c==='dark'?'light':'dark');};
+const WORDS=["the","sky","is","blue","because","light","scatters","."];
+const GLYPH="ΞΨЖ好Δθ语Ω究火Яβ星Φ云雨";
+const maskWrap=document.getElementById('maskCells'), noiseWrap=document.getElementById('noiseCells');
+let mCells=[], nCells=[], mState=[], nState=[], step=0, timer=null, flick=null;
+// reveal order (both use same confidence-ish order, but random flickers)
+const ORD=[0,2,3,1,4,7,5,6];
+function build(){
+  maskWrap.innerHTML='';noiseWrap.innerHTML='';mCells=[];nCells=[];mState=WORDS.map(()=>0);nState=WORDS.map(()=>0);step=0;
+  document.getElementById('stepN').textContent=0;
+  WORDS.forEach((w,i)=>{
+    const a=document.createElement('span');a.className='c mask';a.textContent='[M]';maskWrap.appendChild(a);mCells.push(a);
+    const b=document.createElement('span');b.className='c noise';b.textContent=rnd();noiseWrap.appendChild(b);nCells.push(b);
+  });
+}
+function rnd(){let s='';for(let i=0;i<2+Math.floor(Math.random()*3);i++)s+=GLYPH[Math.floor(Math.random()*GLYPH.length)];return s;}
+function flickr(){nState.forEach((v,i)=>{if(v===0)nCells[i].textContent=rnd();});}
+function stepFn(){
+  if(step>=ORD.length){stop();return;}
+  // reveal 1-2 per step
+  const k=ORD[step];mState[k]=1;mCells[k].className='c lock';mCells[k].textContent=WORDS[k];
+  nState[k]=1;nCells[k].className='c lock';nCells[k].textContent=WORDS[k];
+  step++;document.getElementById('stepN').textContent=step;
+}
+function play(){stop();const reduce=matchMedia('(prefers-reduced-motion:reduce)').matches;
+  if(step>=ORD.length)build();
+  if(!reduce)flick=setInterval(flickr,90);
+  timer=setInterval(()=>{if(step>=ORD.length){stop();return;}stepFn();},reduce?0:720);
+  document.getElementById('play').textContent='❙❙ 暂停';}
+function stop(){clearInterval(timer);clearInterval(flick);timer=null;document.getElementById('play').textContent='▶ 同时播放';}
+document.getElementById('play').onclick=()=>{if(timer)stop();else play();};
+document.getElementById('reset').onclick=()=>{stop();build();};
+build();
+setTimeout(()=>{if(!matchMedia('(prefers-reduced-motion:reduce)').matches)play();},700);
+</script>

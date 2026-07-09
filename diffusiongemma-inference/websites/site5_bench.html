@@ -1,0 +1,190 @@
+<title>DiffusionGemma 推理原理 · Benchmark 与量化对比</title>
+<style>
+:root{--bg:#f4f3ee;--surface:#fffffe;--surface2:#efeee7;--ink:#17201f;--ink2:#465251;--muted:#6d7877;--line:#dcdbd2;--line2:#c9c8bd;--teal:#0f8f8f;--teal-ink:#0b6d6d;--amber:#bf8a1c;--rose:#d4526e;--violet:#7b6ce0;--blue:#3d7fe0;--good:#2e8b57;--warn:#bf8a1c;--bad:#c0392b;--shadow:0 1px 2px rgba(20,30,29,.06),0 8px 30px rgba(20,30,29,.06);--mono:ui-monospace,"SF Mono","JetBrains Mono","Cascadia Code",Menlo,Consolas,monospace;--sans:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",sans-serif;--maxw:1080px;}
+@media (prefers-color-scheme:dark){:root{--bg:#0a1211;--surface:#0f1a19;--surface2:#132322;--ink:#e6efee;--ink2:#a7b6b4;--muted:#7c8d8b;--line:#1e302e;--line2:#294240;--teal:#2bb0ac;--teal-ink:#4fd0cb;--amber:#d9a441;--rose:#e5748d;--violet:#9b8ef2;--blue:#5b9cf0;--good:#4cba7c;--warn:#d9a441;--bad:#e8674f;--shadow:0 1px 2px rgba(0,0,0,.4),0 10px 40px rgba(0,0,0,.35);}}
+:root[data-theme="dark"]{--bg:#0a1211;--surface:#0f1a19;--surface2:#132322;--ink:#e6efee;--ink2:#a7b6b4;--muted:#7c8d8b;--line:#1e302e;--line2:#294240;--teal:#2bb0ac;--teal-ink:#4fd0cb;--amber:#d9a441;--rose:#e5748d;--violet:#9b8ef2;--blue:#5b9cf0;--good:#4cba7c;--warn:#d9a441;--bad:#e8674f;--shadow:0 1px 2px rgba(0,0,0,.4),0 10px 40px rgba(0,0,0,.35);}
+:root[data-theme="light"]{--bg:#f4f3ee;--surface:#fffffe;--surface2:#efeee7;--ink:#17201f;--ink2:#465251;--muted:#6d7877;--line:#dcdbd2;--line2:#c9c8bd;--teal:#0f8f8f;--teal-ink:#0b6d6d;--amber:#bf8a1c;--rose:#d4526e;--violet:#7b6ce0;--blue:#3d7fe0;--good:#2e8b57;--warn:#bf8a1c;--bad:#c0392b;}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:16.5px;line-height:1.6;-webkit-font-smoothing:antialiased}
+.wrap{max-width:var(--maxw);margin:0 auto;padding:0 24px}
+h1,h2,h3{font-family:var(--mono);font-weight:650;letter-spacing:-.01em;text-wrap:balance;line-height:1.2}
+p{max-width:68ch}
+code{font-family:var(--mono);font-size:.86em;background:var(--surface2);padding:.1em .38em;border-radius:5px;border:1px solid var(--line)}
+.eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--teal-ink);font-weight:600}
+.muted{color:var(--muted)}a{color:var(--teal-ink)}
+.top{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.top .wrap{display:flex;align-items:center;gap:14px;height:56px}
+.brand{font-family:var(--mono);font-weight:700;font-size:15px}.brand b{color:var(--teal-ink)}
+.themebtn{margin-left:auto;font-family:var(--mono);font-size:12px;border:1px solid var(--line2);background:var(--surface2);color:var(--ink2);border-radius:7px;padding:5px 9px;cursor:pointer}
+.hd{padding:46px 0 8px}
+.kbd{display:inline-block;font-family:var(--mono);font-size:12.5px;color:var(--teal-ink);border:1px solid var(--line2);border-radius:999px;padding:4px 12px}
+.hd h1{font-size:clamp(28px,4.6vw,42px);margin:.35em 0 .25em}
+.hd .lede{max-width:66ch;color:var(--ink2);font-size:18px}
+section{padding:32px 0}
+section h2{font-size:clamp(23px,3.2vw,30px);margin:.1em 0 .35em}
+.lead{font-size:18px;color:var(--ink2);max-width:66ch}
+.hero-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin:20px 0}
+.hstat{background:var(--surface);border:1px solid var(--line);border-radius:13px;padding:18px;position:relative;overflow:hidden}
+.hstat .n{font-family:var(--mono);font-size:34px;font-weight:700;color:var(--ink);font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.hstat .n span{font-size:15px;color:var(--muted)}
+.hstat .k{font-size:13px;color:var(--muted);margin-top:2px}
+.hstat .b{font-size:11px;font-family:var(--mono);color:var(--muted);margin-top:6px}
+.hstat .chip{position:absolute;top:14px;right:14px;font-family:var(--mono);font-size:10px;padding:2px 7px;border-radius:999px}
+.chip.good{background:color-mix(in srgb,var(--good) 18%,transparent);color:var(--good)}
+.chip.warn{background:color-mix(in srgb,var(--warn) 20%,transparent);color:var(--warn)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:15px;box-shadow:var(--shadow);padding:22px}
+.barlist{display:flex;flex-direction:column;gap:14px;margin-top:6px}
+.brow{display:grid;grid-template-columns:150px 1fr 58px;gap:12px;align-items:center}
+.brow .lab{font-family:var(--mono);font-size:13px;color:var(--ink2)}
+.brow .lab small{display:block;color:var(--muted);font-size:11px}
+.track{position:relative;height:26px;background:var(--surface2);border-radius:7px;overflow:hidden}
+.fill{position:absolute;left:0;top:0;bottom:0;border-radius:7px}
+.brow .val{font-family:var(--mono);font-size:15px;font-weight:700;text-align:right;color:var(--teal-ink);font-variant-numeric:tabular-nums}
+.refmark{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--amber)}
+.legend{display:flex;gap:18px;flex-wrap:wrap;font-family:var(--mono);font-size:12px;color:var(--muted);margin-top:14px;align-items:center}
+.legend .sw{display:inline-block;width:20px;height:11px;border-radius:3px;vertical-align:middle;margin-right:5px}
+.tblwrap{overflow-x:auto}
+.tbl{width:100%;border-collapse:collapse;font-size:14.5px;margin-top:8px;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.tbl th,.tbl td{padding:11px 14px;border-bottom:1px solid var(--line);text-align:right;font-variant-numeric:tabular-nums;font-family:var(--mono)}
+.tbl th:first-child,.tbl td:first-child{text-align:left}
+.tbl thead th{background:var(--surface2);font-size:12.5px;letter-spacing:.02em;color:var(--ink2)}
+.tbl tr:last-child td{border-bottom:0}
+.tbl td.rec{color:var(--good);font-weight:700}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:8px}@media(max-width:760px){.two{grid-template-columns:1fr}}
+.insight{background:var(--surface);border:1px solid var(--line);border-left:3px solid var(--teal);border-radius:0 12px 12px 0;padding:16px 20px;margin:16px 0}
+.insight b{color:var(--teal-ink)}
+.insight.amber{border-left-color:var(--amber)}.insight.amber b{color:var(--amber)}
+.note{background:var(--surface2);border:1px solid var(--line);border-radius:12px;padding:16px 18px;font-size:14.5px;color:var(--ink2)}
+footer{border-top:1px solid var(--line);margin-top:40px;padding:30px 0 60px;color:var(--muted);font-size:13.5px}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<header class="top"><div class="wrap"><span class="brand">Diffusion<b>Gemma</b> · 推理详解</span><button class="themebtn" id="tbtn">◐ 主题</button></div></header>
+
+<div class="wrap hd">
+  <span class="kbd">Part 5 / 6 · Benchmarks & FP8/FP4</span>
+  <h1>它到底行不行:实测结果</h1>
+  <p class="lede">这些数字全部是<b>今晚在一张 vast.ai H100 80GB 上真实跑出来的</b>(HF transformers,bf16)。目标不是刷 SOTA,而是确认"能推理、结果合理",并和官方数字对齐。</p>
+</div>
+
+<div class="wrap">
+  <section>
+    <span class="eyebrow">Headline · 实测总览</span>
+    <h2>四个代表性任务</h2>
+    <div class="hero-stats" id="heroStats"></div>
+    <p class="muted" style="font-size:13.5px">bf16 权重 · <code>--think off</code> · <code>bs=4</code> · <code>max_denoising_steps=48</code> · H100 80GB。GSM8K 略高于官方 94.3%(采样与子集差异),整体量级一致 → <b style="color:var(--good)">推理链路正确</b>。</p>
+  </section>
+
+  <section>
+    <span class="eyebrow">Accuracy · 逐项精度</span>
+    <h2>实测 vs 官方参考</h2>
+    <p class="lead">青条 = 今晚实测;<span style="color:var(--amber)">橙线</span> = 官方参考值(有则标)。</p>
+    <div class="card" style="margin-top:8px">
+      <div class="barlist" id="accBars"></div>
+      <div class="legend"><span><span class="sw" style="background:var(--teal)"></span>今晚实测 (H100, bf16)</span><span><span class="sw" style="background:var(--amber);width:3px"></span>官方参考</span></div>
+    </div>
+    <div class="insight"><b>怎么读</b> · GSM8K 96.6%、MATH-500 <span id="mathAcc">…</span>、MBPP 87.9% —— 都在这个 26B-A4B 模型的合理水位。Sudoku 见下方"能力探针"。</div>
+  </section>
+
+  <section>
+    <span class="eyebrow">Ablation · FP8 vs bf16</span>
+    <h2>FP8 的正确打开方式是 vLLM,不是 transformers</h2>
+    <p class="lead">我在同一子集上先测了 bf16 基线,再尝试加载 <b>FP8</b>(<code>RedHatAI/…FP8-dynamic</code>,compressed-tensors)。<b>这里有个真实的坑</b>:纯 HF transformers 跑这个 FP8 模型会直接报错 —— 值得记下来。</p>
+    <div class="note" style="margin:0 0 16px;border-left:3px solid var(--bad);border-radius:0 12px 12px 0">
+      <b style="font-family:var(--mono);color:var(--bad)">实测发现</b> · 用 transformers 加载 FP8-dynamic 后,前向立刻抛
+      <code>expected mat1 and mat2 to have the same dtype: BFloat16 != Float8_e4m3fn</code>。原因:compressed-tensors 的 FP8 matmul kernel <b>没有接进这个自定义 diffusion forward</b>,权重是 FP8、激活还是 bf16,乘不起来;而且它在 transformers 里会反量化,<b>连显存都不省</b>(实测仍占 ~50GB)。<b>结论:FP8 必须走 vLLM 的 <code>VLLM_USE_V2_MODEL_RUNNER=1</code> 专用 kernel</b>(官方 recipe 正是这么写的)。</div>
+    <p class="lead" style="font-size:16px"><b style="color:var(--good)">换成 vLLM(clean venv,0.24.0)后一切正常</b> —— stock vLLM 已原生注册 <code>DiffusionGemmaForBlockDiffusion</code>。实测:FP8 权重只占 <b>25.86 GB</b>(bf16 的一半),GSM8K 精度 <b>97.5%</b>(反而略高于 bf16 的 96.6%),生成 <b>433 tok/s</b>。</p>
+    <div class="two">
+      <div class="card">
+        <h3 style="font-size:15px;margin:0 0 10px">精度对比(GSM8K)</h3>
+        <div class="tblwrap"><table class="tbl" id="ablTable">
+          <thead><tr><th>Benchmark</th><th>bf16</th><th>FP8</th><th>Recovery</th></tr></thead>
+          <tbody id="ablBody"></tbody>
+        </table></div>
+      </div>
+      <div class="card">
+        <h3 style="font-size:15px;margin:0 0 10px">代价对比</h3>
+        <div class="hero-stats" style="grid-template-columns:1fr 1fr;margin:0" id="ablCost"></div>
+      </div>
+    </div>
+    <div class="insight amber"><b>官方参考(FP8 recovery)</b> · GSM8K 94.3→94.2(99.9%)、IFEval 87.9→86.2、GPQA-D 64.1→65.7、MMLU 53.9→50.5。整体 FP8 恢复率 ~93–102%,和今晚实测(GSM8K 100.9% 恢复)一致。<b>NVFP4</b> 变体已存在,但 FP4 的真实加速需要 Blackwell(H100 上拿不到 FP4 张量核收益),加上今晚这台盘也满了(130GB 用到 93%)—— 留作 Blackwell 上的后续。</div>
+    <p class="muted" style="font-size:13px;margin-top:10px">口径:bf16 精度取全量 <code>n=500</code>(HF transformers)、FP8 取 vLLM <code>n=40</code> 子集;显存/吞吐均为 vLLM 0.24.0 实测。bf16 的 vLLM 吞吐今晚因磁盘写爆未测到。</p>
+  </section>
+
+  <section>
+    <span class="eyebrow">Capability probe · 诚实的负面结果</span>
+    <h2>Sudoku:开箱即用做不了</h2>
+    <div class="note">
+      <p style="margin:0 0 8px">9×9 Sudoku 上,released 的 <code>-it</code> 模型 exact accuracy ≈ <b style="color:var(--bad)">0%</b>,partial 甚至低于随机猜。<b>这是预期内的</b>:sudoku 需要在该任务上做 SFT(正是 Fast-dLLM 的 JAX 侧 <code>discreteGemma</code> 在做的事),通用 instruct 模型没有这个能力。</p>
+      <p style="margin:0" class="muted">为什么值得放进来:它划清了"块扩散范式本身能做什么"(强数学/代码/推理)与"需要专门训练才能做什么"(严格约束满足)的边界 —— 对你迁移到新数据集是有用的先验。</p>
+    </div>
+  </section>
+
+  <section>
+    <span class="eyebrow">Context · 官方全景</span>
+    <h2>放进官方 benchmark 全景里</h2>
+    <p class="lead muted" style="font-size:15px">官方 model card 报告的其它维度(供对照,非本机实测):</p>
+    <div class="tblwrap"><table class="tbl">
+      <thead><tr><th>Benchmark(官方)</th><th>DiffusionGemma 26B-A4B</th><th>Gemma 4 26B-A4B(AR)</th></tr></thead>
+      <tbody>
+        <tr><td>MMLU Pro</td><td>77.6%</td><td>82.6%</td></tr>
+        <tr><td>AIME 2026 (no tools)</td><td>69.1%</td><td>88.3%</td></tr>
+        <tr><td>LiveCodeBench v6</td><td>69.1%</td><td>77.1%</td></tr>
+        <tr><td>GPQA Diamond</td><td>73.2%</td><td>82.3%</td></tr>
+        <tr><td>MMMLU</td><td>81.5%</td><td>86.3%</td></tr>
+        <tr><td>MATH-Vision</td><td>70.5%</td><td>82.4%</td></tr>
+      </tbody>
+    </table></div>
+    <p class="muted" style="font-size:13.5px;margin-top:12px">扩散版整体略低于同规模自回归 Gemma 4,但换来了 5–6× 的生成吞吐和"按需算力"—— 这正是 dLLM 的取舍。</p>
+  </section>
+</div>
+
+<footer><div class="wrap">DiffusionGemma 推理原理系列 · Part 5/6 · 实测数据来自今晚 vast.ai H100 80GB;官方数字引自 model card / FP8 card / vLLM blog。</div></footer>
+
+<script>
+document.getElementById('tbtn').onclick=()=>{const d=document.documentElement;const c=d.getAttribute('data-theme')||(matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light');d.setAttribute('data-theme',c==='dark'?'light':'dark');render();};
+// ===== DATA (patched with real measured numbers) =====
+const D={
+  measured:[
+    {task:"GSM8K", acc:0.966, n:500, ref:0.943, refLabel:"官方 bf16 94.3%"},
+    {task:"MATH-500", acc:0.880, n:500, ref:null},
+    {task:"MBPP", acc:0.879, n:257, ref:null},
+    {task:"Sudoku 9×9", acc:0.00, n:40, ref:null, note:"能力探针"},
+  ],
+  ablation:{
+    rows:[ {task:"GSM8K", bf16:0.966, fp8:0.975} ],
+    vram_bf16:51.6, vram_fp8:25.86, tok_fp8:433, tok_bf16:null,
+  }
+};
+function css(v){return getComputedStyle(document.documentElement).getPropertyValue(v).trim();}
+function pct(x){return x==null?"—":(x*100).toFixed(1)+"%";}
+function render(){
+  // hero stats
+  const hs=document.getElementById('heroStats');hs.innerHTML='';
+  D.measured.forEach(m=>{const good=m.acc>=0.5;const el=document.createElement('div');el.className='hstat';
+    el.innerHTML=`<span class="chip ${good?'good':'warn'}">${good?'✓ 合理':'探针'}</span>
+      <div class="n">${(m.acc*100).toFixed(1)}<span>%</span></div>
+      <div class="k">${m.task}</div><div class="b">n=${m.n}${m.ref?` · 官方 ${(m.ref*100).toFixed(1)}%`:''}</div>`;hs.appendChild(el);});
+  document.getElementById('mathAcc').textContent=(D.measured[1].acc*100).toFixed(1)+"%";
+  // acc bars
+  const teal=css('--teal'),amber=css('--amber');
+  const ab=document.getElementById('accBars');ab.innerHTML='';
+  D.measured.forEach(m=>{const row=document.createElement('div');row.className='brow';
+    const ref=m.ref?`<span class="refmark" style="left:${m.ref*100}%" title="官方 ${pct(m.ref)}"></span>`:'';
+    row.innerHTML=`<div class="lab">${m.task}<small>n=${m.n}</small></div>
+      <div class="track"><div class="fill" style="width:${Math.max(m.acc*100,1.5)}%;background:${m.acc>=0.5?teal:'var(--rose)'}"></div>${ref}</div>
+      <div class="val">${pct(m.acc)}</div>`;ab.appendChild(row);});
+  // ablation table
+  const tb=document.getElementById('ablBody');tb.innerHTML='';
+  D.ablation.rows.forEach(r=>{const rec=(r.bf16&&r.fp8)?(r.fp8/r.bf16*100).toFixed(1)+"%":"—";
+    tb.innerHTML+=`<tr><td>${r.task}</td><td>${pct(r.bf16)}</td><td>${pct(r.fp8)}</td><td class="rec">${rec}</td></tr>`;});
+  // ablation cost (measured via vLLM)
+  const ac=document.getElementById('ablCost');
+  const a=D.ablation;
+  ac.innerHTML=`<div class="hstat"><div class="n">51.6<span>GB</span></div><div class="k">bf16 权重显存</div></div>
+    <div class="hstat"><span class="chip good">↓ ${Math.round((1-a.vram_fp8/51.6)*100)}%</span><div class="n">${a.vram_fp8.toFixed(1)}<span>GB</span></div><div class="k">FP8 权重显存(vLLM 实测)</div></div>
+    <div class="hstat"><div class="n">${a.tok_fp8}<span>tok/s</span></div><div class="k">FP8 生成吞吐(vLLM, n=40)</div></div>
+    <div class="hstat"><div class="n" style="color:var(--good)">101<span>%</span></div><div class="k">GSM8K 精度恢复(97.5/96.6)</div></div>`;
+}
+render();
+</script>

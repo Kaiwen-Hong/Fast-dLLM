@@ -1,0 +1,20 @@
+[Thu Jul  9 12:37:22 UTC 2026] START downloads
+=== FP8 (primary, ~26GB) ===
+/usr/local/lib/python3.12/dist-packages/huggingface_hub/constants.py:298: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+Fetching 11 files:   0%|          | 0/11 [00:00<?, ?it/s]Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+Fetching 11 files:   9%|▉         | 1/11 [00:00<00:01,  7.10it/s]Fetching 11 files:  55%|█████▍    | 6/11 [00:30<00:27,  5.42s/it]Fetching 11 files: 100%|██████████| 11/11 [00:30<00:00,  2.81s/it]
+[32m✓ Downloaded[0m
+  path: /workspace/hf/hub/models--RedHatAI--diffusiongemma-26B-A4B-it-FP8-dynamic/snapshots/d1bf4064e02fab5276f78f25425c4847bcb28566
+=== FP8_DONE Thu Jul  9 12:37:54 UTC 2026 ===
+overlay         130G   32G   99G  25% /
+=== BF16 full (~52GB) ===
+/usr/local/lib/python3.12/dist-packages/huggingface_hub/constants.py:298: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+Fetching 22 files:   0%|          | 0/22 [00:00<?, ?it/s]Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+Fetching 22 files:  27%|██▋       | 6/22 [00:16<00:43,  2.70s/it]Fetching 22 files:  41%|████      | 9/22 [00:16<00:20,  1.60s/it]Fetching 22 files:  64%|██████▎   | 14/22 [00:21<00:10,  1.35s/it]Fetching 22 files:  68%|██████▊   | 15/22 [00:22<00:08,  1.26s/it]Fetching 22 files: 100%|██████████| 22/22 [00:22<00:00,  1.02s/it]
+[32m✓ Downloaded[0m
+  path: /workspace/hf/hub/models--google--diffusiongemma-26B-A4B-it/snapshots/52de6b914ee1749a7d4933202505ddf5b414ec43
+=== BF16_DONE Thu Jul  9 12:38:17 UTC 2026 ===
+overlay         130G   81G   50G  62% /
+[Thu Jul  9 12:38:17 UTC 2026] ALL_DOWNLOADS_DONE

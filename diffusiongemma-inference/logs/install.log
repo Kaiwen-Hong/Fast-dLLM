@@ -1,0 +1,23 @@
+[Thu Jul  9 12:37:22 UTC 2026] START install
+ERROR: Cannot uninstall pip 24.0, RECORD file not found. Hint: The package was installed by debian.
+>>> installing vllm==0.24.0 (this pulls torch, ~several min)
+  Attempting uninstall: pyjwt
+    Found existing installation: PyJWT 2.7.0
+ERROR: Cannot uninstall PyJWT 2.7.0, RECORD file not found. Hint: The package was installed by debian.
+>>> installing latest transformers + accelerate
+      Successfully uninstalled triton-3.6.0
+Successfully installed accelerate-1.14.0 annotated-doc-0.0.4 cuda-bindings-13.3.1 cuda-pathfinder-1.5.6 cuda-toolkit-13.0.3.0 markdown-it-py-4.2.0 mdurl-0.1.2 networkx-3.6.1 nvidia-cublas-13.1.1.3 nvidia-cuda-cupti-13.0.85 nvidia-cuda-nvrtc-13.0.88 nvidia-cuda-runtime-13.0.96 nvidia-cudnn-cu13-9.20.0.48 nvidia-cufft-12.0.0.61 nvidia-cufile-1.15.1.6 nvidia-curand-10.4.0.35 nvidia-cusolver-12.0.4.66 nvidia-cusparse-12.6.3.3 nvidia-cusparselt-cu13-0.8.1 nvidia-nccl-cu13-2.29.7 nvidia-nvjitlink-13.3.33 nvidia-nvshmem-cu13-3.4.5 nvidia-nvtx-13.0.85 rich-15.0.0 tokenizers-0.22.2 torch-2.13.0 transformers-5.13.0 triton-3.7.1 typer-0.26.8
+WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+=== VERSIONS ===
+torch 2.13.0+cu130 | transformers 5.13.0
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+ModuleNotFoundError: No module named 'vllm'
+=== Q1: does stock vLLM know DiffusionGemma? ===
+vllm dir: 
+grep: /model_executor/models/: No such file or directory
+  File "<string>", line 1, in <module>
+ModuleNotFoundError: No module named 'vllm'
+=== Q2: does transformers know DiffusionGemma? ===
+transformers HAS DiffusionGemmaForBlockDiffusion
+[Thu Jul  9 12:39:33 UTC 2026] INSTALL_DONE

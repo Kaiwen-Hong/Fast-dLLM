@@ -1,0 +1,297 @@
+<title>DiffusionGemma 推理原理 · 总览</title>
+<style>
+:root{
+  --bg:#f4f3ee; --surface:#fffffe; --surface2:#efeee7; --ink:#17201f; --ink2:#465251; --muted:#6d7877;
+  --line:#dcdbd2; --line2:#c9c8bd;
+  --teal:#0f8f8f; --teal-ink:#0b6d6d; --amber:#bf8a1c; --violet:#7b6ce0; --rose:#d4526e; --blue:#3d7fe0;
+  --accept:#0f8f8f; --noisy:#9aa3a2; --answer:#bf8a1c;
+  --hot:#c0392b; --warm:#d98a2b; --cool:#2b8a9a;
+  --shadow:0 1px 2px rgba(20,30,29,.06),0 8px 30px rgba(20,30,29,.06);
+  --mono:ui-monospace,"SF Mono","JetBrains Mono","Cascadia Code",Menlo,Consolas,monospace;
+  --sans:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",sans-serif;
+  --maxw:1080px;
+}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#0a1211; --surface:#0f1a19; --surface2:#132322; --ink:#e6efee; --ink2:#a7b6b4; --muted:#7c8d8b;
+  --line:#1e302e; --line2:#294240;
+  --teal:#2bb0ac; --teal-ink:#4fd0cb; --amber:#d9a441; --violet:#9b8ef2; --rose:#e5748d; --blue:#5b9cf0;
+  --accept:#2bb0ac; --noisy:#5a6b69; --answer:#d9a441;
+  --hot:#e8674f; --warm:#e0a145; --cool:#48b6c4;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 40px rgba(0,0,0,.35);
+}}
+:root[data-theme="dark"]{
+  --bg:#0a1211; --surface:#0f1a19; --surface2:#132322; --ink:#e6efee; --ink2:#a7b6b4; --muted:#7c8d8b;
+  --line:#1e302e; --line2:#294240;
+  --teal:#2bb0ac; --teal-ink:#4fd0cb; --amber:#d9a441; --violet:#9b8ef2; --rose:#e5748d; --blue:#5b9cf0;
+  --accept:#2bb0ac; --noisy:#5a6b69; --answer:#d9a441;
+  --hot:#e8674f; --warm:#e0a145; --cool:#48b6c4;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 40px rgba(0,0,0,.35);
+}
+:root[data-theme="light"]{
+  --bg:#f4f3ee; --surface:#fffffe; --surface2:#efeee7; --ink:#17201f; --ink2:#465251; --muted:#6d7877;
+  --line:#dcdbd2; --line2:#c9c8bd;
+  --teal:#0f8f8f; --teal-ink:#0b6d6d; --amber:#bf8a1c; --violet:#7b6ce0; --rose:#d4526e; --blue:#3d7fe0;
+  --accept:#0f8f8f; --noisy:#9aa3a2; --answer:#bf8a1c;
+  --hot:#c0392b; --warm:#d98a2b; --cool:#2b8a9a;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1.62;
+  font-size:17px;letter-spacing:.005em;-webkit-font-smoothing:antialiased}
+.wrap{max-width:var(--maxw);margin:0 auto;padding:0 24px}
+h1,h2,h3{font-family:var(--mono);font-weight:650;letter-spacing:-.01em;text-wrap:balance;line-height:1.18}
+a{color:var(--teal-ink);text-decoration-thickness:1px;text-underline-offset:2px}
+code{font-family:var(--mono);font-size:.9em;background:var(--surface2);padding:.1em .38em;border-radius:5px;border:1px solid var(--line)}
+.eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--teal-ink);font-weight:600}
+.muted{color:var(--muted)}
+.rule{height:1px;background:var(--line);border:0;margin:0}
+
+/* header */
+.top{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--bg) 88%,transparent);
+  backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.top .wrap{display:flex;align-items:center;gap:16px;height:56px}
+.brand{font-family:var(--mono);font-weight:700;letter-spacing:-.02em;font-size:15px}
+.brand b{color:var(--teal-ink)}
+.top nav{margin-left:auto;display:flex;gap:6px;flex-wrap:wrap}
+.top nav a{font-family:var(--mono);font-size:12.5px;color:var(--ink2);text-decoration:none;
+  padding:5px 9px;border-radius:7px}
+.top nav a:hover,.top nav a[aria-current]{background:var(--surface2);color:var(--ink)}
+
+/* hero */
+.hero{position:relative;overflow:hidden;border-bottom:1px solid var(--line)}
+.hero canvas{position:absolute;inset:0;width:100%;height:100%;opacity:.5}
+.hero .wrap{position:relative;padding:78px 24px 64px}
+.hero h1{font-size:clamp(34px,6vw,60px);margin:.28em 0 .3em}
+.hero .lede{font-size:clamp(18px,2.4vw,22px);max-width:60ch;color:var(--ink2);font-family:var(--sans)}
+.hero .kbd{display:inline-block;font-family:var(--mono);font-size:13px;color:var(--teal-ink);
+  border:1px solid var(--line2);border-radius:999px;padding:5px 13px;background:color-mix(in srgb,var(--surface) 70%,transparent)}
+
+/* sections */
+section{padding:60px 0}
+section h2{font-size:clamp(24px,3.4vw,33px);margin:.2em 0 .5em}
+.lead{font-size:19px;color:var(--ink2);max-width:65ch}
+p{max-width:68ch}
+
+/* essence card */
+.essence{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:28px 30px;box-shadow:var(--shadow)}
+.essence .big{font-family:var(--mono);font-size:clamp(19px,2.6vw,25px);line-height:1.45;font-weight:600}
+.hl-accept{color:var(--accept);font-weight:700}
+.hl-noisy{color:var(--noisy);font-weight:700}
+.hl-answer{color:var(--answer);font-weight:700}
+
+/* stat grid */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin-top:8px}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:13px;padding:18px 18px}
+.stat .n{font-family:var(--mono);font-size:29px;font-weight:700;letter-spacing:-.02em;color:var(--ink);font-variant-numeric:tabular-nums}
+.stat .n span{font-size:15px;color:var(--muted)}
+.stat .k{font-size:13.5px;color:var(--muted);margin-top:3px}
+
+/* compare AR vs diffusion */
+.cmp{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+@media(max-width:720px){.cmp{grid-template-columns:1fr}.cmp2{grid-template-columns:1fr!important}}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:22px;box-shadow:var(--shadow)}
+.panel h3{font-size:17px;margin:0 0 4px;display:flex;align-items:center;gap:8px}
+.dot{width:10px;height:10px;border-radius:3px;display:inline-block}
+.tokrow{display:flex;flex-wrap:wrap;gap:5px;margin:14px 0 6px;min-height:64px}
+.tok{font-family:var(--mono);font-size:13px;padding:5px 8px;border-radius:6px;border:1px solid var(--line);
+  background:var(--surface2);color:var(--ink2);transition:all .25s}
+.tok.on{background:var(--accept);color:#fff;border-color:transparent}
+.tok.noise{color:var(--noisy);background:transparent;border-style:dashed}
+.ctrls{display:flex;align-items:center;gap:12px;margin-top:12px}
+button.play{font-family:var(--mono);font-size:13px;font-weight:600;border:1px solid var(--line2);
+  background:var(--surface2);color:var(--ink);border-radius:9px;padding:8px 14px;cursor:pointer}
+button.play:hover{border-color:var(--teal)}
+.metric{font-family:var(--mono);font-size:13px;color:var(--muted)}
+.metric b{color:var(--teal-ink);font-variant-numeric:tabular-nums}
+
+/* pipeline steps */
+.pipe{display:grid;gap:12px;counter-reset:s}
+.step{display:grid;grid-template-columns:auto 1fr;gap:16px;background:var(--surface);border:1px solid var(--line);
+  border-radius:13px;padding:18px 20px}
+.step .num{counter-increment:s;font-family:var(--mono);font-weight:700;font-size:14px;color:#fff;background:var(--teal);
+  width:30px;height:30px;border-radius:8px;display:grid;place-items:center}
+.step h4{margin:2px 0 5px;font-family:var(--mono);font-size:16px}
+.step p{margin:0;font-size:15px;color:var(--ink2);max-width:64ch}
+
+/* series nav */
+.series{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px}
+.pt{display:block;background:var(--surface);border:1px solid var(--line);border-radius:13px;padding:18px 20px;
+  text-decoration:none;color:inherit;transition:border-color .2s,transform .2s}
+.pt:hover{border-color:var(--teal);transform:translateY(-2px)}
+.pt .i{font-family:var(--mono);font-size:12px;color:var(--teal-ink);letter-spacing:.1em}
+.pt h4{margin:6px 0 4px;font-size:16px;font-family:var(--mono)}
+.pt p{margin:0;font-size:13.5px;color:var(--muted)}
+.pt.here{border-color:var(--teal);background:var(--surface2)}
+
+footer{border-top:1px solid var(--line);padding:34px 0 60px;color:var(--muted);font-size:13.5px}
+.themebtn{font-family:var(--mono);font-size:12px;border:1px solid var(--line2);background:var(--surface2);
+  color:var(--ink2);border-radius:7px;padding:5px 9px;cursor:pointer}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+
+<header class="top"><div class="wrap">
+  <span class="brand">Diffusion<b>Gemma</b> · 推理详解</span>
+  <nav>
+    <a href="#top" aria-current="true">总览</a>
+    <a href="#arch">架构</a>
+    <a href="#loop">算法</a>
+    <a href="#series">系列</a>
+    <button class="themebtn" id="tbtn" aria-label="切换主题">◐ 主题</button>
+  </nav>
+</div></header>
+
+<div class="hero" id="top">
+  <canvas id="noise" aria-hidden="true"></canvas>
+  <div class="wrap">
+    <span class="kbd">Part 1 / 6 · Overview</span>
+    <h1>从噪声中析出文字<br>Block-Diffusion LLM 推理</h1>
+    <p class="lede">DiffusionGemma 不是一个字一个字往右写(autoregressive),而是把一整块 256 个 token 的画布(canvas)从<b>随机噪声</b>并行地<b>逐步去噪(iterative denoising)</b>成答案。这个系列用真实的中间步骤数据,带你逐帧看懂它到底怎么"想"。</p>
+  </div>
+</div>
+
+<main>
+<section class="wrap">
+  <span class="eyebrow">One-line essence · 一句话本质</span>
+  <div class="essence" style="margin-top:14px">
+    <div class="big">每一步,模型看着当前<span class="hl-noisy">半是噪声</span>的画布,<br>
+    把它<b>最有把握(lowest entropy)</b>的一批位置<span class="hl-accept">确定下来</span>,<br>
+    其余位置<span class="hl-noisy">重新打回随机噪声</span> —— 循环往复,文字逐渐<span class="hl-answer">结晶</span>。</div>
+  </div>
+  <p class="muted" style="margin-top:16px;font-size:14.5px">注:与 LLaDA / Dream 等 <em>mask diffusion</em> 不同,DiffusionGemma 的"噪声"是<b>真实的随机词表 token</b>(uniform / random-token diffusion),不是 <code>[MASK]</code>。这一点在 Part 6 详细对比。</p>
+</section>
+
+<section class="wrap" id="compare">
+  <span class="eyebrow">The core contrast · 核心对比</span>
+  <h2>自回归 vs 块扩散</h2>
+  <p class="lead">同一句"The sky is blue",两种生成范式的差别一目了然。点 ▶ 看它们如何产出。</p>
+  <div class="cmp" style="margin-top:22px">
+    <div class="panel">
+      <h3><span class="dot" style="background:var(--noisy)"></span>Autoregressive(如 GPT / 普通 Gemma)</h3>
+      <p class="muted" style="font-size:13.5px;margin:.3em 0">从左到右,一次一个 token,后一个依赖前一个。</p>
+      <div class="tokrow" id="ar"></div>
+      <div class="ctrls"><button class="play" id="arplay">▶ 播放</button>
+        <span class="metric">forward 次数 ≈ token 数 · <b id="armetric">0</b></span></div>
+    </div>
+    <div class="panel">
+      <h3><span class="dot" style="background:var(--accept)"></span>Block Diffusion(DiffusionGemma)</h3>
+      <p class="muted" style="font-size:13.5px;margin:.3em 0">整块并行去噪,每步"锁定"多个高置信位置。</p>
+      <div class="tokrow" id="df"></div>
+      <div class="ctrls"><button class="play" id="dfplay">▶ 播放</button>
+        <span class="metric">forward 次数 = 去噪步数 · <b id="dfmetric">0</b></span></div>
+    </div>
+  </div>
+  <p class="muted" style="margin-top:14px;font-size:14px">真实数据里,"The sky is blue…"这段 53 token 的回答,块扩散只用了 <b style="color:var(--teal-ink)">7 步</b> forward(平均每次前向产出 7.6 个 token);自回归则需要 ~53 次。并行度正是扩散 LLM 的速度来源。</p>
+</section>
+
+<section class="wrap" id="arch">
+  <span class="eyebrow">Architecture · 架构速览</span>
+  <h2>这块模型长什么样</h2>
+  <p class="lead">一个稀疏 MoE 骨干 + 块扩散采样头。总参数大但每 token 只激活一小部分专家,所以在单张 H100 上很快。</p>
+  <div class="stats">
+    <div class="stat"><div class="n">26<span>B</span></div><div class="k">总参数 total params</div></div>
+    <div class="stat"><div class="n">4<span>B</span></div><div class="k">每 token 激活 active (MoE)</div></div>
+    <div class="stat"><div class="n">128</div><div class="k">专家数 experts · top-8 路由</div></div>
+    <div class="stat"><div class="n">256</div><div class="k">画布长度 canvas / block</div></div>
+    <div class="stat"><div class="n">262<span>K</span></div><div class="k">词表 vocab size</div></div>
+    <div class="stat"><div class="n">30</div><div class="k">层数 layers</div></div>
+    <div class="stat"><div class="n">262<span>K</span></div><div class="k">上下文 context length</div></div>
+    <div class="stat"><div class="n">48</div><div class="k">最大去噪步 max denoising steps</div></div>
+  </div>
+  <p class="muted" style="margin-top:16px;font-size:14px">关键类:<code>DiffusionGemmaForBlockDiffusion</code> · <code>model_type = diffusion_gemma</code>。词表 262K 极大,这也是为什么推理要把 <code>--max-num-seqs</code> 压到 4:单个 logits 张量 = batch × 256 × 262144,很吃显存。bf16 权重约 51.6 GB,单张 H100 80GB 装得下。</p>
+</section>
+
+<section class="wrap" id="loop">
+  <span class="eyebrow">The algorithm · 采样算法</span>
+  <h2>一次生成里发生了什么</h2>
+  <p class="lead">外层对 canvas 做"块自回归"(一块 256 token 接一块),内层对每块做 <b>N→1</b> 的反向扩散去噪。下面是内层一步的真实流程。</p>
+  <div class="pipe" style="margin-top:22px">
+    <div class="step"><div class="num"></div><div><h4>Denoiser 前向 forward</h4><p>把当前画布 <code>x_t</code>(含噪声)+ 上一步 logits(self-conditioning)+ 前文 KV cache 一起喂进去,得到每个位置的 logits。</p></div></div>
+    <div class="step"><div class="num"></div><div><h4>温度缩放 temperature schedule</h4><p>logits ÷ temperature,温度按步数从 <b>0.8 线性退火到 0.4</b>:早期高温多探索,后期低温快收敛。</p></div></div>
+    <div class="step"><div class="num"></div><div><h4>采样 + 算熵 entropy</h4><p>对 logits 做 softmax,采样出候选 token;同时算每个位置的熵 <code>H_i</code>(不确定度)。</p></div></div>
+    <div class="step"><div class="num"></div><div><h4>熵界接受 entropy-bound accept</h4><p>把位置按熵从低到高排序,接受累计互信息界 <code>≤ 0.1</code> 的那批(近似相互独立)的<b>低熵、高把握</b> token —— 这些被"锁定"。</p></div></div>
+    <div class="step"><div class="num"></div><div><h4>重新加噪 renoise</h4><p>没被接受的位置,全部<b>重填随机词表 token</b>(不是 <code>[MASK]</code>),回到下一步继续去噪。</p></div></div>
+    <div class="step"><div class="num"></div><div><h4>自适应早停 adaptive stop</h4><p>当画布 argmax 连续几步<b>不再变化(stable)</b>且<b>整体熵足够低(confident)</b>,提前结束 —— 简单任务可能只用 2 步。</p></div></div>
+  </div>
+  <p class="muted" style="margin-top:16px;font-size:14px">这套采样器叫 <b>Entropy-Bounded Denoising with Adaptive Stopping</b>。Part 2 会用真实数据逐帧回放;Part 3 深入熵界接受的数学;Part 4 讲自适应算力与并行度。</p>
+</section>
+
+<section class="wrap" id="series">
+  <span class="eyebrow">This series · 本系列 6 篇</span>
+  <h2>如何逐步吃透它</h2>
+  <div class="series" style="margin-top:20px">
+    <a class="pt here" href="#top"><div class="i">PART 1</div><h4>总览 Overview</h4><p>本页 · 范式对比 + 架构 + 算法骨架</p></a>
+    <a class="pt" data-part="2"><div class="i">PART 2</div><h4>去噪轨迹播放器</h4><p>用真实中间步骤逐帧看文字如何结晶</p></a>
+    <a class="pt" data-part="3"><div class="i">PART 3</div><h4>熵与接受机制</h4><p>entropy-bound sampler 的分布可视化</p></a>
+    <a class="pt" data-part="4"><div class="i">PART 4</div><h4>自适应算力与并行</h4><p>tokens/forward、早停、速度从哪来</p></a>
+    <a class="pt" data-part="5"><div class="i">PART 5</div><h4>Benchmark 与 FP8/FP4</h4><p>GSM8K/MATH/MBPP 实测 + 量化对比</p></a>
+    <a class="pt" data-part="6"><div class="i">PART 6</div><h4>对比 LLaDA / Dream</h4><p>mask diffusion vs random-token diffusion</p></a>
+  </div>
+  <p class="muted" style="margin-top:18px;font-size:13.5px">数据来源:Google <code>google/diffusiongemma-26B-A4B-it</code>,在一张 vast.ai H100 80GB 上用 HuggingFace transformers 真实推理与插桩采集。</p>
+</section>
+</main>
+
+<footer><div class="wrap">
+  DiffusionGemma 推理原理系列 · Part 1/6 · 中文讲解 + English terms · 由真实 H100 推理数据驱动。
+</div></footer>
+
+<script>
+// theme toggle
+(function(){
+  const b=document.getElementById('tbtn');
+  b.addEventListener('click',()=>{
+    const cur=document.documentElement.getAttribute('data-theme')
+      || (matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light');
+    document.documentElement.setAttribute('data-theme',cur==='dark'?'light':'dark');
+  });
+})();
+// AR vs Diffusion animation
+(function(){
+  const words=["The","sky","is","blue","because","of","Rayleigh","scattering"];
+  const arRow=document.getElementById('ar'), dfRow=document.getElementById('df');
+  const arM=document.getElementById('armetric'), dfM=document.getElementById('dfmetric');
+  function build(row){row.innerHTML='';return words.map(w=>{const s=document.createElement('span');
+    s.className='tok noise';s.textContent=w;row.appendChild(s);return s;});}
+  let arT=build(arRow), dfT=build(dfRow);
+  const reduce=matchMedia('(prefers-reduced-motion:reduce)').matches;
+  function playAR(){arT=build(arRow);let i=0,f=0;arM.textContent='0';
+    (function tick(){if(i>=words.length)return;arT[i].className='tok on';i++;f++;arM.textContent=f;
+      setTimeout(tick,reduce?0:230);})();}
+  function playDF(){dfT=build(dfRow);
+    // steps reveal groups (parallel), from real "sky" trajectory: few forwards, multiple tokens each
+    const groups=[[0,3],[1,4,7],[2,5],[6]]; let s=0,f=0;dfM.textContent='0';
+    (function tick(){if(s>=groups.length)return;groups[s].forEach(i=>{if(dfT[i])dfT[i].className='tok on';});
+      s++;f++;dfM.textContent=f;setTimeout(tick,reduce?0:430);})();}
+  document.getElementById('arplay').onclick=playAR;
+  document.getElementById('dfplay').onclick=playDF;
+  setTimeout(()=>{if(!reduce){playAR();setTimeout(playDF,400);}},600);
+})();
+// ambient hero noise -> text canvas
+(function(){
+  const c=document.getElementById('noise');if(!c)return;const x=c.getContext('2d');
+  const reduce=matchMedia('(prefers-reduced-motion:reduce)').matches;
+  let W,H,cells;const size=15;
+  function resize(){W=c.width=c.offsetWidth*devicePixelRatio;H=c.height=c.offsetHeight*devicePixelRatio;
+    x.scale(1,1);const cols=Math.ceil(W/(size*devicePixelRatio)),rows=Math.ceil(H/(size*devicePixelRatio));
+    cells=[];for(let i=0;i<cols*rows;i++)cells.push({v:Math.random(),lock:Math.random()<0.06?Math.random()*300:0});
+    c._cols=cols;c._rows=rows;}
+  resize();addEventListener('resize',resize);
+  const css=getComputedStyle(document.documentElement);
+  let t=0;
+  function frame(){
+    const accept=css.getPropertyValue('--accept').trim();
+    x.clearRect(0,0,W,H);const s=size*devicePixelRatio;
+    for(let r=0;r<c._rows;r++)for(let col=0;col<c._cols;col++){
+      const idx=r*c._cols+col;const cell=cells[idx];
+      const locked = cell.lock>0 && t>cell.lock;
+      let a;
+      if(locked){x.fillStyle=accept;a=0.16;}
+      else{const g=Math.floor(cell.v*90+70);x.fillStyle=`rgb(${g},${g},${g})`;a=0.06;
+        if(!reduce && Math.random()<0.12)cell.v=Math.random();}
+      x.globalAlpha=a;x.fillRect(col*s+1,r*s+1,s-2,s-2);
+    }
+    x.globalAlpha=1;t+=1;
+    if(!reduce)requestAnimationFrame(frame);
+  }
+  frame();
+})();
+</script>

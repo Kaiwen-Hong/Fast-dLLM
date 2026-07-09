@@ -1,0 +1,283 @@
+===== BF16 reference =====
+########## bf16 gsm8k ##########
+[gsm8k] 120 items bs=4 max_new_tokens=640 steps=48 think_override=False
+[load] 10.8s dtype=torch.bfloat16 GPU=51.6GB
+  4/120 acc=1.000 tpf=25.1 elapsed=16s
+  8/120 acc=1.000 tpf=23.5 elapsed=20s
+  12/120 acc=1.000 tpf=25.4 elapsed=24s
+  16/120 acc=0.938 tpf=25.0 elapsed=27s
+  20/120 acc=0.950 tpf=24.0 elapsed=32s
+  24/120 acc=0.958 tpf=24.0 elapsed=35s
+  28/120 acc=0.964 tpf=24.4 elapsed=40s
+  32/120 acc=0.969 tpf=24.8 elapsed=42s
+  36/120 acc=0.972 tpf=25.3 elapsed=46s
+  40/120 acc=0.975 tpf=25.3 elapsed=51s
+  44/120 acc=0.977 tpf=25.5 elapsed=54s
+  48/120 acc=0.979 tpf=25.0 elapsed=57s
+  52/120 acc=0.981 tpf=25.0 elapsed=59s
+  56/120 acc=0.982 tpf=25.2 elapsed=63s
+  60/120 acc=0.983 tpf=25.4 elapsed=69s
+  64/120 acc=0.969 tpf=25.4 elapsed=74s
+  68/120 acc=0.971 tpf=25.4 elapsed=78s
+  72/120 acc=0.972 tpf=25.6 elapsed=82s
+  76/120 acc=0.974 tpf=25.8 elapsed=84s
+  80/120 acc=0.975 tpf=25.9 elapsed=87s
+  84/120 acc=0.976 tpf=26.1 elapsed=91s
+  88/120 acc=0.977 tpf=26.1 elapsed=95s
+  92/120 acc=0.967 tpf=26.0 elapsed=100s
+  96/120 acc=0.958 tpf=26.0 elapsed=107s
+  100/120 acc=0.960 tpf=26.2 elapsed=109s
+  104/120 acc=0.962 tpf=26.1 elapsed=112s
+  108/120 acc=0.963 tpf=26.0 elapsed=118s
+  112/120 acc=0.964 tpf=26.1 elapsed=122s
+  116/120 acc=0.966 tpf=26.1 elapsed=127s
+  120/120 acc=0.958 tpf=26.0 elapsed=133s
+[gsm8k] DONE acc=0.9583 n=120 time=133s
+BENCH_TASK_DONE
+########## bf16 math ##########
+[math500] 60 items bs=4 max_new_tokens=1280 steps=48 think_override=False
+[load] 10.6s dtype=torch.bfloat16 GPU=51.6GB
+  4/60 acc=0.750 tpf=27.5 elapsed=16s
+  8/60 acc=0.875 tpf=23.8 elapsed=21s
+  12/60 acc=0.750 tpf=22.5 elapsed=32s
+  16/60 acc=0.750 tpf=23.4 elapsed=37s
+  20/60 acc=0.750 tpf=22.9 elapsed=46s
+  24/60 acc=0.792 tpf=22.6 elapsed=57s
+  28/60 acc=0.786 tpf=22.8 elapsed=65s
+  32/60 acc=0.812 tpf=22.6 elapsed=69s
+  36/60 acc=0.833 tpf=23.4 elapsed=71s
+  40/60 acc=0.850 tpf=23.4 elapsed=79s
+  44/60 acc=0.841 tpf=23.7 elapsed=90s
+  48/60 acc=0.854 tpf=23.6 elapsed=97s
+  52/60 acc=0.865 tpf=23.6 elapsed=101s
+  56/60 acc=0.875 tpf=23.5 elapsed=105s
+  60/60 acc=0.883 tpf=23.7 elapsed=110s
+[math500] DONE acc=0.8833 n=60 time=110s
+BENCH_TASK_DONE
+===== FP8-dynamic =====
+########## fp8 gsm8k ##########
+[gsm8k] 120 items bs=4 max_new_tokens=640 steps=48 think_override=False
+Compressing model:   0%|          | 0/410 [00:00<?, ?it/s]Compressing model:  30%|██▉       | 121/410 [00:00<00:00, 1200.47it/s]Compressing model:  59%|█████▉    | 242/410 [00:00<00:00, 1203.75it/s]Compressing model:  89%|████████▊ | 363/410 [00:00<00:00, 1204.18it/s]Compressing model: 100%|██████████| 410/410 [00:00<00:00, 1203.66it/s]
+[transformers] This checkpoint seem corrupted. The tied weights mapping for this model specifies to tie model.decoder.layers.0.experts.gate_up_proj to model.encoder.language_model.layers.0.experts.gate_up_proj, but both are absent from the checkpoint, and we could not find another related tied weight for those keys
+[transformers] This checkpoint seem corrupted. The tied weights mapping for this model specifies to tie model.decoder.layers.1.experts.gate_up_proj to model.encoder.language_model.layers.1.experts.gate_up_proj, but both are absent from the checkpoint, and we could not find another related tied weight for those keys
+[transformers] This checkpoint seem corrupted. The tied weights mapping for this model specifies to tie model.decoder.layers.10.experts.gate_up_proj to model.encoder.language_model.layers.10.experts.gate_up_proj, but both are absent from the checkpoint, and we could not find another related tied weight for those keys
+[transformers] This checkpoint seem corrupted. The tied weights mapping for this model specifies to tie model.decoder.layers.11.experts.gate_up_proj to model.encoder.language_model.layers.11.experts.gate_up_proj, but both are absent from the checkpoint, and we could not find another related tied weight for those keys
+[transformers] This checkpoint seem corrupted. The tied weights mapping for this model specifies to tie model.decoder.layers.12.experts.gate_up_proj to model.encoder.language_model.layers.12.experts.gate_up_proj, but both are absent from the checkpoint, and we could not find another related tied weight for those keys
+[transformers] This checkpoint seem corrupted. The tied weights mapping for this model specifies to tie model.decoder.layers.13.experts.gate_up_proj to model.encoder.language_model.layers.13.experts.gate_up_proj, but both are absent from the checkpoint, and we could not find another related tied weight for those keys
+[transformers] This checkpoint seem corrupted. The tied weights mapping for this model specifies to tie model.decoder.layers.14.experts.gate_up_proj to model.encoder.language_model.layers.14.experts.gate_up_proj, but both are absent from the checkpoint, and we could not find another related tied weight for those keys
+[transformers] This checkpoint seem corrupted. The tied weights mapping for this model specifies to tie model.decoder.layers.15.experts.gate_up_proj to model.encoder.language_model.layers.15.experts.gate_up_proj, but both are absent from the checkpoint, and we could not find another related tied weight for those keys
+[transformers] This checkpoint seem corrupted. The tied weights mapping for this model specifies to tie model.decoder.layers.16.experts.gate_up_proj to model.encoder.language_model.layers.16.experts.gate_up_proj, but both are absent from the checkpoint, and we could not find another related tied weight for those keys
+[transformers] This checkpoint seem corrupted. The tied weights mapping for this model specifies to tie model.decoder.layers.17.experts.gate_up_proj to model.encoder.language_model.layers.17.experts.gate_up_proj, but both are absent from the checkpoint, and we could not find another related tied weight for those keys
+[transformers] This checkpoint seem corrupted. The tied weights mapping for this model specifies to tie model.decoder.layers.18.experts.gate_up_proj to model.encoder.language_model.layers.18.experts.gate_up_proj, but both are absent from the checkpoint, and we could not find another related tied weight for those keys
+[transformers] This checkpoint seem corrupted. The tied weights mapping for this model specifies to tie model.decoder.layers.19.experts.gate_up_proj to model.encoder.language_model.layers.19.experts.gate_up_proj, but both are absent from the checkpoint, and we could not find another related tied weight for those keys
+[transformers] This checkpoint seem corrupted. The tied weights mapping for this model specifies to tie model.decoder.layers.2.experts.gate_up_proj to model.encoder.language_model.layers.2.experts.gate_up_proj, but both are absent from the checkpoint, and we could not find another related tied weight for those keys
+[transformers] This checkpoint seem corrupted. The tied weights mapping for this model specifies to tie model.decoder.layers.20.experts.gate_up_proj to model.encoder.language_model.layers.20.experts.gate_up_proj, but both are absent from the checkpoint, and we could not find another related tied weight for those keys
+[transformers] This checkpoint seem corrupted. The tied weights mapping for this model specifies to tie model.decoder.layers.21.experts.gate_up_proj to model.encoder.language_model.layers.21.experts.gate_up_proj, but both are absent from the checkpoint, and we could not find another related tied weight for those keys
+[transformers] This checkpoint seem corrupted. The tied weights mapping for this model specifies to tie model.decoder.layers.22.experts.gate_up_proj to model.encoder.language_model.layers.22.experts.gate_up_proj, but both are absent from the checkpoint, and we could not find another related tied weight for those keys
+[transformers] This checkpoint seem corrupted. The tied weights mapping for this model specifies to tie model.decoder.layers.23.experts.gate_up_proj to model.encoder.language_model.layers.23.experts.gate_up_proj, but both are absent from the checkpoint, and we could not find another related tied weight for those keys
+[transformers] This checkpoint seem corrupted. The tied weights mapping for this model specifies to tie model.decoder.layers.24.experts.gate_up_proj to model.encoder.language_model.layers.24.experts.gate_up_proj, but both are absent from the checkpoint, and we could not find another related tied weight for those keys
+[transformers] This checkpoint seem corrupted. The tied weights mapping for this model specifies to tie model.decoder.layers.25.experts.gate_up_proj to model.encoder.language_model.layers.25.experts.gate_up_proj, but both are absent from the checkpoint, and we could not find another related tied weight for those keys
+[transformers] This checkpoint seem corrupted. The tied weights mapping for this model specifies to tie model.decoder.layers.26.experts.gate_up_proj to model.encoder.language_model.layers.26.experts.gate_up_proj, but both are absent from the checkpoint, and we could not find another related tied weight for those keys
+[transformers] This checkpoint seem corrupted. The tied weights mapping for this model specifies to tie model.decoder.layers.27.experts.gate_up_proj to model.encoder.language_model.layers.27.experts.gate_up_proj, but both are absent from the checkpoint, and we could not find another related tied weight for those keys
+[transformers] This checkpoint seem corrupted. The tied weights mapping for this model specifies to tie model.decoder.layers.28.experts.gate_up_proj to model.encoder.language_model.layers.28.experts.gate_up_proj, but both are absent from the checkpoint, and we could not find another related tied weight for those keys
+[transformers] This checkpoint seem corrupted. The tied weights mapping for this model specifies to tie model.decoder.layers.29.experts.gate_up_proj to model.encoder.language_model.layers.29.experts.gate_up_proj, but both are absent from the checkpoint, and we could not find another related tied weight for those keys
+[transformers] This checkpoint seem corrupted. The tied weights mapping for this model specifies to tie model.decoder.layers.3.experts.gate_up_proj to model.encoder.language_model.layers.3.experts.gate_up_proj, but both are absent from the checkpoint, and we could not find another related tied weight for those keys
+[transformers] This checkpoint seem corrupted. The tied weights mapping for this model specifies to tie model.decoder.layers.4.experts.gate_up_proj to model.encoder.language_model.layers.4.experts.gate_up_proj, but both are absent from the checkpoint, and we could not find another related tied weight for those keys
+[transformers] This checkpoint seem corrupted. The tied weights mapping for this model specifies to tie model.decoder.layers.5.experts.gate_up_proj to model.encoder.language_model.layers.5.experts.gate_up_proj, but both are absent from the checkpoint, and we could not find another related tied weight for those keys
+[transformers] This checkpoint seem corrupted. The tied weights mapping for this model specifies to tie model.decoder.layers.6.experts.gate_up_proj to model.encoder.language_model.layers.6.experts.gate_up_proj, but both are absent from the checkpoint, and we could not find another related tied weight for those keys
+[transformers] This checkpoint seem corrupted. The tied weights mapping for this model specifies to tie model.decoder.layers.7.experts.gate_up_proj to model.encoder.language_model.layers.7.experts.gate_up_proj, but both are absent from the checkpoint, and we could not find another related tied weight for those keys
+[transformers] This checkpoint seem corrupted. The tied weights mapping for this model specifies to tie model.decoder.layers.8.experts.gate_up_proj to model.encoder.language_model.layers.8.experts.gate_up_proj, but both are absent from the checkpoint, and we could not find another related tied weight for those keys
+[transformers] This checkpoint seem corrupted. The tied weights mapping for this model specifies to tie model.decoder.layers.9.experts.gate_up_proj to model.encoder.language_model.layers.9.experts.gate_up_proj, but both are absent from the checkpoint, and we could not find another related tied weight for those keys
+[transformers] This checkpoint seem corrupted. The tied weights mapping for this model specifies to tie model.decoder.layers.0.experts.down_proj to model.encoder.language_model.layers.0.experts.down_proj, but both are absent from the checkpoint, and we could not find another related tied weight for those keys
+[transformers] This checkpoint seem corrupted. The tied weights mapping for this model specifies to tie model.decoder.layers.1.experts.down_proj to model.encoder.language_model.layers.1.experts.down_proj, but both are absent from the checkpoint, and we could not find another related tied weight for those keys
+[transformers] This checkpoint seem corrupted. The tied weights mapping for this model specifies to tie model.decoder.layers.10.experts.down_proj to model.encoder.language_model.layers.10.experts.down_proj, but both are absent from the checkpoint, and we could not find another related tied weight for those keys
+[transformers] This checkpoint seem corrupted. The tied weights mapping for this model specifies to tie model.decoder.layers.11.experts.down_proj to model.encoder.language_model.layers.11.experts.down_proj, but both are absent from the checkpoint, and we could not find another related tied weight for those keys
+[transformers] This checkpoint seem corrupted. The tied weights mapping for this model specifies to tie model.decoder.layers.12.experts.down_proj to model.encoder.language_model.layers.12.experts.down_proj, but both are absent from the checkpoint, and we could not find another related tied weight for those keys
+[transformers] This checkpoint seem corrupted. The tied weights mapping for this model specifies to tie model.decoder.layers.13.experts.down_proj to model.encoder.language_model.layers.13.experts.down_proj, but both are absent from the checkpoint, and we could not find another related tied weight for those keys
+[transformers] This checkpoint seem corrupted. The tied weights mapping for this model specifies to tie model.decoder.layers.14.experts.down_proj to model.encoder.language_model.layers.14.experts.down_proj, but both are absent from the checkpoint, and we could not find another related tied weight for those keys
+[transformers] This checkpoint seem corrupted. The tied weights mapping for this model specifies to tie model.decoder.layers.15.experts.down_proj to model.encoder.language_model.layers.15.experts.down_proj, but both are absent from the checkpoint, and we could not find another related tied weight for those keys
+[transformers] This checkpoint seem corrupted. The tied weights mapping for this model specifies to tie model.decoder.layers.16.experts.down_proj to model.encoder.language_model.layers.16.experts.down_proj, but both are absent from the checkpoint, and we could not find another related tied weight for those keys
+[transformers] This checkpoint seem corrupted. The tied weights mapping for this model specifies to tie model.decoder.layers.17.experts.down_proj to model.encoder.language_model.layers.17.experts.down_proj, but both are absent from the checkpoint, and we could not find another related tied weight for those keys
+[transformers] This checkpoint seem corrupted. The tied weights mapping for this model specifies to tie model.decoder.layers.18.experts.down_proj to model.encoder.language_model.layers.18.experts.down_proj, but both are absent from the checkpoint, and we could not find another related tied weight for those keys
+[transformers] This checkpoint seem corrupted. The tied weights mapping for this model specifies to tie model.decoder.layers.19.experts.down_proj to model.encoder.language_model.layers.19.experts.down_proj, but both are absent from the checkpoint, and we could not find another related tied weight for those keys
+[transformers] This checkpoint seem corrupted. The tied weights mapping for this model specifies to tie model.decoder.layers.2.experts.down_proj to model.encoder.language_model.layers.2.experts.down_proj, but both are absent from the checkpoint, and we could not find another related tied weight for those keys
+[transformers] This checkpoint seem corrupted. The tied weights mapping for this model specifies to tie model.decoder.layers.20.experts.down_proj to model.encoder.language_model.layers.20.experts.down_proj, but both are absent from the checkpoint, and we could not find another related tied weight for those keys
+[transformers] This checkpoint seem corrupted. The tied weights mapping for this model specifies to tie model.decoder.layers.21.experts.down_proj to model.encoder.language_model.layers.21.experts.down_proj, but both are absent from the checkpoint, and we could not find another related tied weight for those keys
+[transformers] This checkpoint seem corrupted. The tied weights mapping for this model specifies to tie model.decoder.layers.22.experts.down_proj to model.encoder.language_model.layers.22.experts.down_proj, but both are absent from the checkpoint, and we could not find another related tied weight for those keys
+[transformers] This checkpoint seem corrupted. The tied weights mapping for this model specifies to tie model.decoder.layers.23.experts.down_proj to model.encoder.language_model.layers.23.experts.down_proj, but both are absent from the checkpoint, and we could not find another related tied weight for those keys
+[transformers] This checkpoint seem corrupted. The tied weights mapping for this model specifies to tie model.decoder.layers.24.experts.down_proj to model.encoder.language_model.layers.24.experts.down_proj, but both are absent from the checkpoint, and we could not find another related tied weight for those keys
+[transformers] This checkpoint seem corrupted. The tied weights mapping for this model specifies to tie model.decoder.layers.25.experts.down_proj to model.encoder.language_model.layers.25.experts.down_proj, but both are absent from the checkpoint, and we could not find another related tied weight for those keys
+[transformers] This checkpoint seem corrupted. The tied weights mapping for this model specifies to tie model.decoder.layers.26.experts.down_proj to model.encoder.language_model.layers.26.experts.down_proj, but both are absent from the checkpoint, and we could not find another related tied weight for those keys
+[transformers] This checkpoint seem corrupted. The tied weights mapping for this model specifies to tie model.decoder.layers.27.experts.down_proj to model.encoder.language_model.layers.27.experts.down_proj, but both are absent from the checkpoint, and we could not find another related tied weight for those keys
+[transformers] This checkpoint seem corrupted. The tied weights mapping for this model specifies to tie model.decoder.layers.28.experts.down_proj to model.encoder.language_model.layers.28.experts.down_proj, but both are absent from the checkpoint, and we could not find another related tied weight for those keys
+[transformers] This checkpoint seem corrupted. The tied weights mapping for this model specifies to tie model.decoder.layers.29.experts.down_proj to model.encoder.language_model.layers.29.experts.down_proj, but both are absent from the checkpoint, and we could not find another related tied weight for those keys
+[transformers] This checkpoint seem corrupted. The tied weights mapping for this model specifies to tie model.decoder.layers.3.experts.down_proj to model.encoder.language_model.layers.3.experts.down_proj, but both are absent from the checkpoint, and we could not find another related tied weight for those keys
+[transformers] This checkpoint seem corrupted. The tied weights mapping for this model specifies to tie model.decoder.layers.4.experts.down_proj to model.encoder.language_model.layers.4.experts.down_proj, but both are absent from the checkpoint, and we could not find another related tied weight for those keys
+[transformers] This checkpoint seem corrupted. The tied weights mapping for this model specifies to tie model.decoder.layers.5.experts.down_proj to model.encoder.language_model.layers.5.experts.down_proj, but both are absent from the checkpoint, and we could not find another related tied weight for those keys
+[transformers] This checkpoint seem corrupted. The tied weights mapping for this model specifies to tie model.decoder.layers.6.experts.down_proj to model.encoder.language_model.layers.6.experts.down_proj, but both are absent from the checkpoint, and we could not find another related tied weight for those keys
+[transformers] This checkpoint seem corrupted. The tied weights mapping for this model specifies to tie model.decoder.layers.7.experts.down_proj to model.encoder.language_model.layers.7.experts.down_proj, but both are absent from the checkpoint, and we could not find another related tied weight for those keys
+[transformers] This checkpoint seem corrupted. The tied weights mapping for this model specifies to tie model.decoder.layers.8.experts.down_proj to model.encoder.language_model.layers.8.experts.down_proj, but both are absent from the checkpoint, and we could not find another related tied weight for those keys
+[transformers] This checkpoint seem corrupted. The tied weights mapping for this model specifies to tie model.decoder.layers.9.experts.down_proj to model.encoder.language_model.layers.9.experts.down_proj, but both are absent from the checkpoint, and we could not find another related tied weight for those keys
+[transformers] [1mDiffusionGemmaForBlockDiffusion LOAD REPORT[0m from: RedHatAI/diffusiongemma-26B-A4B-it-FP8-dynamic
+Key                                                                        | Status     | 
+---------------------------------------------------------------------------+------------+-
+model.decoder.layers.{0...29}.experts.{0...127}.gate_projweight            | UNEXPECTED | 
+model.decoder.layers.{0...29}.experts.{0...127}.down_projweight            | UNEXPECTED | 
+model.decoder.layers.{0...29}.experts.{0...127}.up_projweight              | UNEXPECTED | 
+model.decoder.layers.{0...29}.experts.{0...127}.down_proj.weight           | UNEXPECTED | 
+model.decoder.layers.{0...29}.experts.{0...127}.gate_proj.weight           | UNEXPECTED | 
+model.decoder.layers.{0...29}.experts.{0...127}.up_proj.weight             | UNEXPECTED | 
+model.encoder.language_model.layers.{0...29}.experts.down_proj             | MISSING    | 
+model.encoder.language_model.layers.{0...29}.self_attn.k_proj.weight_scale | MISSING    | 
+model.encoder.language_model.layers.{0...29}.self_attn.o_proj.weight_scale | MISSING    | 
+model.decoder.layers.{0...29}.experts.down_proj                            | MISSING    | 
+model.encoder.language_model.layers.{0...29}.experts.gate_up_proj          | MISSING    | 
+model.encoder.language_model.layers.{0...29}.mlp.gate_proj.weight_scale    | MISSING    | 
+model.decoder.layers.{0...29}.experts.gate_up_proj                         | MISSING    | 
+model.encoder.language_model.layers.{0...29}.mlp.up_proj.weight_scale      | MISSING    | 
+model.encoder.language_model.layers.{0...29}.self_attn.q_proj.weight_scale | MISSING    | 
+model.encoder.language_model.layers.{0...29}.mlp.down_proj.weight_scale    | MISSING    | 
+model.encoder.language_model.layers.{0...28}.self_attn.v_proj.weight_scale | MISSING    | 
+
+Notes:
+- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
+- MISSING:	those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
+[load] 5.7s dtype=torch.bfloat16 GPU=50.0GB
+  [batch 0 ERROR] expected mat1 and mat2 to have the same dtype, but got: c10::BFloat16 != c10::Float8_e4m3fn
+  [batch 4 ERROR] expected mat1 and mat2 to have the same dtype, but got: c10::BFloat16 != c10::Float8_e4m3fn
+  [batch 8 ERROR] expected mat1 and mat2 to have the same dtype, but got: c10::BFloat16 != c10::Float8_e4m3fn
+  [batch 12 ERROR] expected mat1 and mat2 to have the same dtype, but got: c10::BFloat16 != c10::Float8_e4m3fn
+  [batch 16 ERROR] expected mat1 and mat2 to have the same dtype, but got: c10::BFloat16 != c10::Float8_e4m3fn
+  [batch 20 ERROR] expected mat1 and mat2 to have the same dtype, but got: c10::BFloat16 != c10::Float8_e4m3fn
+  [batch 24 ERROR] expected mat1 and mat2 to have the same dtype, but got: c10::BFloat16 != c10::Float8_e4m3fn
+  [batch 28 ERROR] expected mat1 and mat2 to have the same dtype, but got: c10::BFloat16 != c10::Float8_e4m3fn
+  [batch 32 ERROR] expected mat1 and mat2 to have the same dtype, but got: c10::BFloat16 != c10::Float8_e4m3fn
+  [batch 36 ERROR] expected mat1 and mat2 to have the same dtype, but got: c10::BFloat16 != c10::Float8_e4m3fn
+  [batch 40 ERROR] expected mat1 and mat2 to have the same dtype, but got: c10::BFloat16 != c10::Float8_e4m3fn
+  [batch 44 ERROR] expected mat1 and mat2 to have the same dtype, but got: c10::BFloat16 != c10::Float8_e4m3fn
+  [batch 48 ERROR] expected mat1 and mat2 to have the same dtype, but got: c10::BFloat16 != c10::Float8_e4m3fn
+  [batch 52 ERROR] expected mat1 and mat2 to have the same dtype, but got: c10::BFloat16 != c10::Float8_e4m3fn
+  [batch 56 ERROR] expected mat1 and mat2 to have the same dtype, but got: c10::BFloat16 != c10::Float8_e4m3fn
+  [batch 60 ERROR] expected mat1 and mat2 to have the same dtype, but got: c10::BFloat16 != c10::Float8_e4m3fn
+  [batch 64 ERROR] expected mat1 and mat2 to have the same dtype, but got: c10::BFloat16 != c10::Float8_e4m3fn
+  [batch 68 ERROR] expected mat1 and mat2 to have the same dtype, but got: c10::BFloat16 != c10::Float8_e4m3fn
+  [batch 72 ERROR] expected mat1 and mat2 to have the same dtype, but got: c10::BFloat16 != c10::Float8_e4m3fn
+  [batch 76 ERROR] expected mat1 and mat2 to have the same dtype, but got: c10::BFloat16 != c10::Float8_e4m3fn
+  [batch 80 ERROR] expected mat1 and mat2 to have the same dtype, but got: c10::BFloat16 != c10::Float8_e4m3fn
+  [batch 84 ERROR] expected mat1 and mat2 to have the same dtype, but got: c10::BFloat16 != c10::Float8_e4m3fn
+  [batch 88 ERROR] expected mat1 and mat2 to have the same dtype, but got: c10::BFloat16 != c10::Float8_e4m3fn
+  [batch 92 ERROR] expected mat1 and mat2 to have the same dtype, but got: c10::BFloat16 != c10::Float8_e4m3fn
+  [batch 96 ERROR] expected mat1 and mat2 to have the same dtype, but got: c10::BFloat16 != c10::Float8_e4m3fn
+  [batch 100 ERROR] expected mat1 and mat2 to have the same dtype, but got: c10::BFloat16 != c10::Float8_e4m3fn
+  [batch 104 ERROR] expected mat1 and mat2 to have the same dtype, but got: c10::BFloat16 != c10::Float8_e4m3fn
+  [batch 108 ERROR] expected mat1 and mat2 to have the same dtype, but got: c10::BFloat16 != c10::Float8_e4m3fn
+  [batch 112 ERROR] expected mat1 and mat2 to have the same dtype, but got: c10::BFloat16 != c10::Float8_e4m3fn
+  [batch 116 ERROR] expected mat1 and mat2 to have the same dtype, but got: c10::BFloat16 != c10::Float8_e4m3fn
+[gsm8k] DONE acc=0.0000 n=0 time=7s
+BENCH_TASK_DONE
+########## fp8 math ##########
+[math500] 60 items bs=4 max_new_tokens=1280 steps=48 think_override=False
+Compressing model:   0%|          | 0/410 [00:00<?, ?it/s]Compressing model:  30%|██▉       | 121/410 [00:00<00:00, 1206.54it/s]Compressing model:  60%|█████▉    | 244/410 [00:00<00:00, 1217.18it/s]Compressing model:  90%|████████▉ | 367/410 [00:00<00:00, 1219.93it/s]Compressing model: 100%|██████████| 410/410 [00:00<00:00, 1218.91it/s]
+[transformers] This checkpoint seem corrupted. The tied weights mapping for this model specifies to tie model.decoder.layers.0.experts.gate_up_proj to model.encoder.language_model.layers.0.experts.gate_up_proj, but both are absent from the checkpoint, and we could not find another related tied weight for those keys
+[transformers] This checkpoint seem corrupted. The tied weights mapping for this model specifies to tie model.decoder.layers.1.experts.gate_up_proj to model.encoder.language_model.layers.1.experts.gate_up_proj, but both are absent from the checkpoint, and we could not find another related tied weight for those keys
+[transformers] This checkpoint seem corrupted. The tied weights mapping for this model specifies to tie model.decoder.layers.10.experts.gate_up_proj to model.encoder.language_model.layers.10.experts.gate_up_proj, but both are absent from the checkpoint, and we could not find another related tied weight for those keys
+[transformers] This checkpoint seem corrupted. The tied weights mapping for this model specifies to tie model.decoder.layers.11.experts.gate_up_proj to model.encoder.language_model.layers.11.experts.gate_up_proj, but both are absent from the checkpoint, and we could not find another related tied weight for those keys
+[transformers] This checkpoint seem corrupted. The tied weights mapping for this model specifies to tie model.decoder.layers.12.experts.gate_up_proj to model.encoder.language_model.layers.12.experts.gate_up_proj, but both are absent from the checkpoint, and we could not find another related tied weight for those keys
+[transformers] This checkpoint seem corrupted. The tied weights mapping for this model specifies to tie model.decoder.layers.13.experts.gate_up_proj to model.encoder.language_model.layers.13.experts.gate_up_proj, but both are absent from the checkpoint, and we could not find another related tied weight for those keys
+[transformers] This checkpoint seem corrupted. The tied weights mapping for this model specifies to tie model.decoder.layers.14.experts.gate_up_proj to model.encoder.language_model.layers.14.experts.gate_up_proj, but both are absent from the checkpoint, and we could not find another related tied weight for those keys
+[transformers] This checkpoint seem corrupted. The tied weights mapping for this model specifies to tie model.decoder.layers.15.experts.gate_up_proj to model.encoder.language_model.layers.15.experts.gate_up_proj, but both are absent from the checkpoint, and we could not find another related tied weight for those keys
+[transformers] This checkpoint seem corrupted. The tied weights mapping for this model specifies to tie model.decoder.layers.16.experts.gate_up_proj to model.encoder.language_model.layers.16.experts.gate_up_proj, but both are absent from the checkpoint, and we could not find another related tied weight for those keys
+[transformers] This checkpoint seem corrupted. The tied weights mapping for this model specifies to tie model.decoder.layers.17.experts.gate_up_proj to model.encoder.language_model.layers.17.experts.gate_up_proj, but both are absent from the checkpoint, and we could not find another related tied weight for those keys
+[transformers] This checkpoint seem corrupted. The tied weights mapping for this model specifies to tie model.decoder.layers.18.experts.gate_up_proj to model.encoder.language_model.layers.18.experts.gate_up_proj, but both are absent from the checkpoint, and we could not find another related tied weight for those keys
+[transformers] This checkpoint seem corrupted. The tied weights mapping for this model specifies to tie model.decoder.layers.19.experts.gate_up_proj to model.encoder.language_model.layers.19.experts.gate_up_proj, but both are absent from the checkpoint, and we could not find another related tied weight for those keys
+[transformers] This checkpoint seem corrupted. The tied weights mapping for this model specifies to tie model.decoder.layers.2.experts.gate_up_proj to model.encoder.language_model.layers.2.experts.gate_up_proj, but both are absent from the checkpoint, and we could not find another related tied weight for those keys
+[transformers] This checkpoint seem corrupted. The tied weights mapping for this model specifies to tie model.decoder.layers.20.experts.gate_up_proj to model.encoder.language_model.layers.20.experts.gate_up_proj, but both are absent from the checkpoint, and we could not find another related tied weight for those keys
+[transformers] This checkpoint seem corrupted. The tied weights mapping for this model specifies to tie model.decoder.layers.21.experts.gate_up_proj to model.encoder.language_model.layers.21.experts.gate_up_proj, but both are absent from the checkpoint, and we could not find another related tied weight for those keys
+[transformers] This checkpoint seem corrupted. The tied weights mapping for this model specifies to tie model.decoder.layers.22.experts.gate_up_proj to model.encoder.language_model.layers.22.experts.gate_up_proj, but both are absent from the checkpoint, and we could not find another related tied weight for those keys
+[transformers] This checkpoint seem corrupted. The tied weights mapping for this model specifies to tie model.decoder.layers.23.experts.gate_up_proj to model.encoder.language_model.layers.23.experts.gate_up_proj, but both are absent from the checkpoint, and we could not find another related tied weight for those keys
+[transformers] This checkpoint seem corrupted. The tied weights mapping for this model specifies to tie model.decoder.layers.24.experts.gate_up_proj to model.encoder.language_model.layers.24.experts.gate_up_proj, but both are absent from the checkpoint, and we could not find another related tied weight for those keys
+[transformers] This checkpoint seem corrupted. The tied weights mapping for this model specifies to tie model.decoder.layers.25.experts.gate_up_proj to model.encoder.language_model.layers.25.experts.gate_up_proj, but both are absent from the checkpoint, and we could not find another related tied weight for those keys
+[transformers] This checkpoint seem corrupted. The tied weights mapping for this model specifies to tie model.decoder.layers.26.experts.gate_up_proj to model.encoder.language_model.layers.26.experts.gate_up_proj, but both are absent from the checkpoint, and we could not find another related tied weight for those keys
+[transformers] This checkpoint seem corrupted. The tied weights mapping for this model specifies to tie model.decoder.layers.27.experts.gate_up_proj to model.encoder.language_model.layers.27.experts.gate_up_proj, but both are absent from the checkpoint, and we could not find another related tied weight for those keys
+[transformers] This checkpoint seem corrupted. The tied weights mapping for this model specifies to tie model.decoder.layers.28.experts.gate_up_proj to model.encoder.language_model.layers.28.experts.gate_up_proj, but both are absent from the checkpoint, and we could not find another related tied weight for those keys
+[transformers] This checkpoint seem corrupted. The tied weights mapping for this model specifies to tie model.decoder.layers.29.experts.gate_up_proj to model.encoder.language_model.layers.29.experts.gate_up_proj, but both are absent from the checkpoint, and we could not find another related tied weight for those keys
+[transformers] This checkpoint seem corrupted. The tied weights mapping for this model specifies to tie model.decoder.layers.3.experts.gate_up_proj to model.encoder.language_model.layers.3.experts.gate_up_proj, but both are absent from the checkpoint, and we could not find another related tied weight for those keys
+[transformers] This checkpoint seem corrupted. The tied weights mapping for this model specifies to tie model.decoder.layers.4.experts.gate_up_proj to model.encoder.language_model.layers.4.experts.gate_up_proj, but both are absent from the checkpoint, and we could not find another related tied weight for those keys
+[transformers] This checkpoint seem corrupted. The tied weights mapping for this model specifies to tie model.decoder.layers.5.experts.gate_up_proj to model.encoder.language_model.layers.5.experts.gate_up_proj, but both are absent from the checkpoint, and we could not find another related tied weight for those keys
+[transformers] This checkpoint seem corrupted. The tied weights mapping for this model specifies to tie model.decoder.layers.6.experts.gate_up_proj to model.encoder.language_model.layers.6.experts.gate_up_proj, but both are absent from the checkpoint, and we could not find another related tied weight for those keys
+[transformers] This checkpoint seem corrupted. The tied weights mapping for this model specifies to tie model.decoder.layers.7.experts.gate_up_proj to model.encoder.language_model.layers.7.experts.gate_up_proj, but both are absent from the checkpoint, and we could not find another related tied weight for those keys
+[transformers] This checkpoint seem corrupted. The tied weights mapping for this model specifies to tie model.decoder.layers.8.experts.gate_up_proj to model.encoder.language_model.layers.8.experts.gate_up_proj, but both are absent from the checkpoint, and we could not find another related tied weight for those keys
+[transformers] This checkpoint seem corrupted. The tied weights mapping for this model specifies to tie model.decoder.layers.9.experts.gate_up_proj to model.encoder.language_model.layers.9.experts.gate_up_proj, but both are absent from the checkpoint, and we could not find another related tied weight for those keys
+[transformers] This checkpoint seem corrupted. The tied weights mapping for this model specifies to tie model.decoder.layers.0.experts.down_proj to model.encoder.language_model.layers.0.experts.down_proj, but both are absent from the checkpoint, and we could not find another related tied weight for those keys
+[transformers] This checkpoint seem corrupted. The tied weights mapping for this model specifies to tie model.decoder.layers.1.experts.down_proj to model.encoder.language_model.layers.1.experts.down_proj, but both are absent from the checkpoint, and we could not find another related tied weight for those keys
+[transformers] This checkpoint seem corrupted. The tied weights mapping for this model specifies to tie model.decoder.layers.10.experts.down_proj to model.encoder.language_model.layers.10.experts.down_proj, but both are absent from the checkpoint, and we could not find another related tied weight for those keys
+[transformers] This checkpoint seem corrupted. The tied weights mapping for this model specifies to tie model.decoder.layers.11.experts.down_proj to model.encoder.language_model.layers.11.experts.down_proj, but both are absent from the checkpoint, and we could not find another related tied weight for those keys
+[transformers] This checkpoint seem corrupted. The tied weights mapping for this model specifies to tie model.decoder.layers.12.experts.down_proj to model.encoder.language_model.layers.12.experts.down_proj, but both are absent from the checkpoint, and we could not find another related tied weight for those keys
+[transformers] This checkpoint seem corrupted. The tied weights mapping for this model specifies to tie model.decoder.layers.13.experts.down_proj to model.encoder.language_model.layers.13.experts.down_proj, but both are absent from the checkpoint, and we could not find another related tied weight for those keys
+[transformers] This checkpoint seem corrupted. The tied weights mapping for this model specifies to tie model.decoder.layers.14.experts.down_proj to model.encoder.language_model.layers.14.experts.down_proj, but both are absent from the checkpoint, and we could not find another related tied weight for those keys
+[transformers] This checkpoint seem corrupted. The tied weights mapping for this model specifies to tie model.decoder.layers.15.experts.down_proj to model.encoder.language_model.layers.15.experts.down_proj, but both are absent from the checkpoint, and we could not find another related tied weight for those keys
+[transformers] This checkpoint seem corrupted. The tied weights mapping for this model specifies to tie model.decoder.layers.16.experts.down_proj to model.encoder.language_model.layers.16.experts.down_proj, but both are absent from the checkpoint, and we could not find another related tied weight for those keys
+[transformers] This checkpoint seem corrupted. The tied weights mapping for this model specifies to tie model.decoder.layers.17.experts.down_proj to model.encoder.language_model.layers.17.experts.down_proj, but both are absent from the checkpoint, and we could not find another related tied weight for those keys
+[transformers] This checkpoint seem corrupted. The tied weights mapping for this model specifies to tie model.decoder.layers.18.experts.down_proj to model.encoder.language_model.layers.18.experts.down_proj, but both are absent from the checkpoint, and we could not find another related tied weight for those keys
+[transformers] This checkpoint seem corrupted. The tied weights mapping for this model specifies to tie model.decoder.layers.19.experts.down_proj to model.encoder.language_model.layers.19.experts.down_proj, but both are absent from the checkpoint, and we could not find another related tied weight for those keys
+[transformers] This checkpoint seem corrupted. The tied weights mapping for this model specifies to tie model.decoder.layers.2.experts.down_proj to model.encoder.language_model.layers.2.experts.down_proj, but both are absent from the checkpoint, and we could not find another related tied weight for those keys
+[transformers] This checkpoint seem corrupted. The tied weights mapping for this model specifies to tie model.decoder.layers.20.experts.down_proj to model.encoder.language_model.layers.20.experts.down_proj, but both are absent from the checkpoint, and we could not find another related tied weight for those keys
+[transformers] This checkpoint seem corrupted. The tied weights mapping for this model specifies to tie model.decoder.layers.21.experts.down_proj to model.encoder.language_model.layers.21.experts.down_proj, but both are absent from the checkpoint, and we could not find another related tied weight for those keys
+[transformers] This checkpoint seem corrupted. The tied weights mapping for this model specifies to tie model.decoder.layers.22.experts.down_proj to model.encoder.language_model.layers.22.experts.down_proj, but both are absent from the checkpoint, and we could not find another related tied weight for those keys
+[transformers] This checkpoint seem corrupted. The tied weights mapping for this model specifies to tie model.decoder.layers.23.experts.down_proj to model.encoder.language_model.layers.23.experts.down_proj, but both are absent from the checkpoint, and we could not find another related tied weight for those keys
+[transformers] This checkpoint seem corrupted. The tied weights mapping for this model specifies to tie model.decoder.layers.24.experts.down_proj to model.encoder.language_model.layers.24.experts.down_proj, but both are absent from the checkpoint, and we could not find another related tied weight for those keys
+[transformers] This checkpoint seem corrupted. The tied weights mapping for this model specifies to tie model.decoder.layers.25.experts.down_proj to model.encoder.language_model.layers.25.experts.down_proj, but both are absent from the checkpoint, and we could not find another related tied weight for those keys
+[transformers] This checkpoint seem corrupted. The tied weights mapping for this model specifies to tie model.decoder.layers.26.experts.down_proj to model.encoder.language_model.layers.26.experts.down_proj, but both are absent from the checkpoint, and we could not find another related tied weight for those keys
+[transformers] This checkpoint seem corrupted. The tied weights mapping for this model specifies to tie model.decoder.layers.27.experts.down_proj to model.encoder.language_model.layers.27.experts.down_proj, but both are absent from the checkpoint, and we could not find another related tied weight for those keys
+[transformers] This checkpoint seem corrupted. The tied weights mapping for this model specifies to tie model.decoder.layers.28.experts.down_proj to model.encoder.language_model.layers.28.experts.down_proj, but both are absent from the checkpoint, and we could not find another related tied weight for those keys
+[transformers] This checkpoint seem corrupted. The tied weights mapping for this model specifies to tie model.decoder.layers.29.experts.down_proj to model.encoder.language_model.layers.29.experts.down_proj, but both are absent from the checkpoint, and we could not find another related tied weight for those keys
+[transformers] This checkpoint seem corrupted. The tied weights mapping for this model specifies to tie model.decoder.layers.3.experts.down_proj to model.encoder.language_model.layers.3.experts.down_proj, but both are absent from the checkpoint, and we could not find another related tied weight for those keys
+[transformers] This checkpoint seem corrupted. The tied weights mapping for this model specifies to tie model.decoder.layers.4.experts.down_proj to model.encoder.language_model.layers.4.experts.down_proj, but both are absent from the checkpoint, and we could not find another related tied weight for those keys
+[transformers] This checkpoint seem corrupted. The tied weights mapping for this model specifies to tie model.decoder.layers.5.experts.down_proj to model.encoder.language_model.layers.5.experts.down_proj, but both are absent from the checkpoint, and we could not find another related tied weight for those keys
+[transformers] This checkpoint seem corrupted. The tied weights mapping for this model specifies to tie model.decoder.layers.6.experts.down_proj to model.encoder.language_model.layers.6.experts.down_proj, but both are absent from the checkpoint, and we could not find another related tied weight for those keys
+[transformers] This checkpoint seem corrupted. The tied weights mapping for this model specifies to tie model.decoder.layers.7.experts.down_proj to model.encoder.language_model.layers.7.experts.down_proj, but both are absent from the checkpoint, and we could not find another related tied weight for those keys
+[transformers] This checkpoint seem corrupted. The tied weights mapping for this model specifies to tie model.decoder.layers.8.experts.down_proj to model.encoder.language_model.layers.8.experts.down_proj, but both are absent from the checkpoint, and we could not find another related tied weight for those keys
+[transformers] This checkpoint seem corrupted. The tied weights mapping for this model specifies to tie model.decoder.layers.9.experts.down_proj to model.encoder.language_model.layers.9.experts.down_proj, but both are absent from the checkpoint, and we could not find another related tied weight for those keys
+[transformers] [1mDiffusionGemmaForBlockDiffusion LOAD REPORT[0m from: RedHatAI/diffusiongemma-26B-A4B-it-FP8-dynamic
+Key                                                                        | Status     | 
+---------------------------------------------------------------------------+------------+-
+model.decoder.layers.{0...29}.experts.{0...127}.up_proj.weight             | UNEXPECTED | 
+model.decoder.layers.{0...29}.experts.{0...127}.down_proj.weight           | UNEXPECTED | 
+model.decoder.layers.{0...29}.experts.{0...127}.down_projweight            | UNEXPECTED | 
+model.decoder.layers.{0...29}.experts.{0...127}.gate_projweight            | UNEXPECTED | 
+model.decoder.layers.{0...29}.experts.{0...127}.up_projweight              | UNEXPECTED | 
+model.decoder.layers.{0...29}.experts.{0...127}.gate_proj.weight           | UNEXPECTED | 
+model.encoder.language_model.layers.{0...29}.mlp.gate_proj.weight_scale    | MISSING    | 
+model.encoder.language_model.layers.{0...29}.self_attn.k_proj.weight_scale | MISSING    | 
+model.decoder.layers.{0...29}.experts.gate_up_proj                         | MISSING    | 
+model.encoder.language_model.layers.{0...29}.mlp.down_proj.weight_scale    | MISSING    | 
+model.encoder.language_model.layers.{0...29}.experts.down_proj             | MISSING    | 
+model.encoder.language_model.layers.{0...29}.experts.gate_up_proj          | MISSING    | 
+model.encoder.language_model.layers.{0...29}.self_attn.o_proj.weight_scale | MISSING    | 
+model.encoder.language_model.layers.{0...29}.mlp.up_proj.weight_scale      | MISSING    | 
+model.decoder.layers.{0...29}.experts.down_proj                            | MISSING    | 
+model.encoder.language_model.layers.{0...29}.self_attn.q_proj.weight_scale | MISSING    | 
+model.encoder.language_model.layers.{0...28}.self_attn.v_proj.weight_scale | MISSING    | 
+
+Notes:
+- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
+- MISSING:	those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
+[load] 5.5s dtype=torch.bfloat16 GPU=50.0GB
+  [batch 0 ERROR] expected mat1 and mat2 to have the same dtype, but got: c10::BFloat16 != c10::Float8_e4m3fn
+  [batch 4 ERROR] expected mat1 and mat2 to have the same dtype, but got: c10::BFloat16 != c10::Float8_e4m3fn
+  [batch 8 ERROR] expected mat1 and mat2 to have the same dtype, but got: c10::BFloat16 != c10::Float8_e4m3fn
+  [batch 12 ERROR] expected mat1 and mat2 to have the same dtype, but got: c10::BFloat16 != c10::Float8_e4m3fn
+  [batch 16 ERROR] expected mat1 and mat2 to have the same dtype, but got: c10::BFloat16 != c10::Float8_e4m3fn
+  [batch 20 ERROR] expected mat1 and mat2 to have the same dtype, but got: c10::BFloat16 != c10::Float8_e4m3fn
+  [batch 24 ERROR] expected mat1 and mat2 to have the same dtype, but got: c10::BFloat16 != c10::Float8_e4m3fn
+  [batch 28 ERROR] expected mat1 and mat2 to have the same dtype, but got: c10::BFloat16 != c10::Float8_e4m3fn
+  [batch 32 ERROR] expected mat1 and mat2 to have the same dtype, but got: c10::BFloat16 != c10::Float8_e4m3fn
+  [batch 36 ERROR] expected mat1 and mat2 to have the same dtype, but got: c10::BFloat16 != c10::Float8_e4m3fn
+  [batch 40 ERROR] expected mat1 and mat2 to have the same dtype, but got: c10::BFloat16 != c10::Float8_e4m3fn
+  [batch 44 ERROR] expected mat1 and mat2 to have the same dtype, but got: c10::BFloat16 != c10::Float8_e4m3fn
+  [batch 48 ERROR] expected mat1 and mat2 to have the same dtype, but got: c10::BFloat16 != c10::Float8_e4m3fn
+  [batch 52 ERROR] expected mat1 and mat2 to have the same dtype, but got: c10::BFloat16 != c10::Float8_e4m3fn
+  [batch 56 ERROR] expected mat1 and mat2 to have the same dtype, but got: c10::BFloat16 != c10::Float8_e4m3fn
+[math500] DONE acc=0.0000 n=0 time=6s
+BENCH_TASK_DONE
+ABLATION_DONE

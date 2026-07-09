@@ -1,0 +1,675 @@
+
+########## START gsm8k ##########
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+[gsm8k] 500 items bs=4 max_new_tokens=640 steps=48 think_override=False
+Fetching 11 files:   0%|          | 0/11 [00:00<?, ?it/s]Fetching 11 files: 100%|██████████| 11/11 [00:00<00:00, 171514.29it/s]
+Loading weights:   0%|          | 0/1047 [00:00<?, ?it/s]Loading weights:   0%|          | 1/1047 [00:00<01:53,  9.20it/s]Loading weights:   0%|          | 3/1047 [00:00<01:41, 10.25it/s]Loading weights:   2%|▏         | 25/1047 [00:00<00:16, 60.84it/s]Loading weights:   4%|▍         | 47/1047 [00:00<00:12, 81.14it/s]Loading weights:   7%|▋         | 69/1047 [00:00<00:10, 91.68it/s]Loading weights:   9%|▊         | 91/1047 [00:01<00:09, 97.17it/s]Loading weights:  11%|█         | 113/1047 [00:01<00:09, 100.89it/s]Loading weights:  13%|█▎        | 134/1047 [00:01<00:09, 100.72it/s]Loading weights:  15%|█▍        | 155/1047 [00:01<00:08, 100.99it/s]Loading weights:  17%|█▋        | 178/1047 [00:01<00:08, 104.25it/s]Loading weights:  19%|█▉        | 200/1047 [00:02<00:08, 104.27it/s]Loading weights:  21%|██        | 222/1047 [00:02<00:07, 105.78it/s]Loading weights:  23%|██▎       | 244/1047 [00:02<00:07, 105.80it/s]Loading weights:  25%|██▌       | 265/1047 [00:02<00:07, 104.22it/s]Loading weights:  27%|██▋       | 287/1047 [00:02<00:07, 105.47it/s]Loading weights:  30%|██▉       | 309/1047 [00:03<00:06, 105.46it/s]Loading weights:  32%|███▏      | 331/1047 [00:03<00:06, 106.38it/s]Loading weights:  34%|███▎      | 353/1047 [00:03<00:06, 106.33it/s]Loading weights:  36%|███▌      | 374/1047 [00:03<00:06, 105.35it/s]Loading weights:  38%|███▊      | 396/1047 [00:04<00:06, 104.80it/s]Loading weights:  40%|███▉      | 417/1047 [00:04<00:06, 104.20it/s]Loading weights:  42%|████▏     | 440/1047 [00:04<00:05, 106.91it/s]Loading weights:  44%|████▍     | 461/1047 [00:04<00:05, 105.51it/s]Loading weights:  46%|████▌     | 484/1047 [00:04<00:05, 106.92it/s]Loading weights:  48%|████▊     | 506/1047 [00:05<00:05, 107.01it/s]Loading weights:  50%|█████     | 527/1047 [00:05<00:04, 104.53it/s]Loading weights:  52%|█████▏    | 549/1047 [00:05<00:04, 105.91it/s]Loading weights:  55%|█████▍    | 571/1047 [00:05<00:04, 106.32it/s]Loading weights:  57%|█████▋    | 593/1047 [00:05<00:04, 106.68it/s]Loading weights:  59%|█████▊    | 615/1047 [00:06<00:04, 106.00it/s]Loading weights:  61%|██████    | 637/1047 [00:06<00:03, 106.20it/s]Loading weights:  84%|████████▍ | 877/1047 [00:06<00:00, 497.96it/s]Loading weights: 100%|██████████| 1047/1047 [00:06<00:00, 162.40it/s]
+[load] 10.6s dtype=torch.bfloat16 GPU=51.6GB
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  4/500 acc=1.000 tpf=28.7 elapsed=16s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  8/500 acc=1.000 tpf=26.2 elapsed=19s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  12/500 acc=1.000 tpf=26.5 elapsed=24s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  16/500 acc=0.938 tpf=26.0 elapsed=27s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  20/500 acc=0.950 tpf=26.0 elapsed=30s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  24/500 acc=0.958 tpf=26.7 elapsed=34s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  28/500 acc=0.964 tpf=27.1 elapsed=36s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  32/500 acc=0.969 tpf=27.2 elapsed=37s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  36/500 acc=0.972 tpf=27.2 elapsed=42s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  40/500 acc=0.975 tpf=26.7 elapsed=50s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  44/500 acc=0.977 tpf=26.7 elapsed=54s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  48/500 acc=0.979 tpf=26.8 elapsed=56s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  52/500 acc=0.981 tpf=26.9 elapsed=58s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  56/500 acc=0.982 tpf=27.0 elapsed=62s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  60/500 acc=0.983 tpf=26.9 elapsed=69s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  64/500 acc=0.969 tpf=27.1 elapsed=72s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  68/500 acc=0.971 tpf=26.8 elapsed=78s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  72/500 acc=0.972 tpf=26.7 elapsed=82s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  76/500 acc=0.974 tpf=26.6 elapsed=85s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  80/500 acc=0.975 tpf=26.6 elapsed=87s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  84/500 acc=0.976 tpf=26.6 elapsed=91s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  88/500 acc=0.977 tpf=26.7 elapsed=96s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  92/500 acc=0.967 tpf=26.6 elapsed=100s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  96/500 acc=0.969 tpf=26.7 elapsed=103s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  100/500 acc=0.970 tpf=26.7 elapsed=106s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  104/500 acc=0.971 tpf=26.6 elapsed=108s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  108/500 acc=0.972 tpf=26.7 elapsed=111s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  112/500 acc=0.973 tpf=26.8 elapsed=115s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  116/500 acc=0.974 tpf=26.8 elapsed=120s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  120/500 acc=0.967 tpf=26.8 elapsed=126s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  124/500 acc=0.968 tpf=26.9 elapsed=130s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  128/500 acc=0.969 tpf=26.8 elapsed=135s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  132/500 acc=0.970 tpf=26.9 elapsed=140s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  136/500 acc=0.971 tpf=26.8 elapsed=144s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  140/500 acc=0.971 tpf=26.8 elapsed=147s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  144/500 acc=0.972 tpf=26.8 elapsed=150s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  148/500 acc=0.973 tpf=26.7 elapsed=153s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  152/500 acc=0.974 tpf=26.7 elapsed=157s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  156/500 acc=0.974 tpf=26.8 elapsed=162s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  160/500 acc=0.975 tpf=26.9 elapsed=166s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  164/500 acc=0.976 tpf=26.9 elapsed=169s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  168/500 acc=0.976 tpf=26.8 elapsed=172s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  172/500 acc=0.977 tpf=26.9 elapsed=175s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  176/500 acc=0.977 tpf=26.8 elapsed=177s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  180/500 acc=0.978 tpf=26.9 elapsed=179s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  184/500 acc=0.973 tpf=26.8 elapsed=185s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  188/500 acc=0.968 tpf=26.9 elapsed=188s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  192/500 acc=0.969 tpf=26.8 elapsed=193s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  196/500 acc=0.969 tpf=26.8 elapsed=195s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  200/500 acc=0.970 tpf=26.8 elapsed=198s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  204/500 acc=0.971 tpf=26.9 elapsed=202s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  208/500 acc=0.971 tpf=27.1 elapsed=208s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  212/500 acc=0.972 tpf=27.0 elapsed=213s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  216/500 acc=0.972 tpf=27.0 elapsed=215s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  220/500 acc=0.973 tpf=27.0 elapsed=218s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  224/500 acc=0.973 tpf=27.0 elapsed=222s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  228/500 acc=0.974 tpf=26.9 elapsed=227s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  232/500 acc=0.974 tpf=26.9 elapsed=229s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  236/500 acc=0.970 tpf=26.9 elapsed=233s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  240/500 acc=0.971 tpf=26.8 elapsed=237s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  244/500 acc=0.971 tpf=26.8 elapsed=238s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  248/500 acc=0.972 tpf=26.7 elapsed=240s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  252/500 acc=0.972 tpf=26.8 elapsed=244s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  256/500 acc=0.973 tpf=26.8 elapsed=248s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  260/500 acc=0.973 tpf=26.8 elapsed=253s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  264/500 acc=0.973 tpf=26.8 elapsed=258s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  268/500 acc=0.974 tpf=26.8 elapsed=261s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  272/500 acc=0.974 tpf=26.9 elapsed=265s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  276/500 acc=0.975 tpf=26.8 elapsed=268s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  280/500 acc=0.975 tpf=26.9 elapsed=270s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  284/500 acc=0.975 tpf=26.9 elapsed=272s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  288/500 acc=0.976 tpf=26.9 elapsed=276s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  292/500 acc=0.976 tpf=26.9 elapsed=279s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  296/500 acc=0.976 tpf=26.9 elapsed=283s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  300/500 acc=0.977 tpf=26.9 elapsed=286s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  304/500 acc=0.977 tpf=26.8 elapsed=291s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  308/500 acc=0.974 tpf=26.7 elapsed=296s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  312/500 acc=0.974 tpf=26.7 elapsed=300s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  316/500 acc=0.975 tpf=26.7 elapsed=304s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  320/500 acc=0.975 tpf=26.7 elapsed=305s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  324/500 acc=0.975 tpf=26.7 elapsed=309s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  328/500 acc=0.976 tpf=26.7 elapsed=312s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  332/500 acc=0.976 tpf=26.7 elapsed=316s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  336/500 acc=0.976 tpf=26.7 elapsed=319s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  340/500 acc=0.976 tpf=26.8 elapsed=323s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  344/500 acc=0.977 tpf=26.7 elapsed=327s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  348/500 acc=0.977 tpf=26.7 elapsed=331s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  352/500 acc=0.977 tpf=26.8 elapsed=335s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  356/500 acc=0.975 tpf=26.8 elapsed=338s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  360/500 acc=0.975 tpf=26.7 elapsed=341s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  364/500 acc=0.975 tpf=26.7 elapsed=343s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  368/500 acc=0.976 tpf=26.7 elapsed=347s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  372/500 acc=0.970 tpf=26.7 elapsed=350s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  376/500 acc=0.971 tpf=26.7 elapsed=354s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  380/500 acc=0.971 tpf=26.7 elapsed=358s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  384/500 acc=0.969 tpf=26.7 elapsed=360s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  388/500 acc=0.969 tpf=26.7 elapsed=363s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  392/500 acc=0.969 tpf=26.7 elapsed=368s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  396/500 acc=0.970 tpf=26.7 elapsed=371s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  400/500 acc=0.970 tpf=26.7 elapsed=374s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  404/500 acc=0.970 tpf=26.7 elapsed=378s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  408/500 acc=0.968 tpf=26.8 elapsed=380s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  412/500 acc=0.966 tpf=26.7 elapsed=382s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  416/500 acc=0.966 tpf=26.7 elapsed=385s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  420/500 acc=0.967 tpf=26.7 elapsed=387s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  424/500 acc=0.965 tpf=26.7 elapsed=389s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  428/500 acc=0.963 tpf=26.7 elapsed=394s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  432/500 acc=0.963 tpf=26.7 elapsed=398s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  436/500 acc=0.963 tpf=26.7 elapsed=401s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  440/500 acc=0.964 tpf=26.7 elapsed=405s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  444/500 acc=0.964 tpf=26.7 elapsed=407s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  448/500 acc=0.964 tpf=26.7 elapsed=412s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  452/500 acc=0.965 tpf=26.7 elapsed=417s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  456/500 acc=0.963 tpf=26.7 elapsed=421s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  460/500 acc=0.963 tpf=26.7 elapsed=425s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  464/500 acc=0.963 tpf=26.7 elapsed=428s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  468/500 acc=0.964 tpf=26.8 elapsed=431s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  472/500 acc=0.964 tpf=26.8 elapsed=435s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  476/500 acc=0.964 tpf=26.7 elapsed=438s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  480/500 acc=0.965 tpf=26.7 elapsed=444s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  484/500 acc=0.965 tpf=26.7 elapsed=447s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  488/500 acc=0.965 tpf=26.7 elapsed=452s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  492/500 acc=0.965 tpf=26.7 elapsed=455s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  496/500 acc=0.966 tpf=26.7 elapsed=462s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  500/500 acc=0.966 tpf=26.7 elapsed=467s
+[gsm8k] DONE acc=0.9660 n=500 time=467s
+########## gsm8k SUMMARY {'acc': 0.966} (total 468s) ##########
+
+########## START mbpp ##########
+[mbpp] 257 items bs=4 max_new_tokens=768 steps=48 think_override=False
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  4/257 acc=1.000 tpf=13.7 elapsed=1s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  8/257 acc=1.000 tpf=12.9 elapsed=2s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  12/257 acc=1.000 tpf=13.3 elapsed=3s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  16/257 acc=1.000 tpf=12.8 elapsed=4s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  20/257 acc=1.000 tpf=14.6 elapsed=6s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  24/257 acc=1.000 tpf=15.2 elapsed=7s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  28/257 acc=1.000 tpf=15.2 elapsed=8s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  32/257 acc=0.938 tpf=15.1 elapsed=10s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  36/257 acc=0.917 tpf=15.2 elapsed=11s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  40/257 acc=0.925 tpf=15.0 elapsed=12s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  44/257 acc=0.932 tpf=14.8 elapsed=13s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  48/257 acc=0.917 tpf=15.0 elapsed=19s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  52/257 acc=0.904 tpf=15.2 elapsed=22s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  56/257 acc=0.911 tpf=14.8 elapsed=25s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  60/257 acc=0.917 tpf=14.8 elapsed=26s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  64/257 acc=0.922 tpf=14.6 elapsed=28s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  68/257 acc=0.912 tpf=14.4 elapsed=31s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  72/257 acc=0.917 tpf=14.7 elapsed=32s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  76/257 acc=0.921 tpf=15.0 elapsed=33s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  80/257 acc=0.925 tpf=14.8 elapsed=35s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  84/257 acc=0.917 tpf=14.7 elapsed=42s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  88/257 acc=0.909 tpf=14.7 elapsed=44s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  92/257 acc=0.902 tpf=14.8 elapsed=45s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  96/257 acc=0.906 tpf=14.7 elapsed=46s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  100/257 acc=0.910 tpf=14.7 elapsed=49s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  104/257 acc=0.894 tpf=14.8 elapsed=50s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  108/257 acc=0.889 tpf=14.7 elapsed=54s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  112/257 acc=0.893 tpf=14.7 elapsed=59s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  116/257 acc=0.888 tpf=14.8 elapsed=61s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  120/257 acc=0.883 tpf=14.8 elapsed=65s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  124/257 acc=0.887 tpf=14.7 elapsed=66s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  128/257 acc=0.883 tpf=14.8 elapsed=80s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  132/257 acc=0.886 tpf=14.8 elapsed=82s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  136/257 acc=0.890 tpf=14.7 elapsed=87s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  140/257 acc=0.893 tpf=14.7 elapsed=88s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  144/257 acc=0.896 tpf=14.6 elapsed=89s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  148/257 acc=0.892 tpf=14.6 elapsed=90s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  152/257 acc=0.895 tpf=14.6 elapsed=94s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  156/257 acc=0.897 tpf=14.6 elapsed=99s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  160/257 acc=0.900 tpf=14.7 elapsed=102s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  164/257 acc=0.896 tpf=14.7 elapsed=109s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  168/257 acc=0.887 tpf=14.8 elapsed=117s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  172/257 acc=0.878 tpf=14.7 elapsed=123s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  176/257 acc=0.881 tpf=14.7 elapsed=124s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  180/257 acc=0.883 tpf=14.7 elapsed=125s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  184/257 acc=0.886 tpf=14.8 elapsed=126s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  188/257 acc=0.883 tpf=14.7 elapsed=130s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  192/257 acc=0.885 tpf=14.8 elapsed=133s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  196/257 acc=0.888 tpf=14.7 elapsed=134s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  200/257 acc=0.885 tpf=14.7 elapsed=135s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  204/257 acc=0.887 tpf=14.6 elapsed=136s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  208/257 acc=0.889 tpf=14.6 elapsed=136s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  212/257 acc=0.887 tpf=14.5 elapsed=138s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  216/257 acc=0.889 tpf=14.5 elapsed=139s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  220/257 acc=0.882 tpf=14.4 elapsed=141s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  224/257 acc=0.879 tpf=14.4 elapsed=148s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  228/257 acc=0.882 tpf=14.3 elapsed=149s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  232/257 acc=0.884 tpf=14.3 elapsed=150s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  236/257 acc=0.881 tpf=14.3 elapsed=151s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  240/257 acc=0.883 tpf=14.3 elapsed=152s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  244/257 acc=0.877 tpf=14.3 elapsed=157s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  248/257 acc=0.875 tpf=14.3 elapsed=158s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  252/257 acc=0.877 tpf=14.3 elapsed=159s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  256/257 acc=0.879 tpf=14.2 elapsed=160s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  257/257 acc=0.879 tpf=14.2 elapsed=160s
+[mbpp] DONE acc=0.8794 n=257 time=160s
+########## mbpp SUMMARY {'acc': 0.8793774319066148} (total 628s) ##########
+
+########## START math500 ##########
+[math500] 500 items bs=4 max_new_tokens=1280 steps=48 think_override=False
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  4/500 acc=1.000 tpf=26.1 elapsed=3s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  8/500 acc=1.000 tpf=26.3 elapsed=8s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  12/500 acc=1.000 tpf=24.3 elapsed=19s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  16/500 acc=0.938 tpf=24.2 elapsed=27s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  20/500 acc=0.900 tpf=22.8 elapsed=36s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  24/500 acc=0.875 tpf=23.4 elapsed=47s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  28/500 acc=0.893 tpf=23.5 elapsed=54s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  32/500 acc=0.906 tpf=23.7 elapsed=58s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  36/500 acc=0.889 tpf=24.4 elapsed=60s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  40/500 acc=0.900 tpf=24.4 elapsed=65s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  44/500 acc=0.886 tpf=24.5 elapsed=79s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  48/500 acc=0.896 tpf=24.1 elapsed=87s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  52/500 acc=0.904 tpf=24.1 elapsed=91s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  56/500 acc=0.911 tpf=24.2 elapsed=94s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  60/500 acc=0.917 tpf=24.1 elapsed=99s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  64/500 acc=0.906 tpf=24.3 elapsed=110s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  68/500 acc=0.912 tpf=24.2 elapsed=116s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  72/500 acc=0.917 tpf=23.8 elapsed=121s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  76/500 acc=0.921 tpf=23.7 elapsed=123s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  80/500 acc=0.925 tpf=23.5 elapsed=132s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  84/500 acc=0.917 tpf=23.3 elapsed=140s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  88/500 acc=0.920 tpf=23.2 elapsed=144s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  92/500 acc=0.924 tpf=23.2 elapsed=152s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  96/500 acc=0.917 tpf=23.3 elapsed=154s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  100/500 acc=0.900 tpf=23.1 elapsed=168s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  104/500 acc=0.885 tpf=22.9 elapsed=174s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  108/500 acc=0.880 tpf=23.0 elapsed=185s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  112/500 acc=0.875 tpf=23.0 elapsed=198s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  116/500 acc=0.879 tpf=23.2 elapsed=200s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  120/500 acc=0.883 tpf=23.1 elapsed=205s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  124/500 acc=0.887 tpf=23.3 elapsed=214s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  128/500 acc=0.891 tpf=23.4 elapsed=222s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  132/500 acc=0.886 tpf=23.4 elapsed=229s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  136/500 acc=0.890 tpf=23.4 elapsed=231s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  140/500 acc=0.893 tpf=23.4 elapsed=236s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  144/500 acc=0.896 tpf=23.5 elapsed=238s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  148/500 acc=0.899 tpf=23.4 elapsed=244s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  152/500 acc=0.901 tpf=23.6 elapsed=254s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  156/500 acc=0.897 tpf=23.5 elapsed=263s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  160/500 acc=0.894 tpf=23.6 elapsed=269s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  164/500 acc=0.896 tpf=23.5 elapsed=273s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  168/500 acc=0.893 tpf=23.5 elapsed=280s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  172/500 acc=0.890 tpf=23.6 elapsed=291s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  176/500 acc=0.892 tpf=23.7 elapsed=296s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  180/500 acc=0.894 tpf=23.7 elapsed=303s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  184/500 acc=0.897 tpf=23.7 elapsed=307s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  188/500 acc=0.899 tpf=23.6 elapsed=316s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  192/500 acc=0.896 tpf=23.5 elapsed=327s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  196/500 acc=0.893 tpf=23.5 elapsed=339s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  200/500 acc=0.890 tpf=23.6 elapsed=345s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  204/500 acc=0.892 tpf=23.7 elapsed=347s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  208/500 acc=0.889 tpf=23.7 elapsed=359s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  212/500 acc=0.892 tpf=23.7 elapsed=371s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  216/500 acc=0.894 tpf=23.8 elapsed=376s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  220/500 acc=0.891 tpf=23.7 elapsed=385s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  224/500 acc=0.884 tpf=23.7 elapsed=394s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  228/500 acc=0.882 tpf=23.8 elapsed=403s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  232/500 acc=0.884 tpf=23.6 elapsed=411s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  236/500 acc=0.881 tpf=23.7 elapsed=415s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  240/500 acc=0.879 tpf=23.6 elapsed=425s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  244/500 acc=0.873 tpf=23.6 elapsed=441s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  248/500 acc=0.871 tpf=23.6 elapsed=448s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  252/500 acc=0.873 tpf=23.6 elapsed=455s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  256/500 acc=0.871 tpf=23.5 elapsed=460s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  260/500 acc=0.873 tpf=23.5 elapsed=464s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  264/500 acc=0.875 tpf=23.5 elapsed=470s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  268/500 acc=0.873 tpf=23.5 elapsed=482s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  272/500 acc=0.875 tpf=23.5 elapsed=485s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  276/500 acc=0.873 tpf=23.5 elapsed=490s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  280/500 acc=0.875 tpf=23.5 elapsed=493s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  284/500 acc=0.877 tpf=23.5 elapsed=496s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  288/500 acc=0.872 tpf=23.5 elapsed=508s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  292/500 acc=0.873 tpf=23.6 elapsed=512s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  296/500 acc=0.872 tpf=23.7 elapsed=516s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  300/500 acc=0.873 tpf=23.7 elapsed=522s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  304/500 acc=0.872 tpf=23.6 elapsed=530s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  308/500 acc=0.867 tpf=23.6 elapsed=535s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  312/500 acc=0.869 tpf=23.6 elapsed=541s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  316/500 acc=0.867 tpf=23.5 elapsed=545s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  320/500 acc=0.869 tpf=23.6 elapsed=553s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  324/500 acc=0.870 tpf=23.6 elapsed=560s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  328/500 acc=0.872 tpf=23.6 elapsed=572s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  332/500 acc=0.873 tpf=23.5 elapsed=580s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  336/500 acc=0.875 tpf=23.5 elapsed=587s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  340/500 acc=0.876 tpf=23.5 elapsed=592s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  344/500 acc=0.878 tpf=23.5 elapsed=603s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  348/500 acc=0.879 tpf=23.6 elapsed=605s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  352/500 acc=0.881 tpf=23.5 elapsed=612s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  356/500 acc=0.882 tpf=23.5 elapsed=618s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  360/500 acc=0.883 tpf=23.5 elapsed=625s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  364/500 acc=0.882 tpf=23.5 elapsed=630s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  368/500 acc=0.883 tpf=23.5 elapsed=633s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  372/500 acc=0.879 tpf=23.6 elapsed=644s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  376/500 acc=0.878 tpf=23.5 elapsed=652s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  380/500 acc=0.879 tpf=23.5 elapsed=654s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  384/500 acc=0.875 tpf=23.6 elapsed=657s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  388/500 acc=0.876 tpf=23.6 elapsed=661s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  392/500 acc=0.878 tpf=23.6 elapsed=665s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  396/500 acc=0.874 tpf=23.5 elapsed=672s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  400/500 acc=0.875 tpf=23.5 elapsed=677s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  404/500 acc=0.874 tpf=23.5 elapsed=691s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  408/500 acc=0.875 tpf=23.5 elapsed=692s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  412/500 acc=0.876 tpf=23.5 elapsed=699s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  416/500 acc=0.877 tpf=23.5 elapsed=708s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  420/500 acc=0.879 tpf=23.5 elapsed=712s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  424/500 acc=0.877 tpf=23.6 elapsed=721s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  428/500 acc=0.876 tpf=23.6 elapsed=728s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  432/500 acc=0.875 tpf=23.6 elapsed=735s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  436/500 acc=0.876 tpf=23.6 elapsed=740s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  440/500 acc=0.877 tpf=23.6 elapsed=748s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  444/500 acc=0.878 tpf=23.6 elapsed=750s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  448/500 acc=0.875 tpf=23.6 elapsed=762s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  452/500 acc=0.876 tpf=23.6 elapsed=769s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  456/500 acc=0.877 tpf=23.7 elapsed=776s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  460/500 acc=0.874 tpf=23.7 elapsed=785s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  464/500 acc=0.873 tpf=23.7 elapsed=793s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  468/500 acc=0.874 tpf=23.7 elapsed=798s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  472/500 acc=0.875 tpf=23.7 elapsed=806s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  476/500 acc=0.876 tpf=23.7 elapsed=815s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  480/500 acc=0.877 tpf=23.7 elapsed=828s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  484/500 acc=0.878 tpf=23.7 elapsed=834s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  488/500 acc=0.879 tpf=23.7 elapsed=841s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  492/500 acc=0.878 tpf=23.7 elapsed=854s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  496/500 acc=0.879 tpf=23.7 elapsed=865s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  500/500 acc=0.880 tpf=23.7 elapsed=868s
+[math500] DONE acc=0.8800 n=500 time=868s
+########## math500 SUMMARY {'acc': 0.88} (total 1496s) ##########
+
+########## START sudoku ##########
+[sudoku] 40 items bs=4 max_new_tokens=768 steps=48 think_override=True
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  4/40 acc=0.000 tpf=40.9 elapsed=3s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  8/40 acc=0.000 tpf=46.7 elapsed=5s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  12/40 acc=0.000 tpf=49.1 elapsed=7s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  16/40 acc=0.000 tpf=48.9 elapsed=9s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  20/40 acc=0.000 tpf=48.2 elapsed=11s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  24/40 acc=0.000 tpf=47.6 elapsed=14s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  28/40 acc=0.000 tpf=47.8 elapsed=16s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  32/40 acc=0.000 tpf=48.1 elapsed=18s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  36/40 acc=0.000 tpf=48.4 elapsed=20s
+[transformers] Kwargs passed to `processor.__call__` have to be in `processor_kwargs` dict, not in `**kwargs`
+  40/40 acc=0.000 tpf=47.3 elapsed=23s
+[sudoku] DONE acc=0.0000 n=40 time=23s
+########## sudoku SUMMARY {'acc': 0.0} (total 1519s) ##########
+ALL_BENCH_DONE
