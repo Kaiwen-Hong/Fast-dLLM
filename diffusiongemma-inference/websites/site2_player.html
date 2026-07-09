@@ -106,6 +106,7 @@ footer{border-top:1px solid var(--line);margin-top:40px;padding:30px 0 60px;colo
         <button id="modeArg" aria-pressed="false">模型预测 argmax</button>
       </div>
     </div>
+    <p class="muted" style="font-size:13px;margin:0 0 8px">💡 画布上像乱码的字(<code>Oste</code>、<code>传染</code>、<code>MgII</code>…)不是渲染错误 —— 它们就是<b>真实的随机 token 噪声</b>（random-token diffusion 的"噪声"是随机词，不是空白）。切到「模型预测 argmax」会看到：哪怕画布还是噪声，模型其实已经预测出正确答案了。</p>
     <div class="grid" id="grid" aria-live="polite"></div>
     <div class="legend">
       <span><span class="sw" style="background:var(--accept)"></span>已接受 accepted</span>
@@ -170,7 +171,7 @@ function draw(){
   step.toks.forEach((t,i)=>{
     const c=document.createElement('span');c.className='cell';
     let txt = mode==='canvas'? t.c : t.a;
-    txt = txt.replace(/\n/g,'⏎').replace(/^ /,'␣'); if(txt==='')txt='∅';
+    txt = txt.replace(/\r?\n/g,'⏎').replace(/[\u0000-\u001f\u007f-\u009f\ufffd]/g,'░').replace(/^ /,'␣'); if(txt==='')txt='∅';
     c.textContent=txt;
     if(t.ok){c.classList.add('acc');}
     else{c.classList.add('noise');}
