@@ -1,0 +1,120 @@
+<title>DiffusionGemma 推理原理 · 总目录</title>
+<style>
+:root{--bg:#f4f3ee;--surface:#fffffe;--surface2:#efeee7;--ink:#17201f;--ink2:#465251;--muted:#6d7877;--line:#dcdbd2;--line2:#c9c8bd;--teal:#0f8f8f;--teal-ink:#0b6d6d;--amber:#bf8a1c;--rose:#d4526e;--violet:#7b6ce0;--good:#2e8b57;--shadow:0 1px 2px rgba(20,30,29,.06),0 10px 34px rgba(20,30,29,.07);--mono:ui-monospace,"SF Mono","JetBrains Mono","Cascadia Code",Menlo,Consolas,monospace;--sans:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",sans-serif;--maxw:1080px;}
+@media (prefers-color-scheme:dark){:root{--bg:#0a1211;--surface:#0f1a19;--surface2:#132322;--ink:#e6efee;--ink2:#a7b6b4;--muted:#7c8d8b;--line:#1e302e;--line2:#294240;--teal:#2bb0ac;--teal-ink:#4fd0cb;--amber:#d9a441;--rose:#e5748d;--violet:#9b8ef2;--good:#4cba7c;--shadow:0 1px 2px rgba(0,0,0,.4),0 12px 44px rgba(0,0,0,.4);}}
+:root[data-theme="dark"]{--bg:#0a1211;--surface:#0f1a19;--surface2:#132322;--ink:#e6efee;--ink2:#a7b6b4;--muted:#7c8d8b;--line:#1e302e;--line2:#294240;--teal:#2bb0ac;--teal-ink:#4fd0cb;--amber:#d9a441;--rose:#e5748d;--violet:#9b8ef2;--good:#4cba7c;--shadow:0 1px 2px rgba(0,0,0,.4),0 12px 44px rgba(0,0,0,.4);}
+:root[data-theme="light"]{--bg:#f4f3ee;--surface:#fffffe;--surface2:#efeee7;--ink:#17201f;--ink2:#465251;--muted:#6d7877;--line:#dcdbd2;--line2:#c9c8bd;--teal:#0f8f8f;--teal-ink:#0b6d6d;--amber:#bf8a1c;--rose:#d4526e;--violet:#7b6ce0;--good:#2e8b57;}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:17px;line-height:1.62;-webkit-font-smoothing:antialiased}
+.wrap{max-width:var(--maxw);margin:0 auto;padding:0 24px}
+h1,h2,h3{font-family:var(--mono);font-weight:650;letter-spacing:-.01em;text-wrap:balance;line-height:1.16}
+a{color:var(--teal-ink)}
+code{font-family:var(--mono);font-size:.85em;background:var(--surface2);padding:.1em .38em;border-radius:5px;border:1px solid var(--line)}
+.eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--teal-ink);font-weight:600}
+.muted{color:var(--muted)}
+.themebtn{font-family:var(--mono);font-size:12px;border:1px solid var(--line2);background:var(--surface2);color:var(--ink2);border-radius:7px;padding:5px 9px;cursor:pointer}
+.hero{position:relative;overflow:hidden;border-bottom:1px solid var(--line)}
+.hero canvas{position:absolute;inset:0;width:100%;height:100%;opacity:.42}
+.hero .wrap{position:relative;padding:30px 24px 54px}
+.hbar{display:flex;align-items:center;gap:14px;margin-bottom:40px}
+.brand{font-family:var(--mono);font-weight:700;font-size:15px}.brand b{color:var(--teal-ink)}
+.hero .kbd{display:inline-block;font-family:var(--mono);font-size:12.5px;color:var(--teal-ink);border:1px solid var(--line2);border-radius:999px;padding:5px 13px;background:color-mix(in srgb,var(--surface) 60%,transparent)}
+.hero h1{font-size:clamp(32px,6vw,58px);margin:.3em 0 .3em}
+.hero .lede{font-size:clamp(17px,2.3vw,21px);max-width:60ch;color:var(--ink2)}
+.essence{margin-top:22px;background:color-mix(in srgb,var(--surface) 78%,transparent);border:1px solid var(--line);border-radius:14px;padding:18px 22px;max-width:66ch;font-family:var(--mono);font-size:15.5px;line-height:1.5}
+.hl-a{color:var(--teal-ink);font-weight:700}.hl-n{color:var(--rose);font-weight:700}.hl-w{color:var(--amber);font-weight:700}
+section{padding:52px 0}
+section h2{font-size:clamp(22px,3vw,28px);margin:0 0 4px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px;margin-top:22px}
+.part{display:block;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:22px;text-decoration:none;color:inherit;box-shadow:var(--shadow);transition:transform .2s,border-color .2s}
+.part:hover{transform:translateY(-3px);border-color:var(--teal)}
+.part .row{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.part .ic{font-size:22px}
+.part .pnum{font-family:var(--mono);font-size:11px;letter-spacing:.12em;color:var(--teal-ink);border:1px solid var(--line2);border-radius:999px;padding:2px 9px}
+.part h3{font-size:18px;margin:0 0 5px}
+.part p{margin:0;font-size:14px;color:var(--ink2)}
+.part .go{margin-top:12px;font-family:var(--mono);font-size:12.5px;color:var(--teal-ink)}
+.part.disabled{opacity:.6;pointer-events:none}
+.results{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;margin-top:18px}
+.rc{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px}
+.rc .n{font-family:var(--mono);font-size:27px;font-weight:700;color:var(--teal-ink);font-variant-numeric:tabular-nums}
+.rc .n.zero{color:var(--rose)}
+.rc .k{font-size:12.5px;color:var(--muted);margin-top:2px}
+.setup{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:20px 24px;margin-top:18px;font-size:14.5px;color:var(--ink2)}
+.setup li{margin:6px 0}
+.setup code{font-size:12.5px}
+footer{border-top:1px solid var(--line);padding:30px 0 60px;color:var(--muted);font-size:13.5px}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+
+<div class="hero">
+  <canvas id="noise" aria-hidden="true"></canvas>
+  <div class="wrap">
+    <div class="hbar"><span class="brand">Diffusion<b>Gemma</b> · 推理详解</span><button class="themebtn" id="tbtn" style="margin-left:auto">◐ 主题</button></div>
+    <span class="kbd">6 篇交互式讲解 · 中文 + English terms</span>
+    <h1>看懂 DiffusionGemma<br>怎么从噪声里"想"出答案</h1>
+    <p class="lede">Google 的 DiffusionGemma 26B-A4B 是首个原生进入 vLLM 的扩散语言模型(dLLM)。这套 6 篇用<b>今晚在一张 H100 上真实推理 + 插桩采集</b>的数据,把它的块扩散(block diffusion)推理机制逐帧讲清楚。</p>
+    <div class="essence">每一步,模型看着<span class="hl-n">半是噪声</span>的画布,把最有把握(低熵)的位置<span class="hl-a">锁定</span>,其余<span class="hl-n">重打回随机</span> —— 文字逐渐<span class="hl-w">结晶</span>成答案。</div>
+  </div>
+</div>
+
+<main class="wrap">
+  <section>
+    <span class="eyebrow">The 6 parts · 从这里开始</span>
+    <h2>按顺序读,逐步吃透</h2>
+    <div class="grid" id="parts"></div>
+  </section>
+
+  <section style="padding-top:0">
+    <span class="eyebrow">Tonight's results · 今晚实测</span>
+    <h2>在一张 vast.ai H100 80GB 上真实跑出</h2>
+    <div class="results">
+      <div class="rc"><div class="n">96.6<span style="font-size:15px">%</span></div><div class="k">GSM8K (n=500)</div></div>
+      <div class="rc"><div class="n">88.0<span style="font-size:15px">%</span></div><div class="k">MATH-500 (n=500)</div></div>
+      <div class="rc"><div class="n">87.9<span style="font-size:15px">%</span></div><div class="k">MBPP (n=257)</div></div>
+      <div class="rc"><div class="n zero">0.0<span style="font-size:15px">%</span></div><div class="k">Sudoku(能力探针)</div></div>
+      <div class="rc"><div class="n">51.6<span style="font-size:15px">GB</span></div><div class="k">bf16 显存 · 单卡够跑</div></div>
+    </div>
+    <div class="setup">
+      <b style="font-family:var(--mono);color:var(--teal-ink)">环境搭建要点</b>(可复现)
+      <ul>
+        <li>模型:<code>google/diffusiongemma-26B-A4B-it</code>(bf16 ~52GB) + <code>RedHatAI/…FP8-dynamic</code>(~26GB)</li>
+        <li>推理:HF <code>transformers 5.13</code> + <code>torch 2.13/cu130</code>(<b>无需 vLLM</b>;它自带 <code>DiffusionGemmaForBlockDiffusion</code>)</li>
+        <li>关键坑:词表 262K 极大 → <code>bs=4 / --max-num-seqs 4</code> 才不 OOM;GSM8K 用 <code>think=off</code> 才对齐官方</li>
+        <li>抓中间态:monkeypatch <code>EntropyBoundSampler.accept_canvas</code> 记录每步 canvas / 熵 / 接受掩码</li>
+      </ul>
+    </div>
+  </section>
+</main>
+
+<footer><div class="wrap">DiffusionGemma 推理原理系列 · 目录 · 数据由 vast.ai H100 80GB 真实推理驱动 · 中文讲解 + English terms。</div></footer>
+
+<script>
+document.getElementById('tbtn').onclick=()=>{const d=document.documentElement;const c=d.getAttribute('data-theme')||(matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light');d.setAttribute('data-theme',c==='dark'?'light':'dark');};
+const PARTS=[
+ {n:1,ic:"🌀",t:"总览 Overview",d:"块扩散 vs 自回归、架构速览、采样算法骨架。先建立全局图景。",url:"site1_overview.html"},
+ {n:2,ic:"🎞️",t:"去噪轨迹播放器",d:"用真实中间步骤逐帧回放:随机 token 如何在几步内结晶成文字。",url:"site2_player.html"},
+ {n:3,ic:"🌡️",t:"熵与接受机制",d:"可交互的熵界接受规则(并行度 vs 质量旋钮)、温度退火、熵坍缩热力图。",url:"site3_entropy.html"},
+ {n:4,ic:"⚡",t:"自适应算力与并行",d:"tokens/forward、步数自适应、早停机制 —— 速度到底从哪来。",url:"site4_adaptive.html"},
+ {n:5,ic:"📊",t:"Benchmark 与 FP8/FP4",d:"GSM8K/MATH/MBPP 实测 + FP8 量化对比 + 诚实的 Sudoku 负面结果。",url:"site5_bench.html"},
+ {n:6,ic:"🎭",t:"对比 LLaDA / Dream",d:"mask diffusion vs random-token diffusion,以及把 Fast-dLLM 经验迁移过来。",url:"site6_compare.html"},
+];
+const g=document.getElementById('parts');
+PARTS.forEach(p=>{const dis=p.url.startsWith('__');const a=document.createElement('a');a.className='part'+(dis?' disabled':'');a.href=dis?'#':p.url;
+  a.innerHTML=`<div class="row"><span class="ic">${p.ic}</span><span class="pnum">PART ${p.n}</span></div>
+    <h3>${p.t}</h3><p>${p.d}</p><div class="go">${dis?'即将上线':'打开 →'}</div>`;g.appendChild(a);});
+// ambient noise canvas
+(function(){const c=document.getElementById('noise');if(!c)return;const x=c.getContext('2d');
+ const reduce=matchMedia('(prefers-reduced-motion:reduce)').matches;let W,H,cells,cols,rows;const size=15;
+ function resize(){W=c.width=c.offsetWidth*devicePixelRatio;H=c.height=c.offsetHeight*devicePixelRatio;
+   cols=Math.ceil(W/(size*devicePixelRatio));rows=Math.ceil(H/(size*devicePixelRatio));cells=[];
+   for(let i=0;i<cols*rows;i++)cells.push({v:Math.random(),lock:Math.random()<0.05?Math.random()*260:0});}
+ resize();addEventListener('resize',resize);let t=0;
+ function frame(){const accept=getComputedStyle(document.documentElement).getPropertyValue('--teal').trim();
+   x.clearRect(0,0,W,H);const s=size*devicePixelRatio;
+   for(let r=0;r<rows;r++)for(let col=0;col<cols;col++){const cell=cells[r*cols+col];const locked=cell.lock>0&&t>cell.lock;
+     if(locked){x.fillStyle=accept;x.globalAlpha=0.15;}else{const g=Math.floor(cell.v*80+70);x.fillStyle=`rgb(${g},${g},${g})`;x.globalAlpha=0.05;if(!reduce&&Math.random()<0.1)cell.v=Math.random();}
+     x.fillRect(col*s+1,r*s+1,s-2,s-2);}
+   x.globalAlpha=1;t++;if(!reduce)requestAnimationFrame(frame);}
+ frame();})();
+</script>

@@ -160,3 +160,31 @@ document.getElementById('reset').onclick=()=>{stop();build();};
 build();
 setTimeout(()=>{if(!matchMedia('(prefers-reduced-motion:reduce)').matches)play();},700);
 </script>
+
+<!-- pnav-cross-navigation -->
+<style>
+.pnav{display:flex;gap:4px;align-items:center;margin-left:10px;flex-wrap:wrap}
+.pnav a{font-family:var(--mono,monospace);font-size:12px;color:var(--ink2,#556);text-decoration:none;padding:3px 8px;border-radius:6px;border:1px solid transparent;line-height:1.4}
+.pnav a:hover{background:var(--surface2,#eee);border-color:var(--line2,#ccc)}
+.pnav a.here{background:var(--teal,#0f8f8f);color:#fff}
+.pnav a.hub{border:1px solid var(--line2,#ccc)}
+@media(max-width:640px){.pnav a{padding:3px 6px;font-size:11px}}
+</style>
+<script>
+window.__PART__=6;
+(function(){
+  var P=[{n:1,f:'site1_overview.html',u:'https://claude.ai/code/artifact/58dc04b4-57f7-4369-9403-9a7b5c26abe5',t:'总览'},{n:2,f:'site2_player.html',u:'https://claude.ai/code/artifact/2403315a-63a6-4cc4-9bb7-28bd4f98e0b9',t:'轨迹'},{n:3,f:'site3_entropy.html',u:'https://claude.ai/code/artifact/fc0c27db-b29e-4a21-80f5-c548a3cabc87',t:'熵/接受'},{n:4,f:'site4_adaptive.html',u:'https://claude.ai/code/artifact/0d7eacfc-c90f-460a-aeb4-6d38108d77ac',t:'并行'},{n:5,f:'site5_bench.html',u:'https://claude.ai/code/artifact/c5b5ecb8-2022-4f69-9344-af21b51b6446',t:'评测'},{n:6,f:'site6_compare.html',u:'https://claude.ai/code/artifact/2ff4d7f0-97be-4431-abc8-2a8c3c552e30',t:'对比'}], HUB={f:'index.html',u:'https://claude.ai/code/artifact/1f1ea486-fb7d-4e6f-8508-20bcd88510d5'};
+  var loc=(location.protocol==='file:');
+  function build(){
+    var wrap=document.querySelector('.top .wrap'); if(!wrap||wrap.querySelector('.pnav'))return;
+    var nav=document.createElement('div'); nav.className='pnav';
+    P.forEach(function(p){var a=document.createElement('a');a.textContent='P'+p.n;a.title='Part '+p.n+' · '+p.t;
+      if(p.n===window.__PART__){a.className='here';}else{a.href=loc?p.f:p.u;}
+      nav.appendChild(a);});
+    var h=document.createElement('a');h.className='hub';h.textContent='目录';h.href=loc?HUB.f:HUB.u;nav.appendChild(h);
+    var brand=wrap.querySelector('.brand');
+    if(brand&&brand.after){brand.after(nav);}else{wrap.appendChild(nav);}
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',build);else build();
+})();
+</script>
